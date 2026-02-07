@@ -37,7 +37,7 @@ If a decision is not in the specs, do not implement it. Propose a documentation 
 1. NEVER commit directly to `main`. Always create a feature branch first.
 2. Branch naming: `feat/<slug>`, `fix/<slug>`, `chore/<slug>`, `docs/<slug>`
 3. Commits: `feat(scope): ...`, `fix(scope): ...`, `docs(scope): ...`, `chore(scope): ...`
-4. Show changes with `git diff` before committing.
+4. Don't create PRs without my approval.
 5. One PR per feature. Include: what/why, list of changes, how to test.
 6. Clean up branch after merge.
 
