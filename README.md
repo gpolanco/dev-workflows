@@ -1,120 +1,47 @@
-# Dev Workflows
+# dev-workflows
 
-**Universal developer workflows for AI coding tools.**
+> Define AI coding rules once. Compile to CLAUDE.md, .cursor/rules, GEMINI.md.
 
-Dev Workflows is a **tool-agnostic workflow kit** that helps you keep a consistent development workflow across multiple AI editors/agents (Claude Code, Cursor, Gemini CLI…).
-
-It’s built around a simple idea:
-
-* Maintain a **single source of truth** (`content/core/`) for workflows, skills, templates, and conventions.
-* Use **bridges** (`bridges/`) to translate that core into each tool’s native configuration format.
-* Produce a **ready-to-use output** (`dist/`) and apply it to projects via a CLI.
-
-> This is **not** a “prompt pack” and **not** just a “config sync tool”.
-> The focus is **workflow governance + enforcement** to reduce drift and keep AI-assisted development predictable.
-
----
-
-## Why
-
-If you use more than one AI tool, you’ve seen the pain:
-
-* Every tool has its own config format (`CLAUDE.md`, `.cursor/rules`, `GEMINI.md`, …)
-* Rules drift over time
-* You end up maintaining the same intent N times
-* Agents ignore instructions because the loop is not closed
-
-Dev Workflows keeps one core and generates the rest.
-
----
-
-## How it works
-
-```txt
-content/core/    -> tool-agnostic workflows, skills, templates, conventions (source of truth)
-bridges/ -> per-tool adapters that translate the core (no creativity)
-dist/    -> generated output ready to link/copy into projects
-cli/     -> init/update/doctor commands
-```
-
----
-
-## Status
-
-Early stage. Unix-first.
-
-**Tier 1 tools (planned first):**
-
-* Claude Code
-* Cursor
-* Gemini CLI
-
----
-
-## Quickstart (Unix-first)
-
-> The CLI is not implemented yet in this repo draft. This section will be updated once `dev-workflows` exists.
-
-Expected flow:
-
-1. Install the global pack (mirror repo) into your profile:
+## Quick start
 
 ```bash
-# example (placeholder)
-git clone <repo> ~/.dev-workflows
-cd ~/.dev-workflows
-pnpm install
-pnpm build
+npx dev-workflows init
 ```
 
-2. Initialize a project:
+## Usage
 
 ```bash
-# example (placeholder)
-dev-workflows init --tool claude,cursor --mode link
+devw init                        # set up .dwf/ in your project
+devw add typescript-strict       # install a rule block
+devw compile                     # generate CLAUDE.md, .cursor/rules, GEMINI.md
 ```
 
----
+## Available blocks
 
-## Supported modes
+| Block | Description |
+|-------|-------------|
+| `typescript-strict` | Strict TypeScript conventions (no any, explicit returns) |
+| `react-conventions` | Hooks rules, component patterns, naming |
+| `nextjs-approuter` | App Router patterns, RSC, server actions |
+| `tailwind` | Utility-first CSS conventions and design tokens |
+| `testing-basics` | Test naming, AAA pattern, mock boundaries |
+| `supabase-rls` | Row-Level Security enforcement and auth patterns |
 
-* **link**: uses symlinks (recommended for personal Unix setups)
-* **copy**: vendors files into the repo (recommended for teams/CI)
+## Commands
 
----
+| Command | Description |
+|---------|-------------|
+| `devw init` | Initialize config in current project |
+| `devw compile` | Compile rules to editor-specific formats |
+| `devw add <block>` | Install a rule block |
+| `devw remove <block>` | Remove an installed block |
+| `devw list` | List available blocks and rules |
+| `devw doctor` | Validate configuration |
 
-## Repo layout
+## Documentation
 
-```txt
-dev-workflows/
-  content/core/
-    workflows/
-    skills/
-    templates/
-    conventions/
-  bridges/
-    claude/
-    cursor/
-    gemini/
-  dist/
-  scripts/
-  docs/
-```
-
----
-
-## Contributing
-
-Contributions are welcome, especially for:
-
-* Bridge maintenance (tool format changes)
-* New tool adapters
-* Workflow packs (UI, backend, release, etc.)
-
-See `CONTRIBUTING.md` (to be added in Block 1).
-
----
+Full specification: [docs/CLI_SPEC.md](docs/CLI_SPEC.md)
 
 ## License
 
-MIT (recommended).
+MIT

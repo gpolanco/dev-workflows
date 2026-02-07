@@ -16,6 +16,9 @@
     "dist",
     "bin"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
