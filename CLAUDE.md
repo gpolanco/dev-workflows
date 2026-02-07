@@ -48,3 +48,35 @@ If you are on `main`, stop and create a branch before doing anything else.
 - Do not add dependencies not listed in `docs/CLI_SPEC.md` without asking.
 - Do not create new documentation trees. Update existing docs instead.
 - Do not move files or rename directories unless explicitly instructed.
+<!-- BEGIN dev-workflows -->
+# Project Rules
+
+## Conventions
+
+- Never use `any`. Use `unknown` when the type is truly unknown,
+  then narrow with type guards.
+
+- Always declare explicit return types on exported functions.
+  Inferred types are fine for internal/private functions.
+
+- Prefer union types over enums.
+  Use `as const` objects when you need runtime values.
+
+- Never use non-null assertion (!). Handle null/undefined explicitly
+  with optional chaining, nullish coalescing, or type guards.
+
+- Follow the Rules of Hooks: only call hooks at the top level,
+  never inside conditions or loops. Custom hooks must start
+  with "use".
+
+- Use PascalCase for component names and their files.
+  Use camelCase for hook files prefixed with "use"
+  (e.g. useAuth.ts).
+
+- Prefer composition over prop drilling. Use children,
+  render props, or context for shared behavior rather than
+  deeply nested prop chains.
+
+- Avoid inline styles. Use CSS modules, Tailwind classes,
+  or styled-components for styling.
+<!-- END dev-workflows -->
