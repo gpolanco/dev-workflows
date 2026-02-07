@@ -15,13 +15,14 @@
   "files": [
     "dist",
     "bin",
-    "content"
+    "content",
+    "README.md"
   ],
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
-    "prebuild": "rm -rf content/blocks && mkdir -p content && cp -r ../../content/blocks content/blocks",
+    "prebuild": "rm -rf content/blocks && mkdir -p content && cp -r ../../content/blocks content/blocks && cp ../../README.md README.md",
     "build": "tsc",
     "dev": "tsc --watch",
     "typecheck": "tsc --noEmit",
