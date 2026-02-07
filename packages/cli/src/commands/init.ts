@@ -54,11 +54,17 @@ async function resolveTools(options: InitOptions, cwd: string): Promise<ToolId[]
   if (detectedIds.length > 0) {
     console.log(`Detected tools: ${chalk.cyan(detectedIds.join(', '))}`);
   }
-  const answer = await ask(
-    `Which tools to configure? (${SUPPORTED_TOOLS.join(',')}) [${defaultTools}]: `,
-    defaultTools,
-  );
-  return parseToolsFlag(answer);
+  for (;;) {
+    const answer = await ask(
+      `Which tools to configure? (${SUPPORTED_TOOLS.join(',')}) [${defaultTools}]: `,
+      defaultTools,
+    );
+    try {
+      return parseToolsFlag(answer);
+    } catch {
+      console.log(chalk.yellow(`Invalid selection. Supported tools: ${SUPPORTED_TOOLS.join(', ')}`));
+    }
+  }
 }
 
 async function resolveMode(options: InitOptions): Promise<'copy' | 'link'> {
@@ -73,11 +79,13 @@ async function resolveMode(options: InitOptions): Promise<'copy' | 'link'> {
     return 'copy';
   }
 
-  const answer = await ask('Output mode — copy (files) or link (symlinks)? [copy]: ', 'copy');
-  if (answer !== 'copy' && answer !== 'link') {
-    throw new Error(`Unknown mode "${answer}". Supported: copy, link`);
+  for (;;) {
+    const answer = await ask('Output mode — copy or link? [copy]: ', 'copy');
+    if (answer === 'copy' || answer === 'link') {
+      return answer;
+    }
+    console.log(chalk.yellow(`Unknown mode "${answer}". Please enter copy or link.`));
   }
-  return answer;
 }
 
 async function fileExists(filePath: string): Promise<boolean> {
@@ -114,8 +122,16 @@ async function runInit(options: InitOptions): Promise<void> {
     return;
   }
 
-  const tools = await resolveTools(options, cwd);
-  const mode = await resolveMode(options);
+  let tools: ToolId[];
+  let mode: 'copy' | 'link';
+  try {
+    tools = await resolveTools(options, cwd);
+    mode = await resolveMode(options);
+  } catch (err) {
+    console.error(chalk.red(`Error: ${err instanceof Error ? err.message : String(err)}`));
+    process.exitCode = 1;
+    return;
+  }
   const projectName = basename(cwd);
 
   // Create .dwf/rules/
