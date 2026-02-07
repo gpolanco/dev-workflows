@@ -21,7 +21,7 @@
     "gemini"
   ],
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=22.0.0"
   },
   "bin": {
     "devw": "./bin/devw.js"
@@ -55,8 +55,7 @@
     "@inquirer/prompts": "^7.0.0",
     "commander": "^13.0.0",
     "yaml": "^2.7.0",
-    "chalk": "^5.4.0",
-    "ora": "^8.0.0"
+    "chalk": "^5.4.0"
   },
   "devDependencies": {
     "typescript": "^5.7.0",
