@@ -1,17 +1,8 @@
-import { access } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { Command } from 'commander';
 import chalk from 'chalk';
 import { readConfig, readRules } from '../core/parser.js';
-
-async function fileExists(filePath: string): Promise<boolean> {
-  try {
-    await access(filePath);
-    return true;
-  } catch {
-    return false;
-  }
-}
+import { fileExists } from '../utils/fs.js';
 
 async function ensureConfig(cwd: string): Promise<boolean> {
   if (!(await fileExists(join(cwd, '.dwf', 'config.yml')))) {

@@ -1,4 +1,4 @@
-import { mkdir, writeFile, readFile, symlink, unlink, access } from 'node:fs/promises';
+import { mkdir, writeFile, readFile, symlink, unlink } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import type { Command } from 'commander';
 import chalk from 'chalk';
@@ -9,6 +9,7 @@ import { claudeBridge } from '../bridges/claude.js';
 import { cursorBridge } from '../bridges/cursor.js';
 import { geminiBridge } from '../bridges/gemini.js';
 import { mergeMarkedContent } from '../core/markers.js';
+import { fileExists } from '../utils/fs.js';
 
 export interface CompileOptions {
   tool?: string;
@@ -20,15 +21,6 @@ const BRIDGES: Bridge[] = [claudeBridge, cursorBridge, geminiBridge];
 
 function getBridge(id: string): Bridge | undefined {
   return BRIDGES.find((b) => b.id === id);
-}
-
-async function fileExists(filePath: string): Promise<boolean> {
-  try {
-    await access(filePath);
-    return true;
-  } catch {
-    return false;
-  }
 }
 
 async function runCompile(options: CompileOptions): Promise<void> {

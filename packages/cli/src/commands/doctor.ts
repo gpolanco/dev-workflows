@@ -1,4 +1,4 @@
-import { access, lstat, readFile, readdir } from 'node:fs/promises';
+import { lstat, readFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { Command } from 'commander';
 import chalk from 'chalk';
@@ -9,6 +9,7 @@ import { claudeBridge } from '../bridges/claude.js';
 import { cursorBridge } from '../bridges/cursor.js';
 import { geminiBridge } from '../bridges/gemini.js';
 import type { Bridge, ProjectConfig, Rule } from '../bridges/types.js';
+import { fileExists } from '../utils/fs.js';
 
 const BRIDGES: Bridge[] = [claudeBridge, cursorBridge, geminiBridge];
 const BRIDGE_IDS = new Set(BRIDGES.map((b) => b.id));
@@ -17,15 +18,6 @@ export interface CheckResult {
   passed: boolean;
   message: string;
   skipped?: boolean;
-}
-
-async function fileExists(filePath: string): Promise<boolean> {
-  try {
-    await access(filePath);
-    return true;
-  } catch {
-    return false;
-  }
 }
 
 export async function checkConfigExists(cwd: string): Promise<CheckResult> {

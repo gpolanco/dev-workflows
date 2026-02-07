@@ -1,25 +1,5 @@
 import type { Bridge, Rule, ProjectConfig } from './types.js';
-
-function filterRules(rules: Rule[]): Rule[] {
-  return rules.filter((r) => r.enabled && r.severity !== 'info');
-}
-
-function groupByScope(rules: Rule[]): Map<string, Rule[]> {
-  const groups = new Map<string, Rule[]>();
-  for (const rule of rules) {
-    const existing = groups.get(rule.scope);
-    if (existing) {
-      existing.push(rule);
-    } else {
-      groups.set(rule.scope, [rule]);
-    }
-  }
-  return groups;
-}
-
-function capitalize(s: string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1);
-}
+import { filterRules, groupByScope, capitalize } from '../core/helpers.js';
 
 function buildMarkdown(rules: Rule[]): string {
   const lines: string[] = [

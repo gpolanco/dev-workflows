@@ -1,5 +1,5 @@
-import { access } from 'node:fs/promises';
 import { join } from 'node:path';
+import { fileExists } from './fs.js';
 
 export type ToolId = 'claude' | 'cursor' | 'gemini';
 
@@ -16,21 +16,12 @@ const TOOL_MARKERS: Record<ToolId, string> = {
   gemini: 'GEMINI.md',
 };
 
-async function exists(filePath: string): Promise<boolean> {
-  try {
-    await access(filePath);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 export async function detectTools(cwd: string): Promise<DetectedTool[]> {
   const results = await Promise.all(
     SUPPORTED_TOOLS.map(async (id) => {
       const marker = TOOL_MARKERS[id];
       if (!marker) return { id, detected: false };
-      const detected = await exists(join(cwd, marker));
+      const detected = await fileExists(join(cwd, marker));
       return { id, detected };
     }),
   );

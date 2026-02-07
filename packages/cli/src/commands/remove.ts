@@ -1,18 +1,9 @@
-import { access } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { Command } from 'commander';
 import chalk from 'chalk';
 import { readConfig } from '../core/parser.js';
 import { uninstallBlock } from '../blocks/installer.js';
-
-async function fileExists(filePath: string): Promise<boolean> {
-  try {
-    await access(filePath);
-    return true;
-  } catch {
-    return false;
-  }
-}
+import { fileExists } from '../utils/fs.js';
 
 async function runRemove(blockId: string): Promise<void> {
   const cwd = process.cwd();

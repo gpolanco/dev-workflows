@@ -1,22 +1,13 @@
-import { access } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { Command } from 'commander';
 import chalk from 'chalk';
 import { loadAllBlocks, loadBlock } from '../blocks/registry.js';
 import { installBlock } from '../blocks/installer.js';
+import { fileExists } from '../utils/fs.js';
 
 export interface AddOptions {
   list?: boolean;
   noCompile?: boolean;
-}
-
-async function fileExists(filePath: string): Promise<boolean> {
-  try {
-    await access(filePath);
-    return true;
-  } catch {
-    return false;
-  }
 }
 
 async function listAvailableBlocks(): Promise<void> {

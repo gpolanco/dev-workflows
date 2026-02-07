@@ -1,11 +1,12 @@
-import { mkdir, writeFile, readFile, appendFile, access } from 'node:fs/promises';
+import { mkdir, writeFile, readFile, appendFile } from 'node:fs/promises';
 import { join, basename } from 'node:path';
 import type { Command } from 'commander';
 import { stringify } from 'yaml';
 import chalk from 'chalk';
+import { checkbox, select } from '@inquirer/prompts';
 import { detectTools, SUPPORTED_TOOLS } from '../utils/detect-tools.js';
 import type { ToolId } from '../utils/detect-tools.js';
-import { ask } from '../utils/prompt.js';
+import { fileExists } from '../utils/fs.js';
 
 export interface InitOptions {
   tools?: string;
@@ -50,20 +51,21 @@ async function resolveTools(options: InitOptions, cwd: string): Promise<ToolId[]
     return detectedIds.length > 0 ? detectedIds : ['claude'];
   }
 
-  const defaultTools = detectedIds.length > 0 ? detectedIds.join(',') : 'claude';
-  if (detectedIds.length > 0) {
-    console.log(`Detected tools: ${chalk.cyan(detectedIds.join(', '))}`);
-  }
   for (;;) {
-    const answer = await ask(
-      `Which tools to configure? (${SUPPORTED_TOOLS.join(',')}) [${defaultTools}]: `,
-      defaultTools,
-    );
-    try {
-      return parseToolsFlag(answer);
-    } catch {
-      console.log(chalk.yellow(`Invalid selection. Supported tools: ${SUPPORTED_TOOLS.join(', ')}`));
+    const selected = await checkbox<ToolId>({
+      message: 'Which tools to configure?',
+      choices: SUPPORTED_TOOLS.map((id) => ({
+        name: id,
+        value: id,
+        checked: detectedIds.includes(id),
+      })),
+    });
+
+    if (selected.length > 0) {
+      return selected;
     }
+
+    console.log(chalk.yellow('Select at least one tool.'));
   }
 }
 
@@ -79,22 +81,15 @@ async function resolveMode(options: InitOptions): Promise<'copy' | 'link'> {
     return 'copy';
   }
 
-  for (;;) {
-    const answer = await ask('Output mode — copy or link? [copy]: ', 'copy');
-    if (answer === 'copy' || answer === 'link') {
-      return answer;
-    }
-    console.log(chalk.yellow(`Unknown mode "${answer}". Please enter copy or link.`));
-  }
-}
+  const mode = await select<'copy' | 'link'>({
+    message: 'Output mode',
+    choices: [
+      { name: 'copy', value: 'copy' as const, description: 'Embed rules directly in tool config files' },
+      { name: 'link', value: 'link' as const, description: 'Symlink tool config files to .dwf/ output' },
+    ],
+  });
 
-async function fileExists(filePath: string): Promise<boolean> {
-  try {
-    await access(filePath);
-    return true;
-  } catch {
-    return false;
-  }
+  return mode;
 }
 
 async function appendToGitignore(cwd: string): Promise<void> {
@@ -159,20 +154,20 @@ async function runInit(options: InitOptions): Promise<void> {
 
   // Success summary
   console.log('');
-  console.log(chalk.green('Initialized .dwf/ successfully!'));
+  console.log(`  ${chalk.bold('dev-workflows')}`);
   console.log('');
-  console.log(`  Project:  ${chalk.bold(projectName)}`);
-  console.log(`  Tools:    ${chalk.cyan(tools.join(', '))}`);
-  console.log(`  Mode:     ${mode}`);
+  console.log(`  ${chalk.green('\u2714')} Initialized .dwf/ successfully`);
   console.log('');
-  console.log('  Created files:');
-  console.log(`    ${chalk.dim('.dwf/config.yml')}`);
-  for (const scope of RULE_SCOPES) {
-    console.log(`    ${chalk.dim(`.dwf/rules/${scope}.yml`)}`);
-  }
-  console.log(`    ${chalk.dim('.gitignore')} (added .dwf/.cache/)`);
+  console.log(`    Project:  ${chalk.bold(projectName)}`);
+  console.log(`    Tools:    ${chalk.cyan(tools.join(', '))}`);
+  console.log(`    Mode:     ${mode}`);
   console.log('');
-  console.log(`Next: edit ${chalk.cyan('.dwf/rules/')} and run ${chalk.cyan('devw compile')}`);
+  console.log(`  ${chalk.bold("What's next")}`);
+  console.log('');
+  console.log(`    1. Browse available rule blocks   ${chalk.cyan('devw add --list')}`);
+  console.log(`    2. Install a block                ${chalk.cyan('devw add typescript-strict')}`);
+  console.log(`    3. Or write your own rules in     ${chalk.cyan('.dwf/rules/')}`);
+  console.log(`    4. When ready, compile            ${chalk.cyan('devw compile')}`);
 }
 
 export function registerInitCommand(program: Command): void {

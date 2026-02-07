@@ -52,6 +52,7 @@
     "test:e2e": "tsc -p tsconfig.test.json && find .test-build/tests/e2e -name '*.test.js' -exec node --test {} +"
   },
   "dependencies": {
+    "@inquirer/prompts": "^7.0.0",
     "commander": "^13.0.0",
     "yaml": "^2.7.0",
     "chalk": "^5.4.0",
