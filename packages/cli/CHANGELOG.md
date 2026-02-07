@@ -1,5 +1,11 @@
 # dev-workflows
 
+## 0.1.4
+
+### Patch Changes
+
+- 4bca317: add inquirer to select options
+
 ## 0.1.3
 
 ### Patch Changes
