@@ -1,5 +1,11 @@
 # dev-workflows
 
+## 0.1.3
+
+### Patch Changes
+
+- e208a74: Improve README with problem statement, Node.js requirement, output example, and remove internal spec link.
+
 ## 0.1.2
 
 ### Patch Changes
