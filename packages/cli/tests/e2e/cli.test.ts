@@ -197,6 +197,23 @@ describe('devw CLI e2e', () => {
     assert.ok(result.stdout.includes('config.yml is valid'));
   });
 
+  it('add --list shows all available blocks', async () => {
+    const result = await run(['add', '--list'], tmpDir);
+
+    assert.equal(result.exitCode, 0);
+    const expected = [
+      'typescript-strict',
+      'react-conventions',
+      'nextjs-approuter',
+      'tailwind',
+      'testing-basics',
+      'supabase-rls',
+    ];
+    for (const block of expected) {
+      assert.ok(result.stdout.includes(block), `should list block "${block}"`);
+    }
+  });
+
   it('remove typescript-strict removes rules and updates config', async () => {
     await run(['init', '--tools', 'claude', '--mode', 'copy', '-y'], tmpDir);
     await run(['add', 'typescript-strict', '--no-compile'], tmpDir);
