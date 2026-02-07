@@ -3,6 +3,26 @@
   "version": "0.1.1",
   "type": "module",
   "description": "CLI that compiles developer rules into editor-specific config files",
+  "license": "MIT",
+  "author": "Gerardo Polanco",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gpolanco/dev-workflows",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://github.com/gpolanco/dev-workflows#readme",
+  "keywords": [
+    "cli",
+    "developer-workflows",
+    "rules",
+    "editor",
+    "claude",
+    "cursor",
+    "gemini"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "bin": {
     "devw": "./bin/devw.js"
   },
@@ -23,6 +43,7 @@
   },
   "scripts": {
     "prebuild": "rm -rf content/blocks && mkdir -p content && cp -r ../../content/blocks content/blocks && cp ../../README.md README.md",
+    "prepublishOnly": "pnpm build",
     "build": "tsc",
     "dev": "tsc --watch",
     "typecheck": "tsc --noEmit",
