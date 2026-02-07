@@ -1,0 +1,9 @@
+# .dwf/rules/architecture.yml
+scope: architecture
+
+rules: []
+  # Example:
+  # - id: my-rule
+  #   severity: error
+  #   content: |
+  #     Describe your rule here.

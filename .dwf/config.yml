@@ -1,0 +1,8 @@
+version: "0.1"
+project:
+  name: dev-workflows
+tools:
+  - claude
+mode: copy
+blocks:
+  - typescript-strict

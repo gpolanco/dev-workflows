@@ -1,0 +1,9 @@
+# .dwf/rules/security.yml
+scope: security
+
+rules: []
+  # Example:
+  # - id: my-rule
+  #   severity: error
+  #   content: |
+  #     Describe your rule here.

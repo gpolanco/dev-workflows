@@ -1,0 +1,26 @@
+scope: conventions
+rules:
+  - id: ts-strict-no-any
+    severity: error
+    content: |-
+      Never use `any`. Use `unknown` when the type is truly unknown,
+      then narrow with type guards.
+    sourceBlock: typescript-strict
+  - id: ts-strict-explicit-returns
+    severity: warning
+    content: |-
+      Always declare explicit return types on exported functions.
+      Inferred types are fine for internal/private functions.
+    sourceBlock: typescript-strict
+  - id: ts-strict-no-enums
+    severity: warning
+    content: |-
+      Prefer union types over enums.
+      Use `as const` objects when you need runtime values.
+    sourceBlock: typescript-strict
+  - id: ts-strict-no-non-null-assertion
+    severity: error
+    content: |-
+      Never use non-null assertion (!). Handle null/undefined explicitly
+      with optional chaining, nullish coalescing, or type guards.
+    sourceBlock: typescript-strict
