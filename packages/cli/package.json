@@ -1,0 +1,35 @@
+{
+  "name": "dev-workflows",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "CLI that compiles developer rules into editor-specific config files",
+  "bin": {
+    "devw": "./bin/devw.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "bin"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "commander": "^13.0.0",
+    "yaml": "^2.7.0",
+    "chalk": "^5.4.0",
+    "ora": "^8.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "@types/node": "^22.0.0"
+  }
+}
