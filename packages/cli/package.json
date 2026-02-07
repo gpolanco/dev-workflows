@@ -14,12 +14,14 @@
   },
   "files": [
     "dist",
-    "bin"
+    "bin",
+    "content"
   ],
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
+    "prebuild": "rm -rf content/blocks && mkdir -p content && cp -r ../../content/blocks content/blocks",
     "build": "tsc",
     "dev": "tsc --watch",
     "typecheck": "tsc --noEmit",

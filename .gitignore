@@ -21,6 +21,7 @@ dist/
 build/
 /out/
 .test-build/
+packages/cli/content/
 
 settings.local.json
 

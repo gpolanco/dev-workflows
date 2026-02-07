@@ -29,8 +29,8 @@ interface RawBlockRule {
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 function defaultBlocksDir(): string {
-  // From dist/blocks/ → repo root: 4 levels up, then content/blocks
-  return join(__dirname, '..', '..', '..', '..', 'content', 'blocks');
+  // From dist/blocks/ → packages/cli/ (2 up), then content/blocks
+  return join(__dirname, '..', '..', 'content', 'blocks');
 }
 
 function normalizeBlockRule(raw: RawBlockRule): BlockRule | null {
