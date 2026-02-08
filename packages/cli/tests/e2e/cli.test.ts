@@ -269,19 +269,33 @@ describe('devw CLI e2e', () => {
     assert.ok(after.includes('explicit return types'), 'CLAUDE.md should still contain typescript-strict rules');
   });
 
-  it('remove last block cleans rules from output files', async () => {
+  it('remove last block deletes output file when no user content', async () => {
     await run(['init', '--tools', 'claude', '--mode', 'copy', '-y'], tmpDir);
     await run(['add', 'supabase-rls'], tmpDir);
 
-    const before = await readFile(join(tmpDir, 'CLAUDE.md'), 'utf-8');
-    assert.ok(before.includes('Every new table must have RLS policies'), 'CLAUDE.md should contain rules before remove');
+    assert.ok(await fileExists(join(tmpDir, 'CLAUDE.md')), 'CLAUDE.md should exist before remove');
+
+    const result = await run(['remove', 'supabase-rls'], tmpDir);
+    assert.equal(result.exitCode, 0);
+
+    assert.ok(!(await fileExists(join(tmpDir, 'CLAUDE.md'))), 'CLAUDE.md should be deleted when no user content remains');
+  });
+
+  it('remove last block preserves user content outside markers', async () => {
+    await run(['init', '--tools', 'claude', '--mode', 'copy', '-y'], tmpDir);
+    await run(['add', 'supabase-rls'], tmpDir);
+
+    // Add user content around the markers
+    const claudeMd = await readFile(join(tmpDir, 'CLAUDE.md'), 'utf-8');
+    await writeFile(join(tmpDir, 'CLAUDE.md'), `# My Notes\n\nKeep this.\n\n${claudeMd}`, 'utf-8');
 
     const result = await run(['remove', 'supabase-rls'], tmpDir);
     assert.equal(result.exitCode, 0);
 
     const after = await readFile(join(tmpDir, 'CLAUDE.md'), 'utf-8');
-    assert.ok(!after.includes('Every new table must have RLS policies'), 'CLAUDE.md should not contain rules after removing last block');
-    assert.ok(after.includes('<!-- BEGIN dev-workflows -->'), 'markers should still exist');
-    assert.ok(after.includes('<!-- END dev-workflows -->'), 'markers should still exist');
+    assert.ok(after.includes('# My Notes'), 'user content should be preserved');
+    assert.ok(after.includes('Keep this.'), 'user content should be preserved');
+    assert.ok(!after.includes('<!-- BEGIN dev-workflows -->'), 'markers should be removed');
+    assert.ok(!after.includes('RLS policies'), 'rules should be removed');
   });
 });

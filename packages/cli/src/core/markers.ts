@@ -20,3 +20,19 @@ export function mergeMarkedContent(existingContent: string | null, newBlock: str
 
   return `${existingContent}\n${markedBlock}`;
 }
+
+export function removeMarkedBlock(existingContent: string): string {
+  const beginIndex = existingContent.indexOf(MARKER_BEGIN);
+  const endIndex = existingContent.indexOf(MARKER_END);
+
+  if (beginIndex === -1 || endIndex === -1) {
+    return existingContent;
+  }
+
+  const before = existingContent.slice(0, beginIndex);
+  const afterEndLine = existingContent.indexOf('\n', endIndex);
+  const after = afterEndLine !== -1 ? existingContent.slice(afterEndLine + 1) : '';
+
+  const result = `${before}${after}`.replace(/\n{3,}/g, '\n\n').trim();
+  return result;
+}

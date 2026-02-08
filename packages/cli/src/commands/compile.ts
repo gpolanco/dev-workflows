@@ -10,7 +10,7 @@ import { cursorBridge } from '../bridges/cursor.js';
 import { geminiBridge } from '../bridges/gemini.js';
 import { windsurfBridge } from '../bridges/windsurf.js';
 import { copilotBridge } from '../bridges/copilot.js';
-import { mergeMarkedContent } from '../core/markers.js';
+import { mergeMarkedContent, removeMarkedBlock } from '../core/markers.js';
 import { fileExists } from '../utils/fs.js';
 import * as ui from '../utils/ui.js';
 import { ICONS } from '../utils/ui.js';
@@ -68,6 +68,29 @@ async function runCompile(options: CompileOptions): Promise<void> {
     const bridge = getBridge(toolId);
     if (!bridge) {
       ui.warn(`No bridge for tool "${toolId}", skipping`);
+      continue;
+    }
+
+    // When zero active rules, clean up output files instead of writing empty content
+    if (activeRules.length === 0 && !options.dryRun) {
+      for (const relativePath of bridge.outputPaths) {
+        const absolutePath = join(cwd, relativePath);
+        if (!(await fileExists(absolutePath))) continue;
+
+        if (bridge.usesMarkers) {
+          const existing = await readFile(absolutePath, 'utf-8');
+          const cleaned = removeMarkedBlock(existing);
+          if (cleaned.length === 0) {
+            await unlink(absolutePath);
+          } else {
+            await writeFile(absolutePath, cleaned + '\n', 'utf-8');
+          }
+        } else {
+          await unlink(absolutePath);
+        }
+        writtenPaths.push(relativePath);
+        filesWritten++;
+      }
       continue;
     }
 
