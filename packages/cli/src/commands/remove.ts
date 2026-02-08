@@ -33,7 +33,11 @@ async function runRemove(blockId?: string): Promise<void> {
       ui.warn('No blocks installed');
       return;
     }
-    blockId = await selectBlock(config.blocks);
+    try {
+      blockId = await selectBlock(config.blocks);
+    } catch {
+      return;
+    }
   }
 
   if (!config.blocks.includes(blockId)) {

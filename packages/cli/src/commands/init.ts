@@ -123,6 +123,7 @@ async function runInit(options: InitOptions): Promise<void> {
     tools = await resolveTools(options, cwd);
     mode = await resolveMode(options);
   } catch (err) {
+    if (err instanceof Error && err.name === 'ExitPromptError') return;
     ui.error(err instanceof Error ? err.message : String(err));
     process.exitCode = 1;
     return;
