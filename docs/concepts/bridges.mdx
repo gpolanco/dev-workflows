@@ -1,0 +1,40 @@
+---
+title: "Bridges"
+description: "How rules are compiled to each editor's native format"
+---
+
+A bridge is an adapter that translates your rules into the format a specific AI editor expects. Each bridge is a single file that implements the same interface.
+
+## How It Works
+
+```
+.dwf/rules/ (YAML) → Bridge → Editor config file
+```
+
+Bridges **only translate format**. They don't add new rules, logic, or intent.
+
+## Available Bridges
+
+### Claude Code
+
+**Output:** `CLAUDE.md` at project root
+
+Rules are grouped by scope as H2 sections, each rule as a bullet point. Content wrapped in `<!-- BEGIN/END dev-workflows -->` markers.
+
+### Cursor
+
+**Output:** `.cursor/rules/devworkflows.mdc`
+
+Includes MDC frontmatter with `alwaysApply: true`. Same scope grouping as Claude.
+
+### Gemini CLI
+
+**Output:** `GEMINI.md` at project root
+
+Identical format to Claude Code. Gemini CLI consumes `GEMINI.md` with the same markdown format.
+
+## Adding More Bridges
+
+The bridge interface is simple. Each bridge defines an `id`, `outputPaths`, and a `compile()` function that takes rules and config and returns a `Map<filePath, content>`.
+
+New bridges will be added in future versions (Windsurf, Copilot, Aider).

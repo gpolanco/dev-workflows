@@ -1,0 +1,18 @@
+---
+title: "devw remove"
+description: "Remove an installed rule block"
+---
+
+```bash
+devw remove <block>
+```
+
+Removes all rules installed by a specific block and updates `config.yml`.
+
+## Example
+
+```bash
+devw remove typescript-strict
+```
+
+Rules added manually (without `sourceBlock`) are never affected.

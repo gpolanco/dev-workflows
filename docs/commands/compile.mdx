@@ -1,0 +1,45 @@
+---
+title: "devw compile"
+description: "Compile .dwf/ rules into editor-specific config files"
+---
+
+```bash
+devw compile
+```
+
+Reads your `.dwf/` rules and generates output for each configured tool using the appropriate bridge.
+
+## Output by Tool
+
+| Tool | Output File |
+|------|-------------|
+| Claude Code | `CLAUDE.md` |
+| Cursor | `.cursor/rules/devworkflows.mdc` |
+| Gemini CLI | `GEMINI.md` |
+
+## Flags
+
+| Flag | Description |
+|------|-------------|
+| `--tool claude` | Compile only a specific bridge |
+| `--dry-run` | Show output without writing files |
+| `--verbose` | Show detailed output |
+
+## Markers
+
+When compiling to markdown-based outputs (CLAUDE.md, GEMINI.md), the generated content is wrapped in `<!-- BEGIN dev-workflows -->` and `<!-- END dev-workflows -->` markers.
+
+This means you can have **manual content** in your CLAUDE.md and dev-workflows will only replace the section between markers. Your hand-written rules are preserved.
+
+## Examples
+
+```bash
+# Compile all configured tools
+devw compile
+
+# Preview output without writing
+devw compile --dry-run
+
+# Compile only Claude bridge
+devw compile --tool claude
+```

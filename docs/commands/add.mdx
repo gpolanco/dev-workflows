@@ -1,0 +1,48 @@
+---
+title: "devw add"
+description: "Install a prebuilt rule block"
+---
+
+```bash
+devw add <block>
+```
+
+Installs a prebuilt rule block into your `.dwf/rules/` files and auto-compiles.
+
+## Behavior
+
+1. Loads the block from the internal registry
+2. Merges rules into the corresponding scope files
+3. Adds the block ID to `config.yml > blocks[]`
+4. Runs `devw compile` automatically
+
+## Flags
+
+| Flag | Description |
+|------|-------------|
+| `--list` | List all available blocks |
+| `--no-compile` | Skip auto-compile after adding |
+
+## Examples
+
+```bash
+# List available blocks
+devw add --list
+
+# Install a block
+devw add typescript-strict
+
+# Install without auto-compiling
+devw add react-conventions --no-compile
+```
+
+## Available Blocks
+
+| Block | Scope | Description |
+|-------|-------|-------------|
+| `typescript-strict` | conventions | No any, explicit returns, union types over enums |
+| `react-conventions` | conventions | Hooks rules, component patterns, naming |
+| `nextjs-approuter` | architecture | App Router, RSC, server actions |
+| `tailwind` | conventions | Utility-first, no custom CSS, design tokens |
+| `testing-basics` | testing | Test naming, coverage, mocks |
+| `supabase-rls` | security | RLS enforcement, auth patterns |

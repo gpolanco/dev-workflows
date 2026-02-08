@@ -1,0 +1,66 @@
+---
+title: "Rules"
+description: "How to write and organize rules in dev-workflows"
+---
+
+Rules are the core of dev-workflows. Each rule is a piece of guidance for AI editors, written in natural language and stored in YAML.
+
+## File Structure
+
+Rules live in `.dwf/rules/`, organized by scope:
+
+```
+.dwf/rules/
+  architecture.yml
+  conventions.yml
+  security.yml
+  testing.yml
+  workflow.yml
+```
+
+## Rule Format
+
+```yaml
+scope: conventions
+
+rules:
+  - id: named-exports
+    severity: error
+    content: |
+      Always use named exports. Never use default exports.
+      This applies to all files: components, utilities, hooks, and types.
+
+  - id: no-barrel-files
+    severity: warning
+    content: |
+      Avoid barrel files (index.ts re-exports).
+      Import directly from the source file.
+```
+
+## Fields
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `id` | string | Yes | Unique identifier (kebab-case) |
+| `severity` | enum | No | `error` \| `warning` \| `info` (default: `error`) |
+| `content` | string | Yes | The rule in natural language (multiline YAML) |
+| `tags` | string[] | No | Tags for filtering |
+| `enabled` | boolean | No | Default: `true`. Disable without deleting |
+
+## Severity Behavior
+
+- **error** and **warning** rules are included in compiled output
+- **info** rules are internal documentation only — they are omitted from output
+- Rules with `enabled: false` are always omitted
+
+## Scopes
+
+The five built-in scopes organize rules by concern:
+
+| Scope | Purpose |
+|-------|---------|
+| `architecture` | Project structure, patterns, module organization |
+| `conventions` | Naming, formatting, code style |
+| `security` | Auth, RLS, secrets, input validation |
+| `testing` | Test strategy, naming, coverage |
+| `workflow` | Git, CI/CD, PR process, deployment |

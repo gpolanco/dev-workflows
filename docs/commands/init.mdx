@@ -1,0 +1,52 @@
+---
+title: "devw init"
+description: "Initialize .dwf/ in the current project"
+---
+
+```bash
+devw init
+```
+
+Creates the `.dwf/` directory structure with configuration and empty rule files.
+
+## Behavior
+
+1. Detects AI tools configured in the project (looks for `.cursor/`, `CLAUDE.md`, `GEMINI.md`)
+2. Asks which tools to include (detected tools are pre-selected)
+3. Asks output mode: `copy` (default) or `link`
+4. Generates `.dwf/config.yml` + empty rule files with example comments
+5. Adds `.dwf/.cache/` to `.gitignore`
+
+## Generated Structure
+
+```
+.dwf/
+  config.yml
+  rules/
+    architecture.yml
+    conventions.yml
+    security.yml
+    workflow.yml
+    testing.yml
+```
+
+## Flags
+
+| Flag | Description |
+|------|-------------|
+| `--tools claude,cursor,gemini` | Skip interactive tool selection |
+| `--mode copy\|link` | Skip interactive mode selection |
+| `-y, --yes` | Accept all defaults |
+
+## Examples
+
+```bash
+# Interactive
+devw init
+
+# Non-interactive with specific tools
+devw init --tools claude,cursor --mode copy
+
+# Accept all defaults
+devw init -y
+```

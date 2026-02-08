@@ -1,0 +1,47 @@
+---
+title: "Quickstart"
+description: "Install dev-workflows and compile your first rules in 60 seconds"
+---
+
+## Prerequisites
+
+- Node.js >= 22
+
+## Install and Initialize
+
+<Steps>
+  <Step title="Initialize your project">
+    ```bash
+    npx dev-workflows init
+    ```
+    This creates a `.dwf/` directory with `config.yml` and empty rule files for each scope: architecture, conventions, security, testing, and workflow.
+
+    The CLI detects existing AI tools in your project (CLAUDE.md, .cursor/, GEMINI.md) and pre-selects them.
+  </Step>
+
+  <Step title="Add a rule block (optional)">
+    ```bash
+    npx dev-workflows add typescript-strict
+    ```
+    Installs prebuilt rules into your `.dwf/rules/` files. Run `devw add --list` to see all available blocks.
+  </Step>
+
+  <Step title="Compile">
+    ```bash
+    npx dev-workflows compile
+    ```
+    Generates editor-specific config files:
+
+    | Tool | Output |
+    |------|--------|
+    | Claude Code | `CLAUDE.md` |
+    | Cursor | `.cursor/rules/devworkflows.mdc` |
+    | Gemini CLI | `GEMINI.md` |
+  </Step>
+</Steps>
+
+## What's Next
+
+- Write your own rules in `.dwf/rules/` → [Rules format](/concepts/rules)
+- Validate your setup → `devw doctor`
+- Browse all commands → [Commands](/commands/init)
