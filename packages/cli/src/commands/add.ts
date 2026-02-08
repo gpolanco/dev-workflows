@@ -4,6 +4,9 @@ import chalk from 'chalk';
 import { loadAllBlocks, loadBlock } from '../blocks/registry.js';
 import { installBlock } from '../blocks/installer.js';
 import { fileExists } from '../utils/fs.js';
+import { readConfig } from '../core/parser.js';
+import * as ui from '../utils/ui.js';
+import { ICONS } from '../utils/ui.js';
 
 export interface AddOptions {
   list?: boolean;
@@ -14,15 +17,26 @@ async function listAvailableBlocks(): Promise<void> {
   const blocks = await loadAllBlocks();
 
   if (blocks.length === 0) {
-    console.log(chalk.yellow('No blocks available.'));
+    ui.warn('No blocks available');
     return;
   }
 
-  console.log(chalk.bold('Available blocks:\n'));
+  // Try to load installed blocks from config
+  let installedBlocks: string[] = [];
+  try {
+    const config = await readConfig(process.cwd());
+    installedBlocks = config.blocks;
+  } catch {
+    // No config — that's fine, just don't show installed indicator
+  }
+
+  ui.header('Available blocks');
+  ui.newline();
   for (const block of blocks) {
-    console.log(`  ${chalk.cyan(block.id)} — ${block.description}`);
-    console.log(`  ${chalk.dim(`${String(block.rules.length)} rules | v${block.version}`)}`);
-    console.log('');
+    const installed = installedBlocks.includes(block.id) ? chalk.green(` ${ICONS.success}`) + chalk.dim(' installed') : '';
+    console.log(`${chalk.cyan(`    ${block.id}`)} ${chalk.dim(ICONS.dash)} ${block.description}${installed}`);
+    console.log(`    ${chalk.dim(`${String(block.rules.length)} rules ${ICONS.dot} v${block.version}`)}`);
+    ui.newline();
   }
 }
 
@@ -35,22 +49,20 @@ async function runAdd(blockId: string | undefined, options: AddOptions): Promise
   const cwd = process.cwd();
 
   if (!(await fileExists(join(cwd, '.dwf', 'config.yml')))) {
-    console.error(chalk.red('Error: .dwf/config.yml not found.'));
-    console.error('Run "devw init" first.');
+    ui.error('.dwf/config.yml not found', 'Run devw init to initialize the project');
     process.exitCode = 1;
     return;
   }
 
   const block = await loadBlock(blockId);
   if (!block) {
-    console.error(chalk.red(`Error: block "${blockId}" not found.`));
-    console.error('Run "devw add --list" to see available blocks.');
+    ui.error(`Block "${blockId}" not found`, 'Run devw add --list to see available blocks');
     process.exitCode = 1;
     return;
   }
 
   const rulesAdded = await installBlock(cwd, block);
-  console.log(chalk.green(`Added block "${block.name}" (${String(rulesAdded)} rules).`));
+  ui.success(`Added ${block.id} (${String(rulesAdded)} rules)`);
 
   if (!options.noCompile) {
     // Dynamic import to avoid circular dependency

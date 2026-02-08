@@ -76,7 +76,7 @@ describe('devw explain', () => {
     assert.equal(result.exitCode, 0);
     assert.ok(result.stdout.includes('claude'));
     assert.ok(result.stdout.includes('CLAUDE.md'));
-    assert.ok(result.stdout.includes('Rules included:'));
+    assert.ok(result.stdout.includes('Rules:'));
     assert.ok(result.stdout.includes('architecture:'));
   });
 
@@ -88,7 +88,7 @@ describe('devw explain', () => {
     const result = await run(['explain'], tmpDir);
 
     assert.equal(result.exitCode, 0);
-    assert.ok(result.stdout.includes('Rules excluded:'));
+    assert.ok(result.stdout.includes('Excluded:'));
     assert.ok(result.stdout.includes('[info] arch-info'));
     assert.ok(result.stdout.includes('[disabled] disabled-rule'));
   });
@@ -114,7 +114,7 @@ describe('devw explain', () => {
     const result = await run(['explain'], tmpDir);
 
     assert.equal(result.exitCode, 0);
-    assert.ok(result.stdout.includes('Output size:'));
+    assert.ok(result.stdout.includes('Size:'));
     assert.ok(result.stdout.includes('6,000 chars'));
   });
 
@@ -128,7 +128,7 @@ describe('devw explain', () => {
     assert.equal(result.exitCode, 0);
     assert.ok(result.stdout.includes('copilot'));
     assert.ok(result.stdout.includes('.github/copilot-instructions.md'));
-    assert.ok(result.stdout.includes('BEGIN/END markers'));
+    assert.ok(result.stdout.includes('BEGIN/END'));
   });
 
   it('errors when no config exists', async () => {

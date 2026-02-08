@@ -112,7 +112,7 @@ describe('devw CLI e2e', () => {
     const result = await run(['add', 'typescript-strict', '--no-compile'], tmpDir);
 
     assert.equal(result.exitCode, 0);
-    assert.ok(result.stdout.includes('Added block'));
+    assert.ok(result.stdout.includes('Added'));
 
     const conventions = await readFile(join(tmpDir, '.dwf', 'rules', 'conventions.yml'), 'utf-8');
     assert.ok(conventions.includes('ts-strict-no-any'));
@@ -242,7 +242,7 @@ describe('devw CLI e2e', () => {
 
     const result = await run(['remove', 'typescript-strict'], tmpDir);
     assert.equal(result.exitCode, 0);
-    assert.ok(result.stdout.includes('Removed block'));
+    assert.ok(result.stdout.includes('Removed'));
 
     const conventions = await readFile(join(tmpDir, '.dwf', 'rules', 'conventions.yml'), 'utf-8');
     assert.ok(!conventions.includes('ts-strict-no-any'));
