@@ -1,0 +1,76 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "name": "dev-workflows",
+  "logo": {
+    "light": "/images/logo-light.svg",
+    "dark": "/images/logo-dark.svg"
+  },
+  "favicon": "/favicon.svg",
+  "colors": {
+    "primary": "#22d37e",
+    "light": "#22d37e",
+    "dark": "#22d37e"
+  },
+  "theme": "willow",
+  "layout": "sidenav",
+  "sidebar": {
+    "items": "border"
+  },
+  "topbar": {
+    "style": "default"
+  },
+  "tabs": [
+    {
+      "tab": "Documentation",
+      "groups": [
+        {
+          "group": "Get Started",
+          "pages": [
+            "quickstart"
+          ]
+        },
+        {
+          "group": "Commands",
+          "pages": [
+            "commands/init",
+            "commands/compile",
+            "commands/doctor",
+            "commands/add",
+            "commands/remove",
+            "commands/list"
+          ]
+        },
+        {
+          "group": "Concepts",
+          "pages": [
+            "concepts/rules",
+            "concepts/bridges",
+            "concepts/blocks",
+            "concepts/modes"
+          ]
+        }
+      ]
+    }
+  ],
+  "footerSocials": {
+    "github": "https://github.com/gpolanco/dev-workflows",
+    "x": "https://x.com/gaborpolanco"
+  },
+  "topbarCtaButton": {
+    "type": "github",
+    "url": "https://github.com/gpolanco/dev-workflows"
+  },
+  "anchors": [
+    {
+      "anchor": "npm",
+      "icon": "npm",
+      "url": "https://www.npmjs.com/package/dev-workflows"
+    }
+  ],
+  "seo": {
+    "indexHiddenPages": false
+  },
+  "feedback": {
+    "thumbsRating": true
+  }
+}

@@ -27,8 +27,11 @@ pnpm dev              # dev mode
 
 ## Specs (read before implementing)
 
-- `docs/CLI_SPEC.md` → full CLI specification (commands, bridges, formats, plan)
-- `docs/DECISIONS.md` → accepted decisions (source of truth if conflict)
+- `docs/internal/CLI_SPEC.md` → full CLI specification (commands, bridges, formats, plan)
+- `docs/internal/DECISIONS.md` → accepted decisions (source of truth if conflict)
+- `docs/internal/DOCS_SPEC.md` → documentation site spec (Mintlify)
+- `docs/internal/` is gitignored — internal specs not published
+
 
 If a decision is not in the specs, do not implement it. Propose a documentation change first.
 
@@ -45,9 +48,10 @@ If you are on `main`, stop and create a branch before doing anything else.
 
 ## What NOT to do
 
-- Do not add dependencies not listed in `docs/CLI_SPEC.md` without asking.
+- Do not add dependencies not listed in `docs/internal/CLI_SPEC.md` without asking.
 - Do not create new documentation trees. Update existing docs instead.
 - Do not move files or rename directories unless explicitly instructed.
+
 <!-- BEGIN dev-workflows -->
 # Project Rules
 

@@ -1,0 +1,78 @@
+---
+title: "Rule Blocks"
+description: "Prebuilt rule collections you can install with one command"
+---
+
+Blocks are curated collections of rules that you can install instead of writing from scratch. Each block targets a specific technology or concern.
+
+## Install a Block
+
+```bash
+devw add typescript-strict
+```
+
+This merges the block's rules into your `.dwf/rules/` files by scope and runs `devw compile` automatically.
+
+## Available Blocks
+
+### typescript-strict
+
+Strict TypeScript conventions for professional codebases.
+
+**Rules:**
+- `ts-strict-no-any` — Never use `any`. Use `unknown` + type guards.
+- `ts-strict-explicit-returns` — Explicit return types on exported functions.
+- `ts-strict-no-enums` — Prefer union types over enums. Use `as const`.
+- `ts-strict-no-non-null-assertion` — Never use `!`. Handle null explicitly.
+
+### react-conventions
+
+React component and hooks patterns.
+
+**Rules:**
+- `react-fc-declaration` — Use function declarations for components.
+- `react-hooks-rules` — Follow Rules of Hooks. Custom hooks start with `use`.
+- `react-prop-types` — Use TypeScript interfaces for props, not PropTypes.
+- `react-no-inline-styles` — No inline styles. Use Tailwind or CSS modules.
+
+### nextjs-approuter
+
+Next.js App Router patterns and best practices.
+
+**Rules:**
+- `next-server-components` — Default to Server Components. Add `'use client'` only when needed.
+- `next-server-actions` — Use Server Actions for mutations. Validate inputs with Zod.
+- `next-route-handlers` — Use route handlers for API endpoints. Export named HTTP methods.
+- `next-metadata` — Export `metadata` or `generateMetadata` in layout/page files.
+
+### tailwind
+
+Utility-first CSS with Tailwind.
+
+**Rules:**
+- `tw-utility-first` — Use Tailwind utilities. Avoid custom CSS.
+- `tw-no-arbitrary` — Minimize arbitrary values. Extend theme config instead.
+- `tw-component-extraction` — Extract repeated utility patterns into components, not CSS.
+
+### testing-basics
+
+Testing fundamentals and conventions.
+
+**Rules:**
+- `test-naming` — Test names describe behavior: "should [verb] when [condition]".
+- `test-arrange-act-assert` — Follow AAA pattern in every test.
+- `test-no-implementation` — Test behavior, not implementation details.
+- `test-mock-boundaries` — Only mock external boundaries (API, DB, filesystem).
+
+### supabase-rls
+
+Supabase Row Level Security patterns.
+
+**Rules:**
+- `supa-rls-required` — Every table must have RLS policies before merging.
+- `supa-auth-context` — Use `auth.uid()` in RLS policies. Never trust client-side filters alone.
+- `supa-service-role` — Never expose the service role key to the client.
+
+## Block Source
+
+Blocks are distributed inside the npm package in `content/blocks/`. Each block is a YAML file with an `id`, `name`, `description`, `version`, and a list of `rules` with scope assignments.
