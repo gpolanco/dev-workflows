@@ -1,72 +1,9 @@
 ---
 title: "dev-workflows"
 description: "Write rules once, compile to every AI editor"
+mode: "custom"
 ---
 
-<div style={{textAlign: 'center', padding: '40px 0'}}>
+import { LandingHero } from "/snippets/landing-hero.jsx"
 
-# Write once, **run everywhere**
-
-A single source of truth for your development rules.
-Compile to any AI editor.
-
-</div>
-
-## The Problem
-
-If you use Claude Code, Cursor, and Gemini CLI, you maintain the same rules in three different files with three slightly different formats. They always drift apart.
-
-## The Solution
-
-```bash
-npx dev-workflows init                    # create .dwf/ with config
-npx dev-workflows add typescript-strict   # install a rule block
-npx dev-workflows compile                 # generate CLAUDE.md, .cursor/rules, GEMINI.md
-```
-
-Define rules once in YAML → compile to each editor's native format.
-
-<Columns cols={3}>
-  <Card title="CLAUDE.md" icon="robot">
-    Claude Code
-  </Card>
-  <Card title=".cursor/rules" icon="code">
-    Cursor
-  </Card>
-  <Card title="GEMINI.md" icon="star">
-    Gemini CLI
-  </Card>
-</Columns>
-
-## Prebuilt Rule Blocks
-
-Start with battle-tested presets instead of writing from scratch:
-
-<Columns cols={3}>
-  <Card title="typescript-strict">
-    No any, explicit returns, union types over enums
-  </Card>
-  <Card title="react-conventions">
-    Hooks rules, component patterns, naming
-  </Card>
-  <Card title="nextjs-approuter">
-    App Router, RSC, server actions
-  </Card>
-  <Card title="tailwind">
-    Utility-first, no custom CSS, design tokens
-  </Card>
-  <Card title="testing-basics">
-    Test naming, coverage, mocks
-  </Card>
-  <Card title="supabase-rls">
-    RLS enforcement, auth patterns
-  </Card>
-</Columns>
-
-<div style={{textAlign: 'center', padding: '20px 0'}}>
-
-**Open source · MIT license · 4 dependencies**
-
-[Get Started →](/quickstart)
-
-</div>
+<LandingHero />
