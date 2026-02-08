@@ -64,12 +64,6 @@
     ]
   },
   "navbar": {
-    "links": [
-      {
-        "label": "npm",
-        "href": "https://www.npmjs.com/package/dev-workflows"
-      }
-    ],
     "primary": {
       "type": "github",
       "href": "https://github.com/gpolanco/dev-workflows"
