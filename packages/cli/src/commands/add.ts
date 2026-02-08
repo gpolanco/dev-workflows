@@ -1,6 +1,7 @@
 import { join } from 'node:path';
 import type { Command } from 'commander';
 import chalk from 'chalk';
+import { select } from '@inquirer/prompts';
 import { loadAllBlocks, loadBlock } from '../blocks/registry.js';
 import { installBlock } from '../blocks/installer.js';
 import { fileExists } from '../utils/fs.js';
@@ -40,8 +41,38 @@ async function listAvailableBlocks(): Promise<void> {
   }
 }
 
+async function selectBlock(installedBlocks: string[]): Promise<string | undefined> {
+  const blocks = await loadAllBlocks();
+  if (blocks.length === 0) {
+    ui.warn('No blocks available');
+    return undefined;
+  }
+
+  const available = blocks.filter((b) => !installedBlocks.includes(b.id));
+  if (available.length === 0) {
+    ui.success('All blocks already installed');
+    return undefined;
+  }
+
+  try {
+    return await select<string>({
+      message: 'Which block to install?',
+      choices: blocks.map((b) => {
+        const installed = installedBlocks.includes(b.id);
+        return {
+          name: installed ? `${b.id} ${ICONS.success} installed` : `${b.id} ${ICONS.dash} ${b.description}`,
+          value: b.id,
+          disabled: installed,
+        };
+      }),
+    });
+  } catch {
+    return undefined;
+  }
+}
+
 async function runAdd(blockId: string | undefined, options: AddOptions): Promise<void> {
-  if (options.list || !blockId) {
+  if (options.list) {
     await listAvailableBlocks();
     return;
   }
@@ -52,6 +83,13 @@ async function runAdd(blockId: string | undefined, options: AddOptions): Promise
     ui.error('.dwf/config.yml not found', 'Run devw init to initialize the project');
     process.exitCode = 1;
     return;
+  }
+
+  if (!blockId) {
+    const config = await readConfig(cwd);
+    const selected = await selectBlock(config.blocks);
+    if (!selected) return;
+    blockId = selected;
   }
 
   const block = await loadBlock(blockId);
