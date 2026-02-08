@@ -1,5 +1,11 @@
 # dev-workflows
 
+## 0.2.1
+
+### Patch Changes
+
+- 35672b2: UX polish: unified output module, improved feedback for all commands, interactive add/remove, compile shows file list and timing
+
 ## 0.2.0
 
 ### Minor Changes
