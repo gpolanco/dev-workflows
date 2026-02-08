@@ -72,7 +72,11 @@
     "url": "https://github.com/gpolanco/dev-workflows"
   },
   "seo": {
-    "indexHiddenPages": false
+    "indexHiddenPages": false,
+    "metatags": {
+      "og:site_name": "dev-workflows",
+      "canonical": "https://docs.dev-workflows.com"
+    }
   },
   "feedback": {
     "thumbsRating": true
