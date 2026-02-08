@@ -2,8 +2,8 @@
   "$schema": "https://mintlify.com/docs.json",
   "name": "dev-workflows",
   "logo": {
-    "light": "/images/logo-dark.svg",
-    "dark": "/images/logo-light.svg"
+    "light": "/images/logo-light.svg",
+    "dark": "/images/logo-fdark.svg"
   },
   "favicon": "/images/isotipo-dark.svg",
   "colors": {
