@@ -60,10 +60,6 @@ async function runCompile(options: CompileOptions): Promise<void> {
   }
 
   const activeRules = rules.filter((r) => r.enabled);
-  if (activeRules.length === 0) {
-    ui.warn('No active rules found in .dwf/rules/. Nothing to compile');
-    return;
-  }
 
   let filesWritten = 0;
   const writtenPaths: string[] = [];

@@ -268,4 +268,20 @@ describe('devw CLI e2e', () => {
     assert.ok(!after.includes('Every new table must have RLS policies'), 'CLAUDE.md should not contain supabase rules after remove');
     assert.ok(after.includes('explicit return types'), 'CLAUDE.md should still contain typescript-strict rules');
   });
+
+  it('remove last block cleans rules from output files', async () => {
+    await run(['init', '--tools', 'claude', '--mode', 'copy', '-y'], tmpDir);
+    await run(['add', 'supabase-rls'], tmpDir);
+
+    const before = await readFile(join(tmpDir, 'CLAUDE.md'), 'utf-8');
+    assert.ok(before.includes('Every new table must have RLS policies'), 'CLAUDE.md should contain rules before remove');
+
+    const result = await run(['remove', 'supabase-rls'], tmpDir);
+    assert.equal(result.exitCode, 0);
+
+    const after = await readFile(join(tmpDir, 'CLAUDE.md'), 'utf-8');
+    assert.ok(!after.includes('Every new table must have RLS policies'), 'CLAUDE.md should not contain rules after removing last block');
+    assert.ok(after.includes('<!-- BEGIN dev-workflows -->'), 'markers should still exist');
+    assert.ok(after.includes('<!-- END dev-workflows -->'), 'markers should still exist');
+  });
 });
