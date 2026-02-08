@@ -1,0 +1,48 @@
+---
+title: "devw explain"
+description: "Preview what each editor will receive"
+---
+
+```bash
+devw explain
+```
+
+Shows what rules each configured editor will receive, without writing any files. A semantic dry-run.
+
+## Output
+
+For each configured tool, explain shows:
+
+- **Output path** and mode (markers or full file)
+- **Rules included**, grouped by scope with counts
+- **Rules excluded** with reasons (severity `info` or `enabled: false`)
+- For Windsurf: output size vs 6,000 character limit
+
+## Flags
+
+| Flag | Description |
+|------|-------------|
+| `--tool claude` | Explain only a specific tool |
+
+## Example
+
+```bash
+devw explain --tool claude
+```
+
+```
+── claude ──────────────────────────
+
+  Output:   CLAUDE.md
+  Mode:     markers (BEGIN/END)
+  Rules:    14 included
+            architecture: 3
+            conventions: 5
+            security: 2
+            team:payments: 2
+            testing: 2
+
+  Excluded: 2
+            [info] arch-decision-log
+            [disabled] legacy-api-compat
+```

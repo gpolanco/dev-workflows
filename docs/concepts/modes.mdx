@@ -40,4 +40,16 @@ When compiling to CLAUDE.md or GEMINI.md, the generated content is wrapped in ma
 
 If you have **manual content** outside the markers, it is preserved on recompile. This lets you keep hand-written rules alongside generated ones.
 
-The Cursor bridge (`.mdc` file) does not use markers — the entire file is managed by dev-workflows.
+## Which bridges use markers?
+
+Not all bridges use BEGIN/END markers. It depends on whether the output file is shared with other content:
+
+| Bridge | Output | Markers | Why |
+|--------|--------|---------|-----|
+| Claude Code | `CLAUDE.md` | Yes | File may contain manual rules |
+| Gemini CLI | `GEMINI.md` | Yes | File may contain manual rules |
+| VS Code / Copilot | `.github/copilot-instructions.md` | Yes | File is shared with other tools |
+| Cursor | `.cursor/rules/devworkflows.mdc` | No | File is fully managed by devw |
+| Windsurf | `.windsurf/rules/devworkflows.md` | No | File is fully managed by devw |
+
+Files without markers are **completely overwritten** on each compile. Do not add manual content to these files — it will be lost.

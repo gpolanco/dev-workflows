@@ -33,8 +33,18 @@ Includes MDC frontmatter with `alwaysApply: true`. Same scope grouping as Claude
 
 Identical format to Claude Code. Gemini CLI consumes `GEMINI.md` with the same markdown format.
 
+### Windsurf
+
+**Output:** `.windsurf/rules/devworkflows.md`
+
+Rules are grouped by scope as H2 sections, each rule as a bullet point. The entire file is managed by dev-workflows — do not edit manually. If the compiled output exceeds 6,000 characters, the CLI warns that Windsurf may truncate the content.
+
+### VS Code / GitHub Copilot
+
+**Output:** `.github/copilot-instructions.md`
+
+Same Markdown format as Claude and Gemini. Content wrapped in `<!-- BEGIN/END dev-workflows -->` markers to preserve any manual instructions you've added to the file.
+
 ## Adding More Bridges
 
 The bridge interface is simple. Each bridge defines an `id`, `outputPaths`, and a `compile()` function that takes rules and config and returns a `Map<filePath, content>`.
-
-New bridges will be added in future versions (Windsurf, Copilot, Aider).

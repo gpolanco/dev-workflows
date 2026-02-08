@@ -64,3 +64,31 @@ The five built-in scopes organize rules by concern:
 | `security` | Auth, RLS, secrets, input validation |
 | `testing` | Test strategy, naming, coverage |
 | `workflow` | Git, CI/CD, PR process, deployment |
+
+## Custom Scopes
+
+Beyond the five built-in scopes, you can define your own using the `kind:name` pattern:
+
+```yaml
+scope: team:payments
+scope: agent:reviewer
+scope: pipeline:ci
+```
+
+Custom scopes follow the same rules as built-in ones. Create a new YAML file in `.dwf/rules/` with your custom scope:
+
+```yaml
+# .dwf/rules/team-payments.yml
+scope: team:payments
+
+rules:
+  - id: payments-no-raw-sql
+    severity: error
+    content: |
+      Never write raw SQL in payment flows.
+      Always use the PaymentRepository abstraction.
+```
+
+Custom scopes appear after built-in scopes in compiled output, sorted alphabetically. The scope name is used as-is for the heading (e.g., `## team:payments`).
+
+**Format:** lowercase alphanumeric, hyphens allowed in name. Examples: `team:frontend`, `agent:reviewer`, `pipeline:ci`.

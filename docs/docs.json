@@ -45,6 +45,7 @@
               "commands/init",
               "commands/compile",
               "commands/doctor",
+              "commands/explain",
               "commands/add",
               "commands/remove",
               "commands/list"
