@@ -14,7 +14,7 @@ export interface InitOptions {
   yes?: boolean;
 }
 
-const RULE_SCOPES = ['architecture', 'conventions', 'security', 'workflow', 'testing'] as const;
+import { BUILTIN_SCOPES } from '../core/schema.js';
 
 function buildRuleFileContent(scope: string): string {
   return `# .dwf/rules/${scope}.yml
@@ -145,7 +145,7 @@ async function runInit(options: InitOptions): Promise<void> {
   await writeFile(join(dwfDir, 'config.yml'), configContent, 'utf-8');
 
   // Write empty rule files
-  for (const scope of RULE_SCOPES) {
+  for (const scope of BUILTIN_SCOPES) {
     await writeFile(join(rulesDir, `${scope}.yml`), buildRuleFileContent(scope), 'utf-8');
   }
 

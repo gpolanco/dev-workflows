@@ -8,6 +8,8 @@ import type { Bridge } from '../bridges/types.js';
 import { claudeBridge } from '../bridges/claude.js';
 import { cursorBridge } from '../bridges/cursor.js';
 import { geminiBridge } from '../bridges/gemini.js';
+import { windsurfBridge } from '../bridges/windsurf.js';
+import { copilotBridge } from '../bridges/copilot.js';
 import { mergeMarkedContent } from '../core/markers.js';
 import { fileExists } from '../utils/fs.js';
 
@@ -17,7 +19,7 @@ export interface CompileOptions {
   verbose?: boolean;
 }
 
-const BRIDGES: Bridge[] = [claudeBridge, cursorBridge, geminiBridge];
+const BRIDGES: Bridge[] = [claudeBridge, cursorBridge, geminiBridge, windsurfBridge, copilotBridge];
 
 function getBridge(id: string): Bridge | undefined {
   return BRIDGES.find((b) => b.id === id);
@@ -74,10 +76,8 @@ async function runCompile(options: CompileOptions): Promise<void> {
     const outputs = bridge.compile(rules, config);
 
     for (const [relativePath, rawContent] of outputs) {
-      const isMarkdownBridge = rawContent.startsWith('# Project Rules');
-
       let content = rawContent;
-      if (isMarkdownBridge && !options.dryRun) {
+      if (bridge.usesMarkers && !options.dryRun) {
         const absoluteCheck = join(cwd, relativePath);
         let existing: string | null = null;
         try {
@@ -144,7 +144,7 @@ export function registerCompileCommand(program: Command): void {
   program
     .command('compile')
     .description('Compile .dwf/ rules into editor-specific config files')
-    .option('--tool <tool>', 'Compile only a specific bridge (claude, cursor, gemini)')
+    .option('--tool <tool>', 'Compile only a specific bridge (claude, cursor, gemini, windsurf, copilot)')
     .option('--dry-run', 'Show output without writing files')
     .option('--verbose', 'Show detailed output')
     .action((options: CompileOptions) => runCompile(options));

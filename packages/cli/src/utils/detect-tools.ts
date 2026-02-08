@@ -1,9 +1,9 @@
 import { join } from 'node:path';
 import { fileExists } from './fs.js';
 
-export type ToolId = 'claude' | 'cursor' | 'gemini';
+export type ToolId = 'claude' | 'cursor' | 'gemini' | 'windsurf' | 'copilot';
 
-export const SUPPORTED_TOOLS: ToolId[] = ['claude', 'cursor', 'gemini'];
+export const SUPPORTED_TOOLS: ToolId[] = ['claude', 'cursor', 'gemini', 'windsurf', 'copilot'];
 
 export interface DetectedTool {
   id: ToolId;
@@ -14,6 +14,8 @@ const TOOL_MARKERS: Record<ToolId, string> = {
   claude: 'CLAUDE.md',
   cursor: '.cursor',
   gemini: 'GEMINI.md',
+  windsurf: '.windsurf',
+  copilot: '.github/copilot-instructions.md',
 };
 
 export async function detectTools(cwd: string): Promise<DetectedTool[]> {

@@ -22,5 +22,6 @@ export interface ProjectConfig {
 export interface Bridge {
   id: string;
   outputPaths: string[];
+  usesMarkers: boolean;
   compile(rules: Rule[], config: ProjectConfig): Map<string, string>;
 }

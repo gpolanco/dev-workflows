@@ -1,5 +1,5 @@
 import type { Bridge, Rule, ProjectConfig } from './types.js';
-import { filterRules, groupByScope, capitalize } from '../core/helpers.js';
+import { filterRules, groupByScope, formatScopeHeading } from '../core/helpers.js';
 
 function buildMarkdown(rules: Rule[]): string {
   const lines: string[] = [
@@ -10,7 +10,7 @@ function buildMarkdown(rules: Rule[]): string {
   const grouped = groupByScope(filtered);
 
   for (const [scope, scopeRules] of grouped) {
-    lines.push('', `## ${capitalize(scope)}`);
+    lines.push('', `## ${formatScopeHeading(scope)}`);
     for (const rule of scopeRules) {
       const contentLines = rule.content.split('\n');
       const first = contentLines[0];
@@ -33,6 +33,7 @@ function buildMarkdown(rules: Rule[]): string {
 export const geminiBridge: Bridge = {
   id: 'gemini',
   outputPaths: ['GEMINI.md'],
+  usesMarkers: true,
 
   compile(rules: Rule[], _config: ProjectConfig): Map<string, string> {
     const output = new Map<string, string>();

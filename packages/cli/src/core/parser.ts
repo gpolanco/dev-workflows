@@ -2,6 +2,7 @@ import { readFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { parse } from 'yaml';
 import type { Rule, ProjectConfig } from '../bridges/types.js';
+import { isValidScope } from './schema.js';
 
 interface RawRule {
   id?: string;
@@ -99,6 +100,11 @@ export async function readRules(cwd: string): Promise<Rule[]> {
     const scope = doc.scope ?? file.replace(/\.ya?ml$/, '');
 
     if (!Array.isArray(doc.rules)) continue;
+
+    if (!isValidScope(scope)) {
+      console.warn(`Warning: invalid scope "${scope}" in ${file}, skipping rules`);
+      continue;
+    }
 
     for (const rawRule of doc.rules) {
       if (!rawRule || typeof rawRule !== 'object') continue;

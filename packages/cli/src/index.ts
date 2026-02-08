@@ -6,6 +6,7 @@ import { registerDoctorCommand } from './commands/doctor.js';
 import { registerAddCommand } from './commands/add.js';
 import { registerRemoveCommand } from './commands/remove.js';
 import { registerListCommand } from './commands/list.js';
+import { registerExplainCommand } from './commands/explain.js';
 
 const require = createRequire(import.meta.url);
 const pkg = require('../package.json') as { version: string };
@@ -23,6 +24,7 @@ registerDoctorCommand(program);
 registerAddCommand(program);
 registerRemoveCommand(program);
 registerListCommand(program);
+registerExplainCommand(program);
 
 program.parse();
 

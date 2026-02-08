@@ -27,9 +27,10 @@ pnpm dev              # dev mode
 
 ## Specs (read before implementing)
 
-- `docs/internal/CLI_SPEC.md` → full CLI specification (commands, bridges, formats, plan)
+- `docs/internal/CLI_SPEC.md` → v0.1 specification (COMPLETE)
+- `docs/internal/CLI_SPEC_v0.2.md` → v0.2 specification (ACTIVE — implement this)
+- `docs/internal/DOCS_SPEC.md` → Mintlify documentation spec
 - `docs/internal/DECISIONS.md` → accepted decisions (source of truth if conflict)
-- `docs/internal/DOCS_SPEC.md` → documentation site spec (Mintlify)
 - `docs/internal/` is gitignored — internal specs not published
 
 
