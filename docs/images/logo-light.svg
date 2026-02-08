@@ -1,8 +1,0 @@
-<svg width="200" height="36" viewBox="0 0 200 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <path d="M13 0 Q5 0 5 9 L5 13.5 Q5 18 0 18 Q5 18 5 22.5 L5 27 Q5 36 13 36" stroke="#1a1a2e" stroke-width="2.8" stroke-linecap="round" fill="none"/>
-  <circle cx="22" cy="18" r="5" fill="#1a9d5a"/>
-  <path d="M31 0 Q39 0 39 9 L39 13.5 Q39 18 44 18 Q39 18 39 22.5 L39 27 Q39 36 31 36" stroke="#1a1a2e" stroke-width="2.8" stroke-linecap="round" fill="none"/>
-  <text x="54" y="23" font-family="'JetBrains Mono', ui-monospace, 'Cascadia Code', 'Fira Code', monospace" font-size="20" font-weight="600" fill="#1a1a2e">dev</text>
-  <text x="90" y="23" font-family="'JetBrains Mono', ui-monospace, 'Cascadia Code', 'Fira Code', monospace" font-size="20" font-weight="600" fill="#1a9d5a">-</text>
-  <text x="102" y="23" font-family="'JetBrains Mono', ui-monospace, 'Cascadia Code', 'Fira Code', monospace" font-size="20" font-weight="600" fill="#1a1a2e">workflows</text>
-</svg>
