@@ -1,5 +1,13 @@
 # dev-workflows
 
+## 0.2.0
+
+### Minor Changes
+
+- af87991: Add custom scopes (kind:name)
+  Add Windsurf and Copilot bridges
+  Add devw explain command
+
 ## 0.1.4
 
 ### Patch Changes
