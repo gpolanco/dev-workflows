@@ -12,6 +12,8 @@ import { windsurfBridge } from '../bridges/windsurf.js';
 import { copilotBridge } from '../bridges/copilot.js';
 import { mergeMarkedContent } from '../core/markers.js';
 import { fileExists } from '../utils/fs.js';
+import * as ui from '../utils/ui.js';
+import { ICONS } from '../utils/ui.js';
 
 export interface CompileOptions {
   tool?: string;
@@ -27,10 +29,10 @@ function getBridge(id: string): Bridge | undefined {
 
 async function runCompile(options: CompileOptions): Promise<void> {
   const cwd = process.cwd();
+  const startTime = performance.now();
 
   if (!(await fileExists(join(cwd, '.dwf', 'config.yml')))) {
-    console.error(chalk.red('Error: .dwf/config.yml not found.'));
-    console.error('Run "devw init" first.');
+    ui.error('.dwf/config.yml not found', 'Run devw init to initialize the project');
     process.exitCode = 1;
     return;
   }
@@ -42,8 +44,7 @@ async function runCompile(options: CompileOptions): Promise<void> {
   let toolIds = config.tools;
   if (options.tool) {
     if (!config.tools.includes(options.tool)) {
-      console.error(chalk.red(`Error: tool "${options.tool}" is not configured in .dwf/config.yml`));
-      console.error(`Configured tools: ${config.tools.join(', ')}`);
+      ui.error(`Tool "${options.tool}" is not configured in .dwf/config.yml`, `Configured tools: ${config.tools.join(', ')}`);
       process.exitCode = 1;
       return;
     }
@@ -51,25 +52,26 @@ async function runCompile(options: CompileOptions): Promise<void> {
   }
 
   if (options.verbose) {
-    console.log(chalk.dim(`Project: ${config.project.name}`));
-    console.log(chalk.dim(`Mode: ${config.mode}`));
-    console.log(chalk.dim(`Rules loaded: ${String(rules.length)}`));
-    console.log(chalk.dim(`Tools: ${toolIds.join(', ')}`));
-    console.log('');
+    ui.keyValue('Project:', chalk.bold(config.project.name));
+    ui.keyValue('Mode:', config.mode);
+    ui.keyValue('Rules:', String(rules.length));
+    ui.keyValue('Tools:', chalk.cyan(toolIds.join(', ')));
+    ui.newline();
   }
 
   const activeRules = rules.filter((r) => r.enabled);
   if (activeRules.length === 0) {
-    console.log(chalk.yellow('No active rules found in .dwf/rules/. Nothing to compile.'));
+    ui.warn('No active rules found in .dwf/rules/. Nothing to compile');
     return;
   }
 
   let filesWritten = 0;
+  const writtenPaths: string[] = [];
 
   for (const toolId of toolIds) {
     const bridge = getBridge(toolId);
     if (!bridge) {
-      console.warn(chalk.yellow(`Warning: no bridge for tool "${toolId}", skipping.`));
+      ui.warn(`No bridge for tool "${toolId}", skipping`);
       continue;
     }
 
@@ -108,18 +110,11 @@ async function runCompile(options: CompileOptions): Promise<void> {
           await unlink(absolutePath);
         }
         await symlink(cachePath, absolutePath);
-
-        if (options.verbose) {
-          console.log(`  ${chalk.dim(relativePath)} -> ${chalk.dim(`.dwf/.cache/${relativePath}`)}`);
-        }
       } else {
         await writeFile(absolutePath, content, 'utf-8');
-
-        if (options.verbose) {
-          console.log(`  ${chalk.dim(relativePath)}`);
-        }
       }
 
+      writtenPaths.push(relativePath);
       filesWritten++;
     }
   }
@@ -128,11 +123,11 @@ async function runCompile(options: CompileOptions): Promise<void> {
     const hash = computeRulesHash(activeRules);
     await writeHash(cwd, hash);
 
-    console.log('');
-    console.log(chalk.green(`Compiled ${String(filesWritten)} file${filesWritten !== 1 ? 's' : ''} successfully.`));
-    if (options.verbose) {
-      console.log(chalk.dim(`Mode: ${config.mode}`));
-    }
+    const elapsed = performance.now() - startTime;
+    ui.newline();
+    ui.success(`Compiled ${String(activeRules.length)} rules ${ICONS.arrow} ${String(filesWritten)} file${filesWritten !== 1 ? 's' : ''} ${ui.timing(elapsed)}`);
+    ui.newline();
+    ui.list(writtenPaths);
   }
 }
 

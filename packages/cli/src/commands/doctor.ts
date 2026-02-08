@@ -1,7 +1,6 @@
 import { lstat, readFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { Command } from 'commander';
-import chalk from 'chalk';
 import { parse } from 'yaml';
 import { readConfig, readRules } from '../core/parser.js';
 import { computeRulesHash, readStoredHash } from '../core/hash.js';
@@ -13,6 +12,7 @@ import { copilotBridge } from '../bridges/copilot.js';
 import type { Bridge, ProjectConfig, Rule } from '../bridges/types.js';
 import { fileExists } from '../utils/fs.js';
 import { isValidScope } from '../core/schema.js';
+import * as ui from '../utils/ui.js';
 
 const BRIDGES: Bridge[] = [claudeBridge, cursorBridge, geminiBridge, windsurfBridge, copilotBridge];
 const BRIDGE_IDS = new Set(BRIDGES.map((b) => b.id));
@@ -205,17 +205,9 @@ export async function checkHashSync(cwd: string, rules: Rule[]): Promise<CheckRe
   };
 }
 
-function formatResult(result: CheckResult): string {
-  if (result.skipped) {
-    return `${chalk.dim('-')} ${chalk.dim(result.message)}`;
-  }
-  const icon = result.passed ? chalk.green('\u2713') : chalk.red('\u2717');
-  const text = result.passed ? result.message : chalk.red(result.message);
-  return `${icon} ${text}`;
-}
-
 async function runDoctor(): Promise<void> {
   const cwd = process.cwd();
+  const startTime = performance.now();
   const results: CheckResult[] = [];
   let hasFailed = false;
 
@@ -224,7 +216,11 @@ async function runDoctor(): Promise<void> {
   results.push(configExistsResult);
 
   if (!configExistsResult.passed) {
-    for (const r of results) console.log(formatResult(r));
+    for (const r of results) {
+      ui.check(r.passed, r.message, r.skipped);
+      if (!r.passed) hasFailed = true;
+    }
+    printSummary(results, startTime);
     process.exitCode = 1;
     return;
   }
@@ -243,7 +239,11 @@ async function runDoctor(): Promise<void> {
   results.push(rulesValidResult);
 
   if (!configValidResult.passed) {
-    for (const r of results) console.log(formatResult(r));
+    for (const r of results) {
+      ui.check(r.passed, r.message, r.skipped);
+      if (!r.passed) hasFailed = true;
+    }
+    printSummary(results, startTime);
     process.exitCode = 1;
     return;
   }
@@ -279,13 +279,26 @@ async function runDoctor(): Promise<void> {
 
   // Output
   for (const r of results) {
-    console.log(formatResult(r));
+    ui.check(r.passed, r.message, r.skipped);
     if (!r.passed) hasFailed = true;
   }
+
+  printSummary(results, startTime);
 
   if (hasFailed) {
     process.exitCode = 1;
   }
+}
+
+function printSummary(results: CheckResult[], startTime: number): void {
+  const passed = results.filter((r) => r.passed && !r.skipped).length;
+  const failed = results.filter((r) => !r.passed).length;
+  const skipped = results.filter((r) => r.skipped).length;
+  const elapsed = performance.now() - startTime;
+
+  ui.newline();
+  ui.summary({ passed, failed, skipped });
+  ui.info(ui.timing(elapsed));
 }
 
 export function registerDoctorCommand(program: Command): void {

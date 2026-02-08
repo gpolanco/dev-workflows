@@ -5,6 +5,7 @@ import { stringify } from 'yaml';
 import chalk from 'chalk';
 import { checkbox, select } from '@inquirer/prompts';
 import { detectTools, SUPPORTED_TOOLS } from '../utils/detect-tools.js';
+import * as ui from '../utils/ui.js';
 import type { ToolId } from '../utils/detect-tools.js';
 import { fileExists } from '../utils/fs.js';
 
@@ -65,7 +66,7 @@ async function resolveTools(options: InitOptions, cwd: string): Promise<ToolId[]
       return selected;
     }
 
-    console.log(chalk.yellow('Select at least one tool.'));
+    ui.warn('Select at least one tool');
   }
 }
 
@@ -111,8 +112,7 @@ async function runInit(options: InitOptions): Promise<void> {
   const dwfDir = join(cwd, '.dwf');
 
   if (await fileExists(dwfDir)) {
-    console.error(chalk.red('Error: .dwf/ already exists in this directory.'));
-    console.error('Remove it first or run from a different directory.');
+    ui.error('.dwf/ already exists in this directory', 'Remove it first or run from a different directory');
     process.exitCode = 1;
     return;
   }
@@ -123,7 +123,7 @@ async function runInit(options: InitOptions): Promise<void> {
     tools = await resolveTools(options, cwd);
     mode = await resolveMode(options);
   } catch (err) {
-    console.error(chalk.red(`Error: ${err instanceof Error ? err.message : String(err)}`));
+    ui.error(err instanceof Error ? err.message : String(err));
     process.exitCode = 1;
     return;
   }
@@ -153,17 +153,17 @@ async function runInit(options: InitOptions): Promise<void> {
   await appendToGitignore(cwd);
 
   // Success summary
-  console.log('');
-  console.log(`  ${chalk.bold('dev-workflows')}`);
-  console.log('');
-  console.log(`  ${chalk.green('\u2714')} Initialized .dwf/ successfully`);
-  console.log('');
-  console.log(`    Project:  ${chalk.bold(projectName)}`);
-  console.log(`    Tools:    ${chalk.cyan(tools.join(', '))}`);
-  console.log(`    Mode:     ${mode}`);
-  console.log('');
-  console.log(`  ${chalk.bold("What's next")}`);
-  console.log('');
+  ui.newline();
+  ui.header('dev-workflows');
+  ui.newline();
+  ui.success('Initialized .dwf/ successfully');
+  ui.newline();
+  ui.keyValue('Project:', chalk.bold(projectName));
+  ui.keyValue('Tools:', chalk.cyan(tools.join(', ')));
+  ui.keyValue('Mode:', mode);
+  ui.newline();
+  ui.header("What's next");
+  ui.newline();
   console.log(`    1. Browse available rule blocks   ${chalk.cyan('devw add --list')}`);
   console.log(`    2. Install a block                ${chalk.cyan('devw add typescript-strict')}`);
   console.log(`    3. Or write your own rules in     ${chalk.cyan('.dwf/rules/')}`);

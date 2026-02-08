@@ -3,11 +3,20 @@ import type { Command } from 'commander';
 import chalk from 'chalk';
 import { readConfig, readRules } from '../core/parser.js';
 import { fileExists } from '../utils/fs.js';
+import { claudeBridge } from '../bridges/claude.js';
+import { cursorBridge } from '../bridges/cursor.js';
+import { geminiBridge } from '../bridges/gemini.js';
+import { windsurfBridge } from '../bridges/windsurf.js';
+import { copilotBridge } from '../bridges/copilot.js';
+import type { Bridge } from '../bridges/types.js';
+import * as ui from '../utils/ui.js';
+import { ICONS } from '../utils/ui.js';
+
+const BRIDGES: Bridge[] = [claudeBridge, cursorBridge, geminiBridge, windsurfBridge, copilotBridge];
 
 async function ensureConfig(cwd: string): Promise<boolean> {
   if (!(await fileExists(join(cwd, '.dwf', 'config.yml')))) {
-    console.error(chalk.red('Error: .dwf/config.yml not found.'));
-    console.error('Run "devw init" first.');
+    ui.error('.dwf/config.yml not found', 'Run devw init to initialize the project');
     process.exitCode = 1;
     return false;
   }
@@ -22,21 +31,23 @@ async function listRules(): Promise<void> {
   try {
     rules = await readRules(cwd);
   } catch {
-    console.log(chalk.yellow('No rules found.'));
+    ui.warn('No rules found');
     return;
   }
 
   const active = rules.filter((r) => r.enabled);
   if (active.length === 0) {
-    console.log(chalk.yellow('No active rules found.'));
+    ui.warn('No active rules found');
     return;
   }
 
-  console.log(chalk.bold(`Active rules (${String(active.length)}):\n`));
+  ui.header(`Active rules (${String(active.length)})`);
+  ui.newline();
   for (const rule of active) {
+    const severityIcon = rule.severity === 'error' ? chalk.red(ICONS.error) : rule.severity === 'warning' ? chalk.yellow(ICONS.warn) : chalk.dim(ICONS.dot);
     const severityColor = rule.severity === 'error' ? chalk.red : rule.severity === 'warning' ? chalk.yellow : chalk.dim;
     const source = rule.sourceBlock ? chalk.dim(` [${rule.sourceBlock}]`) : '';
-    console.log(`  ${severityColor(rule.severity.padEnd(7))} ${chalk.cyan(rule.scope.padEnd(14))} ${rule.id}${source}`);
+    console.log(`    ${severityIcon} ${severityColor(rule.severity.padEnd(8))}${chalk.cyan(rule.scope.padEnd(15))}${rule.id}${source}`);
   }
 }
 
@@ -47,15 +58,14 @@ async function listBlocks(): Promise<void> {
   const config = await readConfig(cwd);
 
   if (config.blocks.length === 0) {
-    console.log(chalk.yellow('No blocks installed.'));
-    console.log(chalk.dim('Run "devw add --list" to see available blocks.'));
+    ui.warn('No blocks installed');
+    ui.info('Run devw add --list to see available blocks');
     return;
   }
 
-  console.log(chalk.bold(`Installed blocks (${String(config.blocks.length)}):\n`));
-  for (const blockId of config.blocks) {
-    console.log(`  ${chalk.cyan(blockId)}`);
-  }
+  ui.header(`Installed blocks (${String(config.blocks.length)})`);
+  ui.newline();
+  ui.list(config.blocks);
 }
 
 async function listTools(): Promise<void> {
@@ -65,20 +75,26 @@ async function listTools(): Promise<void> {
   const config = await readConfig(cwd);
 
   if (config.tools.length === 0) {
-    console.log(chalk.yellow('No tools configured.'));
+    ui.warn('No tools configured');
     return;
   }
 
-  console.log(chalk.bold(`Configured tools (${String(config.tools.length)}):\n`));
+  ui.header(`Configured tools (${String(config.tools.length)})`);
+  ui.newline();
   for (const tool of config.tools) {
-    console.log(`  ${chalk.cyan(tool)}`);
+    const bridge = BRIDGES.find((b) => b.id === tool);
+    const outputPath = bridge?.outputPaths[0];
+    if (outputPath) {
+      console.log(`    ${chalk.dim(ICONS.bullet)} ${chalk.cyan(tool.padEnd(12))}${chalk.dim(ICONS.arrow)} ${chalk.dim(outputPath)}`);
+    } else {
+      console.log(`    ${chalk.dim(ICONS.bullet)} ${chalk.cyan(tool)}`);
+    }
   }
 }
 
 async function runList(subcommand: string | undefined): Promise<void> {
   if (!subcommand) {
-    console.error(chalk.red('Error: specify what to list.'));
-    console.error('Usage: devw list <rules|blocks|tools>');
+    ui.error('Specify what to list', 'Usage: devw list <rules|blocks|tools>');
     process.exitCode = 1;
     return;
   }
@@ -94,8 +110,7 @@ async function runList(subcommand: string | undefined): Promise<void> {
       await listTools();
       break;
     default:
-      console.error(chalk.red(`Error: unknown list type "${subcommand}".`));
-      console.error('Usage: devw list <rules|blocks|tools>');
+      ui.error(`Unknown list type "${subcommand}"`, 'Usage: devw list <rules|blocks|tools>');
       process.exitCode = 1;
   }
 }
