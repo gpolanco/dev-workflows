@@ -1,4 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 32" fill="none">
-  <text x="0" y="24" font-family="'JetBrains Mono', monospace" font-size="24" font-weight="700" fill="#ffffff">devw</text>
-  <circle cx="110" cy="8" r="5" fill="#22d37e"/>
+<svg width="260" height="52" viewBox="0 0 260 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M15 4 Q8 4 8 12 L8 17 Q8 22 3 22 Q8 22 8 27 L8 32 Q8 40 15 40" stroke="#1a1a2e" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+  <circle cx="24" cy="22" r="4.5" fill="#1a9d5a"/>
+  <path d="M33 4 Q40 4 40 12 L40 17 Q40 22 45 22 Q40 22 40 27 L40 32 Q40 40 33 40" stroke="#1a1a2e" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+  <text x="56" y="24" font-family="'JetBrains Mono', ui-monospace, 'Cascadia Code', 'Fira Code', monospace" font-size="17" font-weight="600" fill="#1a1a2e">dev</text>
+  <text x="86.5" y="24" font-family="'JetBrains Mono', ui-monospace, 'Cascadia Code', 'Fira Code', monospace" font-size="17" font-weight="600" fill="#1a9d5a">-</text>
+  <text x="96.5" y="24" font-family="'JetBrains Mono', ui-monospace, 'Cascadia Code', 'Fira Code', monospace" font-size="17" font-weight="600" fill="#1a1a2e">workflows</text>
+  <text x="56" y="42" font-family="'JetBrains Mono', ui-monospace, 'Cascadia Code', 'Fira Code', monospace" font-size="9" font-weight="400" fill="#1a9d5a" opacity="0.5" letter-spacing="0.05em">write once, run everywhere</text>
 </svg>
