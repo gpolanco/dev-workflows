@@ -160,6 +160,28 @@ describe('devw CLI e2e', () => {
     assert.ok(updated.includes('# Project Rules'));
   });
 
+  it('compile --dry-run preserves user content outside markers', async () => {
+    await run(['init', '--tools', 'claude', '--mode', 'copy', '-y'], tmpDir);
+    await run(['add', 'typescript-strict', '--no-compile'], tmpDir);
+
+    // First compile to create CLAUDE.md with markers
+    await run(['compile'], tmpDir);
+
+    // Add user content before and after the markers
+    const claudeMd = await readFile(join(tmpDir, 'CLAUDE.md'), 'utf-8');
+    const withUserContent = `# My Custom Rules\n\nDo not touch this.\n\n${claudeMd}\n# Footer\n\nAlso keep this.\n`;
+    await writeFile(join(tmpDir, 'CLAUDE.md'), withUserContent, 'utf-8');
+
+    // Dry-run should show merged content (not just raw rules)
+    const result = await run(['compile', '--dry-run'], tmpDir);
+    assert.equal(result.exitCode, 0);
+    assert.ok(result.stdout.includes('# My Custom Rules'), 'dry-run should include user content before markers');
+    assert.ok(result.stdout.includes('Do not touch this.'), 'dry-run should include user content before markers');
+    assert.ok(result.stdout.includes('# Footer'), 'dry-run should include user content after markers');
+    assert.ok(result.stdout.includes('<!-- BEGIN dev-workflows -->'));
+    assert.ok(result.stdout.includes('# Project Rules'));
+  });
+
   it('list rules shows added rules', async () => {
     await run(['init', '--tools', 'claude', '--mode', 'copy', '-y'], tmpDir);
     await run(['add', 'typescript-strict', '--no-compile'], tmpDir);

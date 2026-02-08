@@ -19,11 +19,12 @@ function buildMdc(rules: Rule[]): string {
 
   for (const [scope, scopeRules] of grouped) {
     lines.push('', `## ${formatScopeHeading(scope)}`);
+    lines.push('');
     for (const rule of scopeRules) {
       const contentLines = rule.content.split('\n');
       const first = contentLines[0];
       if (first !== undefined) {
-        lines.push('', `- ${first}`);
+        lines.push(`- ${first}`);
       }
       for (let i = 1; i < contentLines.length; i++) {
         const line = contentLines[i];

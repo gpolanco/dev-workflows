@@ -145,7 +145,7 @@ blocks: []
       assert.equal(result.passed, true);
     });
 
-    it('fails with duplicate IDs', () => {
+    it('fails with duplicate IDs and shows scopes', () => {
       const rules = [
         makeRule({ id: 'named-exports', scope: 'architecture' }),
         makeRule({ id: 'no-barrel', scope: 'architecture' }),
@@ -155,6 +155,8 @@ blocks: []
       const result = checkDuplicateIds(rules);
       assert.equal(result.passed, false);
       assert.ok(result.message.includes('named-exports'));
+      assert.ok(result.message.includes('architecture'));
+      assert.ok(result.message.includes('conventions'));
     });
 
     it('passes with empty rules', () => {

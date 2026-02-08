@@ -77,7 +77,7 @@ async function runCompile(options: CompileOptions): Promise<void> {
 
     for (const [relativePath, rawContent] of outputs) {
       let content = rawContent;
-      if (bridge.usesMarkers && !options.dryRun) {
+      if (bridge.usesMarkers) {
         const absoluteCheck = join(cwd, relativePath);
         let existing: string | null = null;
         try {

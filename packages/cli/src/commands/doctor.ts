@@ -86,20 +86,28 @@ export async function checkRulesValid(cwd: string): Promise<CheckResult> {
 }
 
 export function checkDuplicateIds(rules: Rule[]): CheckResult {
-  const seen = new Set<string>();
-  const duplicates = new Set<string>();
+  const scopesById = new Map<string, string[]>();
 
   for (const rule of rules) {
-    if (seen.has(rule.id)) {
-      duplicates.add(rule.id);
+    const scopes = scopesById.get(rule.id);
+    if (scopes) {
+      scopes.push(rule.scope);
+    } else {
+      scopesById.set(rule.id, [rule.scope]);
     }
-    seen.add(rule.id);
   }
 
-  if (duplicates.size > 0) {
+  const duplicates: string[] = [];
+  for (const [id, scopes] of scopesById) {
+    if (scopes.length > 1) {
+      duplicates.push(`${id} (${scopes.join(', ')})`);
+    }
+  }
+
+  if (duplicates.length > 0) {
     return {
       passed: false,
-      message: `Duplicate rule IDs found: ${[...duplicates].join(', ')}`,
+      message: `Duplicate rule IDs found: ${duplicates.join(', ')}`,
     };
   }
 
