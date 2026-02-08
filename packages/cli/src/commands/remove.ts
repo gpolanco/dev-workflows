@@ -48,6 +48,9 @@ async function runRemove(blockId?: string): Promise<void> {
 
   const rulesRemoved = await uninstallBlock(cwd, blockId);
   ui.success(`Removed ${blockId} (${String(rulesRemoved)} rules)`);
+
+  const { runCompileFromAdd } = await import('./compile.js');
+  await runCompileFromAdd();
 }
 
 export function registerRemoveCommand(program: Command): void {

@@ -250,4 +250,22 @@ describe('devw CLI e2e', () => {
     const config = await readFile(join(tmpDir, '.dwf', 'config.yml'), 'utf-8');
     assert.ok(!config.includes('typescript-strict'));
   });
+
+  it('remove recompiles output files so removed rules disappear', async () => {
+    await run(['init', '--tools', 'claude', '--mode', 'copy', '-y'], tmpDir);
+    await run(['add', 'supabase-rls'], tmpDir);
+    await run(['add', 'typescript-strict'], tmpDir);
+
+    const before = await readFile(join(tmpDir, 'CLAUDE.md'), 'utf-8');
+    assert.ok(before.includes('Every new table must have RLS policies'), 'CLAUDE.md should contain supabase rules before remove');
+    assert.ok(before.includes('explicit return types'), 'CLAUDE.md should contain typescript-strict rules');
+
+    const result = await run(['remove', 'supabase-rls'], tmpDir);
+    assert.equal(result.exitCode, 0);
+    assert.ok(result.stdout.includes('Compiled'), 'remove should trigger recompile');
+
+    const after = await readFile(join(tmpDir, 'CLAUDE.md'), 'utf-8');
+    assert.ok(!after.includes('Every new table must have RLS policies'), 'CLAUDE.md should not contain supabase rules after remove');
+    assert.ok(after.includes('explicit return types'), 'CLAUDE.md should still contain typescript-strict rules');
+  });
 });
