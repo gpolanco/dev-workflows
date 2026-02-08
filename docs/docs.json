@@ -63,13 +63,23 @@
       }
     ]
   },
-  "footerSocials": {
-    "github": "https://github.com/gpolanco/dev-workflows",
-    "x": "https://x.com/gaborpolanco"
+  "navbar": {
+    "links": [
+      {
+        "label": "npm",
+        "href": "https://www.npmjs.com/package/dev-workflows"
+      }
+    ],
+    "primary": {
+      "type": "github",
+      "href": "https://github.com/gpolanco/dev-workflows"
+    }
   },
-  "topbarCtaButton": {
-    "type": "github",
-    "url": "https://github.com/gpolanco/dev-workflows"
+  "footer": {
+    "socials": {
+      "github": "https://github.com/gpolanco/dev-workflows",
+      "x": "https://x.com/gaborpolanco"
+    }
   },
   "seo": {
     "indexHiddenPages": false,
