@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>dev-workflows — Write rules once, compile everywhere</title>
+<meta name="description" content="A single source of truth for your AI editor rules. Define in YAML, compile to Claude Code, Cursor, and Gemini CLI.">
+
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://dev-workflows.com">
+<meta property="og:title" content="dev-workflows — Write rules once, compile everywhere">
+<meta property="og:description" content="Define AI editor rules in YAML. Compile to CLAUDE.md, .cursor/rules, and GEMINI.md with one command. Open source CLI.">
+<meta property="og:image" content="https://dev-workflows.com/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="dev-workflows — Write rules once, compile everywhere">
+<meta name="twitter:description" content="Define AI editor rules in YAML. Compile to CLAUDE.md, .cursor/rules, and GEMINI.md with one command.">
+<meta name="twitter:image" content="https://dev-workflows.com/og-image.png">
+
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@1,6..72,400&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="styles/variables.css">
+<link rel="stylesheet" href="styles/layout.css">
+<link rel="stylesheet" href="styles/hero.css">
+<link rel="stylesheet" href="styles/drift.css">
+<link rel="stylesheet" href="styles/playground.css">
+<link rel="stylesheet" href="styles/terminal.css">
+<link rel="stylesheet" href="styles/blocks.css">
+<link rel="stylesheet" href="styles/proof.css">
+<link rel="stylesheet" href="styles/cta.css">
+</head>
+<body>
+
+<!-- ═══════ NAV ═══════ -->
+<nav>
+  <div class="nav-left">
+    <a href="#" class="nav-logo">
+      <img src="dark-logo-sm.png" alt="dev-workflows" class="logo-img">
+    </a>
+    <div class="nav-links">
+      <a href="#problem">Problem</a>
+      <a href="#demo">Demo</a>
+      <a href="#blocks">Blocks</a>
+      <a href="https://docs.dev-workflows.com" target="_blank">Docs</a>
+    </div>
+  </div>
+  <div class="nav-right">
+    <a href="https://github.com/gpolanco/dev-workflows" target="_blank" class="gh-link" title="GitHub">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/></svg>
+    </a>
+    <a href="https://www.npmjs.com/package/dev-workflows" target="_blank" class="nav-cta">npm install</a>
+  </div>
+</nav>
+
+<!-- ═══════ HERO ═══════ -->
+<section class="hero">
+  <div class="hero-glow"></div>
+  <div class="hero-badge">
+    <span class="badge-v">v0.2</span>
+    Open source · MIT license
+  </div>
+  <h1>
+    Your AI rules are<br>
+    <span class="italic">scattered.</span> <span class="accent">Fix that.</span>
+  </h1>
+  <p class="hero-sub">
+    One source of truth for Claude Code, Cursor, and Gemini CLI.
+    Define rules in YAML. Compile to every editor.
+  </p>
+  <div class="hero-actions">
+    <a href="#problem" class="btn btn-primary">See how it works →</a>
+    <button class="btn btn-ghost" onclick="copyInstall(this)">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+      npx dev-workflows init
+    </button>
+  </div>
+
+  <!-- COMPILE FLOW — integrated in hero -->
+  <div class="cf-visual" id="cf-visual">
+    <!-- SOURCE -->
+    <div class="cf-source" onclick="openDialog('source')">
+      <div class="cf-yaml-icon">
+        <div class="cf-yaml-lines">
+          <div class="cf-yaml-line"></div>
+          <div class="cf-yaml-line"></div>
+          <div class="cf-yaml-line"></div>
+          <div class="cf-yaml-line"></div>
+        </div>
+      </div>
+      <div class="cf-source-label">.dwf/rules.yml</div>
+      <div class="cf-source-sub">Single source of truth</div>
+    </div>
+
+    <!-- LINE IN -->
+    <div class="cf-line cf-line-in"></div>
+
+    <!-- COMPILE ENGINE -->
+    <div class="cf-engine">
+      <div class="cf-engine-box">
+        <div class="cf-ring"></div>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="16 18 22 12 16 6"></polyline>
+          <polyline points="8 6 2 12 8 18"></polyline>
+        </svg>
+      </div>
+      <div class="cf-engine-label">devw compile</div>
+    </div>
+
+    <!-- LINE OUT + BRANCH + TARGETS -->
+    <div class="cf-line cf-line-out"></div>
+    <div class="cf-right">
+      <div class="cf-branch-lines">
+        <div class="cf-branch-line"></div>
+        <div class="cf-branch-line"></div>
+        <div class="cf-branch-line"></div>
+        <div class="cf-branch-dot"></div>
+        <div class="cf-branch-dot"></div>
+        <div class="cf-branch-dot"></div>
+      </div>
+
+      <!-- TARGETS -->
+      <div class="cf-targets">
+        <div class="cf-target" data-delay="0" onclick="openDialog('claude')">
+          <div class="cf-target-icon cft-claude">
+            <svg viewBox="0 0 24 24" fill="white" width="16" height="16"><path d="M12 2L9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61z"/></svg>
+          </div>
+          <div class="cf-target-info">
+            <div class="cf-target-name">Claude Code</div>
+            <div class="cf-target-file">CLAUDE.md</div>
+          </div>
+          <div class="cf-target-check cfc-claude">✓</div>
+        </div>
+        <div class="cf-target" data-delay="1" onclick="openDialog('cursor')">
+          <div class="cf-target-icon cft-cursor">
+            <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><rect x="3" y="3" width="18" height="18" rx="4" stroke="white" stroke-width="2"/><path d="M8 8h2v8H8V8zm6 0h2v8h-2V8z" fill="white" opacity="0.85"/></svg>
+          </div>
+          <div class="cf-target-info">
+            <div class="cf-target-name">Cursor</div>
+            <div class="cf-target-file">.cursor/rules</div>
+          </div>
+          <div class="cf-target-check cfc-cursor">✓</div>
+        </div>
+        <div class="cf-target" data-delay="2" onclick="openDialog('gemini')">
+          <div class="cf-target-icon cft-gemini">
+            <svg viewBox="0 0 24 24" fill="white" width="16" height="16"><path d="M12 2C12 2 14.5 7 17.5 9.5S24 12 24 12s-5 1-8 3.5S12 22 12 22s-2.5-5-5.5-7.5S0 12 0 12s5-1 8-3.5S12 2 12 2z"/></svg>
+          </div>
+          <div class="cf-target-info">
+            <div class="cf-target-name">Gemini CLI</div>
+            <div class="cf-target-file">GEMINI.md</div>
+          </div>
+          <div class="cf-target-check cfc-gemini">✓</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cf-bottom-text" style="animation: fade-up 0.6s 0.5s ease both;">
+    Change a rule, recompile. <strong>That's it.</strong>
+  </div>
+</section>
+
+<!-- ═══════ THE PROBLEM (drift animation) ═══════ -->
+<section class="drift-section reveal" id="problem">
+  <div class="drift-header">
+    <div class="section-label">The problem</div>
+    <div class="section-title">Watch your rules fall out of sync.</div>
+    <p class="section-sub">
+      Three editors. Three files. It starts fine. Then someone updates one and forgets the others.
+    </p>
+  </div>
+
+  <div class="drift-stage" id="driftStage">
+    <div class="drift-file" id="df-claude">
+      <div class="drift-file-flash"></div>
+      <div class="drift-file-bar">
+        <div class="drift-file-dot dot-claude"></div>
+        <div class="drift-file-name">CLAUDE.md</div>
+        <div class="drift-file-status" id="ds-claude">● synced</div>
+      </div>
+      <div class="drift-file-body" id="db-claude"></div>
+    </div>
+
+    <div class="drift-file" id="df-cursor">
+      <div class="drift-file-flash"></div>
+      <div class="drift-file-bar">
+        <div class="drift-file-dot dot-cursor"></div>
+        <div class="drift-file-name">.cursor/rules</div>
+        <div class="drift-file-status" id="ds-cursor">● synced</div>
+      </div>
+      <div class="drift-file-body" id="db-cursor"></div>
+    </div>
+
+    <div class="drift-file" id="df-gemini">
+      <div class="drift-file-flash"></div>
+      <div class="drift-file-bar">
+        <div class="drift-file-dot dot-gemini"></div>
+        <div class="drift-file-name">GEMINI.md</div>
+        <div class="drift-file-status" id="ds-gemini">● synced</div>
+      </div>
+      <div class="drift-file-body" id="db-gemini"></div>
+    </div>
+  </div>
+
+  <div class="drift-timeline">
+    <div class="drift-track"><div class="drift-progress" id="driftProgress"></div></div>
+    <div class="drift-labels"><span>Day 1</span><span>Day 7</span><span>Day 14</span><span>Day 30</span></div>
+    <div class="drift-caption" id="driftCaption">All files in sync. Life is good.</div>
+    <div class="drift-controls">
+      <div class="drift-controls-main">
+        <button class="drift-btn-fix" id="driftFixBtn" onclick="fixDrift()">⚡ devw compile</button>
+        <div class="drift-hint" id="driftHint">Fix it with one command</div>
+      </div>
+      <div class="drift-controls-secondary">
+        <button class="drift-btn active" id="driftWatchBtn" onclick="startDrift()">▶ Watch drift</button>
+        <button class="drift-btn drift-reset-btn" id="driftResetBtn" onclick="resetDrift()">↺ Reset</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════ PLAYGROUND ═══════ -->
+<section class="playground-section reveal" id="playground">
+  <div class="pg-header">
+    <div class="section-label">Try it</div>
+    <div class="section-title">See what compile actually does.</div>
+    <p class="section-sub">
+      Edit the YAML on the left. Hit compile. See the output for each editor on the right.
+    </p>
+  </div>
+
+  <div class="playground">
+    <div class="pg-toolbar">
+      <div class="pg-toolbar-left">
+        <div class="pg-dots"><span></span><span></span><span></span></div>
+        <div class="pg-toolbar-title">dev-workflows playground</div>
+      </div>
+      <button class="pg-compile-btn" id="compileBtn" onclick="compileRules()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Compile
+      </button>
+    </div>
+
+    <div class="pg-layout">
+      <!-- Source -->
+      <div class="pg-source">
+        <div class="pg-source-header">
+          <span class="file-icon">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z"/></svg>
+          </span>
+          .dwf/rules/conventions.yml
+        </div>
+        <div class="pg-editor">
+          <textarea id="sourceEditor" spellcheck="false">scope: conventions
+
+rules:
+  - id: named-exports
+    severity: error
+    content: |
+      Always use named exports.
+      Never use default exports.
+
+  - id: feature-structure
+    severity: error
+    content: |
+      Organize code by feature, not by type.
+      Each feature has its own components,
+      hooks, utils, and types.
+
+  - id: no-any
+    severity: error
+    content: |
+      Never use `any` in TypeScript.
+      Use `unknown` then narrow with
+      type guards.</textarea>
+        </div>
+      </div>
+
+      <!-- Output -->
+      <div class="pg-output" style="position:relative;">
+        <div class="pg-output-tabs">
+          <button class="pg-tab active" data-target="claude" onclick="switchTab(this)">
+            <span class="tab-dot dot-claude"></span> CLAUDE.md
+          </button>
+          <button class="pg-tab" data-target="cursor" onclick="switchTab(this)">
+            <span class="tab-dot dot-cursor"></span> .cursor/rules
+          </button>
+          <button class="pg-tab" data-target="gemini" onclick="switchTab(this)">
+            <span class="tab-dot dot-gemini"></span> GEMINI.md
+          </button>
+        </div>
+        <div class="pg-output-content" id="outputContent">
+          <div class="pg-output-placeholder" id="outputPlaceholder">
+            <div class="arrow-icon">⌘</div>
+            <div>Edit rules and hit <strong style="color:var(--accent)">Compile</strong></div>
+          </div>
+          <div class="pg-output-code" id="outputCode" style="display:none;"></div>
+        </div>
+        <div class="pg-compiling-overlay" id="compilingOverlay">
+          <div class="compile-spinner"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DIALOG -->
+<div class="cf-dialog-overlay" id="cfDialogOverlay" onclick="closeDialog(event)">
+  <div class="cf-dialog">
+    <div class="cf-dialog-header">
+      <div class="cf-dialog-icon" id="cfDialogIcon"></div>
+      <div class="cf-dialog-filename" id="cfDialogFilename"></div>
+      <button class="cf-dialog-close" onclick="closeDialog()">&times;</button>
+    </div>
+    <div class="cf-dialog-body">
+      <div class="cf-dialog-code" id="cfDialogCode"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ TERMINAL DEMO ═══════ -->
+<section class="terminal-section reveal" id="demo">
+  <div class="terminal-header">
+    <div class="section-label">See it in action</div>
+    <div class="section-title">Every command at a glance.</div>
+    <p class="section-sub">
+      Six commands. That's the entire CLI. Click a tab to see what each one does.
+    </p>
+  </div>
+
+  <div class="terminal">
+    <div class="terminal-bar">
+      <div class="terminal-dots"><span></span><span></span><span></span></div>
+      <div class="terminal-title">~/my-project</div>
+    </div>
+    <div class="terminal-tabs">
+      <button class="term-tab active" onclick="switchTermTab('init', this)"><span class="term-tab-arrow">›</span> init</button>
+      <button class="term-tab" onclick="switchTermTab('add', this)"><span class="term-tab-arrow">›</span> add</button>
+      <button class="term-tab" onclick="switchTermTab('compile', this)"><span class="term-tab-arrow">›</span> compile</button>
+      <button class="term-tab" onclick="switchTermTab('doctor', this)"><span class="term-tab-arrow">›</span> doctor</button>
+      <button class="term-tab" onclick="switchTermTab('list', this)"><span class="term-tab-arrow">›</span> list</button>
+      <button class="term-tab" onclick="switchTermTab('remove', this)"><span class="term-tab-arrow">›</span> remove</button>
+    </div>
+    <div class="terminal-body" id="termBody"></div>
+  </div>
+</section>
+
+<!-- ═══════ BLOCKS ═══════ -->
+<section class="blocks-section reveal" id="blocks">
+  <div class="blocks-header">
+    <div class="section-label">Prebuilt blocks</div>
+    <div class="section-title">Don't start from zero.</div>
+    <p class="section-sub">
+      Install curated rule packs with one command. Each block adds battle-tested rules to your config.
+    </p>
+  </div>
+
+  <div class="blocks-grid">
+    <div class="block-card">
+      <div class="block-name">typescript-strict</div>
+      <div class="block-desc">No any, explicit returns, union types over enums, no non-null assertions.</div>
+      <div class="block-install">
+        <span><span class="cmd">devw add</span> typescript-strict</span>
+        <button class="block-copy" onclick="copyBlock(this, 'devw add typescript-strict')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+          <svg class="check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="block-card">
+      <div class="block-name">react-conventions</div>
+      <div class="block-desc">Hooks rules, component patterns, naming conventions, prop types.</div>
+      <div class="block-install">
+        <span><span class="cmd">devw add</span> react-conventions</span>
+        <button class="block-copy" onclick="copyBlock(this, 'devw add react-conventions')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+          <svg class="check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="block-card">
+      <div class="block-name">nextjs-approuter</div>
+      <div class="block-desc">App Router patterns, RSC boundaries, server actions, metadata API.</div>
+      <div class="block-install">
+        <span><span class="cmd">devw add</span> nextjs-approuter</span>
+        <button class="block-copy" onclick="copyBlock(this, 'devw add nextjs-approuter')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+          <svg class="check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="block-card">
+      <div class="block-name">tailwind</div>
+      <div class="block-desc">Utility-first, no custom CSS, design tokens, responsive patterns.</div>
+      <div class="block-install">
+        <span><span class="cmd">devw add</span> tailwind</span>
+        <button class="block-copy" onclick="copyBlock(this, 'devw add tailwind')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+          <svg class="check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="block-card">
+      <div class="block-name">supabase-rls</div>
+      <div class="block-desc">RLS enforcement on every table, auth patterns, security policies.</div>
+      <div class="block-install">
+        <span><span class="cmd">devw add</span> supabase-rls</span>
+        <button class="block-copy" onclick="copyBlock(this, 'devw add supabase-rls')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+          <svg class="check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="block-card">
+      <div class="block-name">testing-basics</div>
+      <div class="block-desc">Test naming, coverage expectations, mock patterns, arrange-act-assert.</div>
+      <div class="block-install">
+        <span><span class="cmd">devw add</span> testing-basics</span>
+        <button class="block-copy" onclick="copyBlock(this, 'devw add testing-basics')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+          <svg class="check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════ SOCIAL PROOF ═══════ -->
+<section class="proof-strip reveal">
+  <div class="proof-items">
+    <div class="proof-item">
+      <div class="proof-num">137</div>
+      <div class="proof-label">Tests passing</div>
+    </div>
+    <div class="proof-item">
+      <div class="proof-num">6</div>
+      <div class="proof-label">Rule blocks</div>
+    </div>
+    <div class="proof-item">
+      <div class="proof-num">5</div>
+      <div class="proof-label">Editor bridges</div>
+    </div>
+    <div class="proof-item">
+      <div class="proof-num">4</div>
+      <div class="proof-label">Dependencies</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════ CTA ═══════ -->
+<section class="cta-section reveal">
+  <div class="cta-box">
+    <div class="cta-glow"></div>
+    <h2>Stop copy-pasting rules.</h2>
+    <p>Get started in under 30 seconds.</p>
+    <div class="cta-install" onclick="copyCta(this)">
+      <span class="dollar">$</span> npx dev-workflows init
+      <svg class="copy-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+      <svg class="cta-check-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>
+    <div class="cta-meta">
+      <span>Open source</span>
+      <span>·</span>
+      <span>MIT license</span>
+      <span>·</span>
+      <span>4 dependencies</span>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════ FOOTER ═══════ -->
+<footer>
+  <div>dev-workflows — Write once, compile everywhere.</div>
+  <div class="footer-links">
+    <a href="https://github.com/gpolanco/dev-workflows" target="_blank">GitHub</a>
+    <a href="https://www.npmjs.com/package/dev-workflows" target="_blank">npm</a>
+  </div>
+</footer>
+
+<!-- ═══════ SCRIPTS ═══════ -->
+<script src="scripts/copy.js"></script>
+<script src="scripts/dialog.js"></script>
+<script src="scripts/drift.js"></script>
+<script src="scripts/terminal.js"></script>
+<script src="scripts/playground.js"></script>
+<script src="scripts/main.js"></script>
+
+</body>
+</html>

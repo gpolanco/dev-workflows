@@ -1,0 +1,98 @@
+/* ═══════════════════════════════════════
+   CTA
+   ═══════════════════════════════════════ */
+.cta-section {
+  padding-top: 80px;
+  padding-bottom: 120px;
+  text-align: center;
+}
+.cta-box {
+  position: relative;
+  padding: 64px 40px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--bg-raised);
+  transition: border-color 0.4s;
+}
+.cta-box::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 16px;
+  padding: 1px;
+  background: conic-gradient(
+    from 180deg,
+    transparent 0%,
+    var(--accent) 15%,
+    transparent 30%,
+    transparent 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.4s;
+  pointer-events: none;
+  z-index: 1;
+}
+.cta-box:hover::before {
+  opacity: 1;
+}
+.cta-box:hover {
+  border-color: transparent;
+}
+.cta-glow {
+  position: absolute; top: -120px; left: 50%; transform: translateX(-50%);
+  width: 500px; height: 400px;
+  background: radial-gradient(ellipse, var(--accent-glow) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+.cta-box h2 {
+  font-family: var(--font-display);
+  font-size: clamp(28px, 4vw, 38px);
+  font-weight: 700; letter-spacing: -0.025em;
+  color: var(--text);
+  position: relative;
+  margin-bottom: 12px;
+}
+.cta-box p {
+  font-size: 16px; color: var(--text-secondary);
+  margin-bottom: 28px;
+  position: relative;
+}
+.cta-install {
+  display: inline-flex; align-items: center; gap: 12px;
+  padding: 14px 28px;
+  border-radius: 10px;
+  background: var(--bg-code);
+  border: 1px solid var(--border);
+  font-family: var(--font-mono); font-size: 14px; font-weight: 500;
+  color: var(--text);
+  position: relative;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.cta-install:hover { border-color: var(--accent-dim); }
+.cta-install .dollar { color: var(--accent-dim); }
+.cta-install .copy-icon {
+  color: var(--text-muted);
+  transition: all 0.2s;
+}
+.cta-install:hover .copy-icon { color: var(--accent); }
+.cta-install .cta-check-icon {
+  position: absolute; right: 28px;
+  color: var(--accent);
+  opacity: 0; transform: scale(0.5);
+  transition: all 0.2s;
+}
+.cta-install.copied .copy-icon { opacity: 0; transform: scale(0.5); }
+.cta-install.copied .cta-check-icon { opacity: 1; transform: scale(1); }
+
+.cta-meta {
+  display: flex; justify-content: center; gap: 24px;
+  margin-top: 24px;
+  font-family: var(--font-mono); font-size: 11px;
+  color: var(--text-muted);
+  position: relative;
+}
