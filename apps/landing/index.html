@@ -1220,6 +1220,68 @@ footer {
   letter-spacing: 0.06em;
 }
 /* ═══════════════════════════════════════
+   TRAJECTORY
+   ═══════════════════════════════════════ */
+.trajectory-section {
+  padding: 60px 24px 80px;
+}
+.trajectory-items {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0;
+  max-width: 800px;
+  margin: 0 auto;
+}
+.trajectory-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+  flex: 1;
+}
+.trajectory-marker {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+}
+.trajectory-marker.now {
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 0 10px rgba(34, 211, 126, 0.4);
+}
+.trajectory-marker.next {
+  background: transparent;
+  border-color: var(--accent-dim);
+}
+.trajectory-marker.future {
+  background: transparent;
+  border-color: var(--text-muted);
+}
+.trajectory-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+}
+.trajectory-item:first-child .trajectory-label { color: var(--accent); }
+.trajectory-text {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  max-width: 200px;
+}
+.trajectory-line {
+  height: 2px;
+  flex: 0 0 40px;
+  background: var(--border);
+  margin-top: 5px;
+}
+
+/* ═══════════════════════════════════════
    CTA
    ═══════════════════════════════════════ */
 .cta-section {
@@ -1354,12 +1416,12 @@ footer {
     Open source · MIT license
   </div>
   <h1>
-    Your AI rules are<br>
-    <span class="italic">scattered.</span> <span class="accent">Fix that.</span>
+    Define rules once.<br>
+    <span class="italic">Compile them</span> <span class="accent">everywhere.</span>
   </h1>
   <p class="hero-sub">
-    One source of truth for Claude Code, Cursor, and Gemini CLI.
-    Define rules in YAML. Compile to every editor.
+    A local-first CLI to manage AI coding rules across editors.<br>
+    No accounts. No cloud. Your rules live with your code.
   </p>
   <div class="hero-actions">
     <a href="#problem" class="btn btn-primary">See how it works →</a>
@@ -1449,7 +1511,7 @@ footer {
   </div>
 
   <div class="cf-bottom-text" style="animation: fade-up 0.6s 0.5s ease both;">
-    Change a rule, recompile. <strong>That's it.</strong>
+    Change a rule, recompile. <strong>Every editor stays in sync.</strong>
   </div>
 </section>
 
@@ -1457,9 +1519,10 @@ footer {
 <section class="drift-section reveal" id="problem">
   <div class="drift-header">
     <div class="section-label">The problem</div>
-    <div class="section-title">Watch your rules fall out of sync.</div>
+    <div class="section-title">Every AI tool wants its own rule file.</div>
     <p class="section-sub">
-      Three editors. Three files. It starts fine. Then someone updates one and forgets the others.
+      Claude Code reads CLAUDE.md. Cursor reads .cursor/rules. Gemini reads GEMINI.md.
+      Same rules, three files — they always end up out of sync.
     </p>
   </div>
 
@@ -1641,10 +1704,10 @@ rules:
 <!-- ═══════ BLOCKS ═══════ -->
 <section class="blocks-section reveal" id="blocks">
   <div class="blocks-header">
-    <div class="section-label">Prebuilt blocks</div>
-    <div class="section-title">Don't start from zero.</div>
+    <div class="section-label">Prebuilt rule blocks</div>
+    <div class="section-title">Don't write rules from scratch.</div>
     <p class="section-sub">
-      Install curated rule packs with one command. Each block adds battle-tested rules to your config.
+      Install curated rule packs with one command. Stack them — TypeScript + React + Tailwind in seconds.
     </p>
   </div>
 
@@ -1740,11 +1803,34 @@ rules:
   </div>
 </section>
 
+<!-- ═══════ TRAJECTORY ═══════ -->
+<section class="trajectory-section reveal">
+  <div class="trajectory-items">
+    <div class="trajectory-item">
+      <div class="trajectory-marker now"></div>
+      <div class="trajectory-label">Now</div>
+      <div class="trajectory-text">Local-first rule compiler. Your rules live with your code.</div>
+    </div>
+    <div class="trajectory-line"></div>
+    <div class="trajectory-item">
+      <div class="trajectory-marker next"></div>
+      <div class="trajectory-label">Next</div>
+      <div class="trajectory-text">Auto-generate rules from your codebase. Watch mode. More bridges.</div>
+    </div>
+    <div class="trajectory-line"></div>
+    <div class="trajectory-item">
+      <div class="trajectory-marker future"></div>
+      <div class="trajectory-label">Future</div>
+      <div class="trajectory-text">Team sharing. Community rule registry. Visual rule editor.</div>
+    </div>
+  </div>
+</section>
+
 <!-- ═══════ CTA ═══════ -->
 <section class="cta-section reveal">
   <div class="cta-box">
     <div class="cta-glow"></div>
-    <h2>Stop copy-pasting rules.</h2>
+    <h2>Stop duplicating rules across editors.</h2>
     <p>Get started in under 30 seconds.</p>
     <div class="cta-install" onclick="copyCta(this)">
       <span class="dollar">$</span> npx dev-workflows init
@@ -1765,7 +1851,7 @@ rules:
 
 <!-- ═══════ FOOTER ═══════ -->
 <footer>
-  <div>dev-workflows — Write once, compile everywhere.</div>
+  <div>dev-workflows — Define rules once. Compile them everywhere.</div>
   <div class="footer-links">
     <a href="https://github.com/gpolanco/dev-workflows" target="_blank">GitHub</a>
     <a href="https://www.npmjs.com/package/dev-workflows" target="_blank">npm</a>

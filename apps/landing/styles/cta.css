@@ -1,4 +1,66 @@
 /* ═══════════════════════════════════════
+   TRAJECTORY
+   ═══════════════════════════════════════ */
+.trajectory-section {
+  padding: 60px 24px 80px;
+}
+.trajectory-items {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0;
+  max-width: 800px;
+  margin: 0 auto;
+}
+.trajectory-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+  flex: 1;
+}
+.trajectory-marker {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+}
+.trajectory-marker.now {
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 0 10px rgba(34, 211, 126, 0.4);
+}
+.trajectory-marker.next {
+  background: transparent;
+  border-color: var(--accent-dim);
+}
+.trajectory-marker.future {
+  background: transparent;
+  border-color: var(--text-muted);
+}
+.trajectory-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+}
+.trajectory-item:first-child .trajectory-label { color: var(--accent); }
+.trajectory-text {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  max-width: 200px;
+}
+.trajectory-line {
+  height: 2px;
+  flex: 0 0 40px;
+  background: var(--border);
+  margin-top: 5px;
+}
+
+/* ═══════════════════════════════════════
    CTA
    ═══════════════════════════════════════ */
 .cta-section {
