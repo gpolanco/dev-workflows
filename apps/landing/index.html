@@ -39,6 +39,8 @@
 </head>
 <body>
 
+<a href="#problem" class="skip-link">Skip to content</a>
+
 <!-- ═══════ NAV ═══════ -->
 <nav>
   <div class="nav-left">
@@ -53,12 +55,14 @@
     </div>
   </div>
   <div class="nav-right">
-    <a href="https://github.com/gpolanco/dev-workflows" target="_blank" class="gh-link" title="GitHub">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/></svg>
+    <a href="https://github.com/gpolanco/dev-workflows" target="_blank" class="gh-link" aria-label="GitHub repository">
+      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/></svg>
     </a>
     <a href="https://www.npmjs.com/package/dev-workflows" target="_blank" class="nav-cta">npm install</a>
   </div>
 </nav>
+
+<main>
 
 <!-- ═══════ HERO ═══════ -->
 <section class="hero">
@@ -78,7 +82,7 @@
   <div class="hero-actions">
     <a href="#problem" class="btn btn-primary">See how it works →</a>
     <button class="btn btn-ghost" onclick="copyInstall(this)">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+      <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
       npx dev-workflows init
     </button>
   </div>
@@ -106,7 +110,7 @@
     <div class="cf-engine">
       <div class="cf-engine-box">
         <div class="cf-ring"></div>
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="16 18 22 12 16 6"></polyline>
           <polyline points="8 6 2 12 8 18"></polyline>
         </svg>
@@ -130,7 +134,7 @@
       <div class="cf-targets">
         <div class="cf-target" data-delay="0" onclick="openDialog('claude')">
           <div class="cf-target-icon cft-claude">
-            <svg viewBox="0 0 24 24" fill="white" width="16" height="16"><path d="M12 2L9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61z"/></svg>
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="white" width="16" height="16"><path d="M12 2L9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61z"/></svg>
           </div>
           <div class="cf-target-info">
             <div class="cf-target-name">Claude Code</div>
@@ -140,7 +144,7 @@
         </div>
         <div class="cf-target" data-delay="1" onclick="openDialog('cursor')">
           <div class="cf-target-icon cft-cursor">
-            <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><rect x="3" y="3" width="18" height="18" rx="4" stroke="white" stroke-width="2"/><path d="M8 8h2v8H8V8zm6 0h2v8h-2V8z" fill="white" opacity="0.85"/></svg>
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" width="16" height="16"><rect x="3" y="3" width="18" height="18" rx="4" stroke="white" stroke-width="2"/><path d="M8 8h2v8H8V8zm6 0h2v8h-2V8z" fill="white" opacity="0.85"/></svg>
           </div>
           <div class="cf-target-info">
             <div class="cf-target-name">Cursor</div>
@@ -150,7 +154,7 @@
         </div>
         <div class="cf-target" data-delay="2" onclick="openDialog('gemini')">
           <div class="cf-target-icon cft-gemini">
-            <svg viewBox="0 0 24 24" fill="white" width="16" height="16"><path d="M12 2C12 2 14.5 7 17.5 9.5S24 12 24 12s-5 1-8 3.5S12 22 12 22s-2.5-5-5.5-7.5S0 12 0 12s5-1 8-3.5S12 2 12 2z"/></svg>
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="white" width="16" height="16"><path d="M12 2C12 2 14.5 7 17.5 9.5S24 12 24 12s-5 1-8 3.5S12 22 12 22s-2.5-5-5.5-7.5S0 12 0 12s5-1 8-3.5S12 2 12 2z"/></svg>
           </div>
           <div class="cf-target-info">
             <div class="cf-target-name">Gemini CLI</div>
@@ -243,7 +247,7 @@
         <div class="pg-toolbar-title">dev-workflows playground</div>
       </div>
       <button class="pg-compile-btn" id="compileBtn" onclick="compileRules()">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
         Compile
       </button>
     </div>
@@ -252,13 +256,13 @@
       <!-- Source -->
       <div class="pg-source">
         <div class="pg-source-header">
-          <span class="file-icon">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z"/></svg>
+          <span class="file-icon" aria-hidden="true">
+            <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z"/></svg>
           </span>
           .dwf/rules/conventions.yml
         </div>
         <div class="pg-editor">
-          <textarea id="sourceEditor" spellcheck="false">scope: conventions
+          <textarea id="sourceEditor" aria-label="YAML rule editor" spellcheck="false">scope: conventions
 
 rules:
   - id: named-exports
@@ -317,7 +321,7 @@ rules:
     <div class="cf-dialog-header">
       <div class="cf-dialog-icon" id="cfDialogIcon"></div>
       <div class="cf-dialog-filename" id="cfDialogFilename"></div>
-      <button class="cf-dialog-close" onclick="closeDialog()">&times;</button>
+      <button class="cf-dialog-close" aria-label="Close dialog" onclick="closeDialog()">&times;</button>
     </div>
     <div class="cf-dialog-body">
       <div class="cf-dialog-code" id="cfDialogCode"></div>
@@ -368,9 +372,9 @@ rules:
       <div class="block-desc">No any, explicit returns, union types over enums, no non-null assertions.</div>
       <div class="block-install">
         <span><span class="cmd">devw add</span> typescript-strict</span>
-        <button class="block-copy" onclick="copyBlock(this, 'devw add typescript-strict')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-          <svg class="check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        <button class="block-copy" aria-label="Copy install command" onclick="copyBlock(this, 'devw add typescript-strict')">
+          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+          <svg aria-hidden="true" class="check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
         </button>
       </div>
     </div>
@@ -379,9 +383,9 @@ rules:
       <div class="block-desc">Hooks rules, component patterns, naming conventions, prop types.</div>
       <div class="block-install">
         <span><span class="cmd">devw add</span> react-conventions</span>
-        <button class="block-copy" onclick="copyBlock(this, 'devw add react-conventions')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-          <svg class="check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        <button class="block-copy" aria-label="Copy install command" onclick="copyBlock(this, 'devw add react-conventions')">
+          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+          <svg aria-hidden="true" class="check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
         </button>
       </div>
     </div>
@@ -390,9 +394,9 @@ rules:
       <div class="block-desc">App Router patterns, RSC boundaries, server actions, metadata API.</div>
       <div class="block-install">
         <span><span class="cmd">devw add</span> nextjs-approuter</span>
-        <button class="block-copy" onclick="copyBlock(this, 'devw add nextjs-approuter')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-          <svg class="check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        <button class="block-copy" aria-label="Copy install command" onclick="copyBlock(this, 'devw add nextjs-approuter')">
+          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+          <svg aria-hidden="true" class="check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
         </button>
       </div>
     </div>
@@ -401,9 +405,9 @@ rules:
       <div class="block-desc">Utility-first, no custom CSS, design tokens, responsive patterns.</div>
       <div class="block-install">
         <span><span class="cmd">devw add</span> tailwind</span>
-        <button class="block-copy" onclick="copyBlock(this, 'devw add tailwind')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-          <svg class="check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        <button class="block-copy" aria-label="Copy install command" onclick="copyBlock(this, 'devw add tailwind')">
+          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+          <svg aria-hidden="true" class="check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
         </button>
       </div>
     </div>
@@ -412,9 +416,9 @@ rules:
       <div class="block-desc">RLS enforcement on every table, auth patterns, security policies.</div>
       <div class="block-install">
         <span><span class="cmd">devw add</span> supabase-rls</span>
-        <button class="block-copy" onclick="copyBlock(this, 'devw add supabase-rls')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-          <svg class="check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        <button class="block-copy" aria-label="Copy install command" onclick="copyBlock(this, 'devw add supabase-rls')">
+          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+          <svg aria-hidden="true" class="check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
         </button>
       </div>
     </div>
@@ -423,9 +427,9 @@ rules:
       <div class="block-desc">Test naming, coverage expectations, mock patterns, arrange-act-assert.</div>
       <div class="block-install">
         <span><span class="cmd">devw add</span> testing-basics</span>
-        <button class="block-copy" onclick="copyBlock(this, 'devw add testing-basics')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-          <svg class="check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        <button class="block-copy" aria-label="Copy install command" onclick="copyBlock(this, 'devw add testing-basics')">
+          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+          <svg aria-hidden="true" class="check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
         </button>
       </div>
     </div>
@@ -462,8 +466,8 @@ rules:
     <p>Get started in under 30 seconds.</p>
     <div class="cta-install" onclick="copyCta(this)">
       <span class="dollar">$</span> npx dev-workflows init
-      <svg class="copy-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-      <svg class="cta-check-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      <svg aria-hidden="true" class="copy-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+      <svg aria-hidden="true" class="cta-check-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
     </div>
     <div class="cta-meta">
       <span>Open source</span>
@@ -474,6 +478,8 @@ rules:
     </div>
   </div>
 </section>
+
+</main>
 
 <!-- ═══════ FOOTER ═══════ -->
 <footer>

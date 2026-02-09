@@ -44,3 +44,4 @@ coverage/
 *.tgz
 .dwf/.cache/
 docs/internal
+.vercel

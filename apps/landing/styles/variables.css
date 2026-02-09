@@ -12,7 +12,7 @@
   --border-subtle: #16161f;
   --text: #e0e0e8;
   --text-secondary: #8888a0;
-  --text-muted: #555568;
+  --text-muted: #7a7a8e;
   --accent: #22d37e;
   --accent-dim: #1a9d5a;
   --accent-glow: rgba(34, 211, 126, 0.12);
@@ -53,3 +53,13 @@ a { color: inherit; text-decoration: none; }
 }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 * { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
