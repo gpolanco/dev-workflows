@@ -1,0 +1,62 @@
+---
+title: "devw watch"
+description: "Watch .dwf/ and recompile automatically on changes"
+---
+
+```bash
+devw watch
+```
+
+Watches your `.dwf/` directory and recompiles automatically whenever a rule file changes. This keeps your editor config files always in sync without running `devw compile` manually.
+
+## What it watches
+
+All `.yml` and `.yaml` files inside `.dwf/`, including:
+
+- `.dwf/config.yml`
+- `.dwf/rules/**/*.yml`
+
+## Behavior
+
+1. Runs an initial compile on startup
+2. Watches `.dwf/` for file changes (add, edit, delete)
+3. Debounces rapid changes into a single recompile
+4. Prints per-bridge results after each compile
+5. Errors are printed but never stop the watch process
+6. `Ctrl+C` exits cleanly
+
+## Flags
+
+| Flag | Description |
+|------|-------------|
+| `--tool claude` | Recompile only a specific bridge |
+
+## Output
+
+### On change
+
+```
+⟳ Change detected: .dwf/rules/conventions.yml
+Compiling...
+✔ claude     → CLAUDE.md
+✔ cursor     → .cursor/rules/devworkflows.mdc
+✔ gemini     → GEMINI.md
+Done in 42ms
+```
+
+### On error
+
+```
+✖ Duplicate rule id "react-no-inline-styles"
+Watch mode is still running. Fix the error and save again.
+```
+
+## Examples
+
+```bash
+# Watch all configured tools
+devw watch
+
+# Watch only Claude bridge
+devw watch --tool claude
+```

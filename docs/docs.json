@@ -44,6 +44,7 @@
             "pages": [
               "commands/init",
               "commands/compile",
+              "commands/watch",
               "commands/doctor",
               "commands/explain",
               "commands/add",

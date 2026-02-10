@@ -40,6 +40,7 @@ You define rules in YAML. The compiler generates each editor's native format. Ch
 | `devw add <block>` | Install a prebuilt rule block |
 | `devw remove <block>` | Remove a rule block |
 | `devw compile` | Generate editor-specific rule files |
+| `devw watch` | Watch `.dwf/` and recompile on changes |
 | `devw doctor` | Validate config and detect rule drift |
 | `devw list rules` | List all active rules |
 | `devw list blocks` | List installed blocks |
