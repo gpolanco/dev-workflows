@@ -10,6 +10,7 @@ export const ICONS = {
   arrow: '\u2192',
   dash: '\u2014',
   separator: '\u2500',
+  reload: '\u27F3',
 } as const;
 
 const INDENT = {

@@ -21,15 +21,135 @@ export interface CompileOptions {
   verbose?: boolean;
 }
 
+export interface BridgeResult {
+  bridgeId: string;
+  outputPath: string;
+  success: boolean;
+  error?: string;
+  content?: string;
+}
+
+export interface CompileResult {
+  results: BridgeResult[];
+  activeRuleCount: number;
+  elapsedMs: number;
+}
+
+export interface PipelineOptions {
+  cwd: string;
+  tool?: string;
+  write?: boolean;
+}
+
 const BRIDGES: Bridge[] = [claudeBridge, cursorBridge, geminiBridge, windsurfBridge, copilotBridge];
 
 function getBridge(id: string): Bridge | undefined {
   return BRIDGES.find((b) => b.id === id);
 }
 
+export async function executePipeline(options: PipelineOptions): Promise<CompileResult> {
+  const { cwd, tool, write = true } = options;
+  const startTime = performance.now();
+
+  const config = await readConfig(cwd);
+  const rules = await readRules(cwd);
+
+  let toolIds = config.tools;
+  if (tool) {
+    if (!config.tools.includes(tool)) {
+      throw new Error(`Tool "${tool}" is not configured in .dwf/config.yml. Configured tools: ${config.tools.join(', ')}`);
+    }
+    toolIds = [tool];
+  }
+
+  const activeRules = rules.filter((r) => r.enabled);
+  const results: BridgeResult[] = [];
+
+  for (const toolId of toolIds) {
+    const bridge = getBridge(toolId);
+    if (!bridge) {
+      continue;
+    }
+
+    try {
+      if (activeRules.length === 0 && write) {
+        for (const relativePath of bridge.outputPaths) {
+          const absolutePath = join(cwd, relativePath);
+          if (!(await fileExists(absolutePath))) continue;
+
+          if (bridge.usesMarkers) {
+            const existing = await readFile(absolutePath, 'utf-8');
+            const cleaned = removeMarkedBlock(existing);
+            if (cleaned.length === 0) {
+              await unlink(absolutePath);
+            } else {
+              await writeFile(absolutePath, cleaned + '\n', 'utf-8');
+            }
+          } else {
+            await unlink(absolutePath);
+          }
+          results.push({ bridgeId: bridge.id, outputPath: relativePath, success: true });
+        }
+        continue;
+      }
+
+      const outputs = bridge.compile(rules, config);
+
+      for (const [relativePath, rawContent] of outputs) {
+        let content = rawContent;
+        if (bridge.usesMarkers) {
+          const absoluteCheck = join(cwd, relativePath);
+          let existing: string | null = null;
+          try {
+            existing = await readFile(absoluteCheck, 'utf-8');
+          } catch {
+            existing = null;
+          }
+          content = mergeMarkedContent(existing, rawContent);
+        }
+
+        if (!write) {
+          results.push({ bridgeId: bridge.id, outputPath: relativePath, success: true, content });
+          continue;
+        }
+
+        const absolutePath = join(cwd, relativePath);
+        await mkdir(dirname(absolutePath), { recursive: true });
+
+        if (config.mode === 'link') {
+          const cachePath = join(cwd, '.dwf', '.cache', relativePath);
+          await mkdir(dirname(cachePath), { recursive: true });
+          await writeFile(cachePath, content, 'utf-8');
+
+          if (await fileExists(absolutePath)) {
+            await unlink(absolutePath);
+          }
+          await symlink(cachePath, absolutePath);
+        } else {
+          await writeFile(absolutePath, content, 'utf-8');
+        }
+
+        results.push({ bridgeId: bridge.id, outputPath: relativePath, success: true });
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      for (const relativePath of bridge.outputPaths) {
+        results.push({ bridgeId: bridge.id, outputPath: relativePath, success: false, error: message });
+      }
+    }
+  }
+
+  if (write) {
+    const hash = computeRulesHash(activeRules);
+    await writeHash(cwd, hash);
+  }
+
+  const elapsedMs = performance.now() - startTime;
+  return { results, activeRuleCount: activeRules.length, elapsedMs };
+}
+
 async function runCompile(options: CompileOptions): Promise<void> {
   const cwd = process.cwd();
-  const startTime = performance.now();
 
   if (!(await fileExists(join(cwd, '.dwf', 'config.yml')))) {
     ui.error('.dwf/config.yml not found', 'Run devw init to initialize the project');
@@ -37,116 +157,40 @@ async function runCompile(options: CompileOptions): Promise<void> {
     return;
   }
 
-  const config = await readConfig(cwd);
-  const rules = await readRules(cwd);
+  try {
+    if (options.verbose) {
+      const config = await readConfig(cwd);
+      const rules = await readRules(cwd);
+      ui.keyValue('Project:', chalk.bold(config.project.name));
+      ui.keyValue('Mode:', config.mode);
+      ui.keyValue('Rules:', String(rules.length));
+      const toolIds = options.tool ? [options.tool] : config.tools;
+      ui.keyValue('Tools:', chalk.cyan(toolIds.join(', ')));
+      ui.newline();
+    }
 
-  // Determine which tools to compile
-  let toolIds = config.tools;
-  if (options.tool) {
-    if (!config.tools.includes(options.tool)) {
-      ui.error(`Tool "${options.tool}" is not configured in .dwf/config.yml`, `Configured tools: ${config.tools.join(', ')}`);
-      process.exitCode = 1;
+    if (options.dryRun) {
+      const result = await executePipeline({ cwd, tool: options.tool, write: false });
+      for (const br of result.results) {
+        if (br.content !== undefined) {
+          console.log(chalk.cyan(`--- ${br.outputPath} ---`));
+          console.log(br.content);
+        }
+      }
       return;
     }
-    toolIds = [options.tool];
-  }
 
-  if (options.verbose) {
-    ui.keyValue('Project:', chalk.bold(config.project.name));
-    ui.keyValue('Mode:', config.mode);
-    ui.keyValue('Rules:', String(rules.length));
-    ui.keyValue('Tools:', chalk.cyan(toolIds.join(', ')));
+    const result = await executePipeline({ cwd, tool: options.tool });
+    const writtenPaths = result.results.filter((r) => r.success).map((r) => r.outputPath);
+
     ui.newline();
-  }
-
-  const activeRules = rules.filter((r) => r.enabled);
-
-  let filesWritten = 0;
-  const writtenPaths: string[] = [];
-
-  for (const toolId of toolIds) {
-    const bridge = getBridge(toolId);
-    if (!bridge) {
-      ui.warn(`No bridge for tool "${toolId}", skipping`);
-      continue;
-    }
-
-    // When zero active rules, clean up output files instead of writing empty content
-    if (activeRules.length === 0 && !options.dryRun) {
-      for (const relativePath of bridge.outputPaths) {
-        const absolutePath = join(cwd, relativePath);
-        if (!(await fileExists(absolutePath))) continue;
-
-        if (bridge.usesMarkers) {
-          const existing = await readFile(absolutePath, 'utf-8');
-          const cleaned = removeMarkedBlock(existing);
-          if (cleaned.length === 0) {
-            await unlink(absolutePath);
-          } else {
-            await writeFile(absolutePath, cleaned + '\n', 'utf-8');
-          }
-        } else {
-          await unlink(absolutePath);
-        }
-        writtenPaths.push(relativePath);
-        filesWritten++;
-      }
-      continue;
-    }
-
-    const outputs = bridge.compile(rules, config);
-
-    for (const [relativePath, rawContent] of outputs) {
-      let content = rawContent;
-      if (bridge.usesMarkers) {
-        const absoluteCheck = join(cwd, relativePath);
-        let existing: string | null = null;
-        try {
-          existing = await readFile(absoluteCheck, 'utf-8');
-        } catch {
-          existing = null;
-        }
-        content = mergeMarkedContent(existing, rawContent);
-      }
-
-      if (options.dryRun) {
-        console.log(chalk.cyan(`--- ${relativePath} ---`));
-        console.log(content);
-        continue;
-      }
-
-      const absolutePath = join(cwd, relativePath);
-      await mkdir(dirname(absolutePath), { recursive: true });
-
-      if (config.mode === 'link') {
-        // Write to .dwf/.cache/, then symlink
-        const cachePath = join(cwd, '.dwf', '.cache', relativePath);
-        await mkdir(dirname(cachePath), { recursive: true });
-        await writeFile(cachePath, content, 'utf-8');
-
-        // Remove existing file/symlink before creating new one
-        if (await fileExists(absolutePath)) {
-          await unlink(absolutePath);
-        }
-        await symlink(cachePath, absolutePath);
-      } else {
-        await writeFile(absolutePath, content, 'utf-8');
-      }
-
-      writtenPaths.push(relativePath);
-      filesWritten++;
-    }
-  }
-
-  if (!options.dryRun) {
-    const hash = computeRulesHash(activeRules);
-    await writeHash(cwd, hash);
-
-    const elapsed = performance.now() - startTime;
-    ui.newline();
-    ui.success(`Compiled ${String(activeRules.length)} rules ${ICONS.arrow} ${String(filesWritten)} file${filesWritten !== 1 ? 's' : ''} ${ui.timing(elapsed)}`);
+    ui.success(`Compiled ${String(result.activeRuleCount)} rules ${ICONS.arrow} ${String(writtenPaths.length)} file${writtenPaths.length !== 1 ? 's' : ''} ${ui.timing(result.elapsedMs)}`);
     ui.newline();
     ui.list(writtenPaths);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    ui.error(message);
+    process.exitCode = 1;
   }
 }
 

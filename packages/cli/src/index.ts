@@ -7,6 +7,7 @@ import { registerAddCommand } from './commands/add.js';
 import { registerRemoveCommand } from './commands/remove.js';
 import { registerListCommand } from './commands/list.js';
 import { registerExplainCommand } from './commands/explain.js';
+import { registerWatchCommand } from './commands/watch.js';
 
 const require = createRequire(import.meta.url);
 const pkg = require('../package.json') as { version: string };
@@ -25,6 +26,7 @@ registerAddCommand(program);
 registerRemoveCommand(program);
 registerListCommand(program);
 registerExplainCommand(program);
+registerWatchCommand(program);
 
 program.parse();
 

@@ -47,12 +47,13 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "typecheck": "tsc --noEmit",
-    "test": "tsc -p tsconfig.test.json && find .test-build/tests -name '*.test.js' -exec node --test {} +",
+    "test": "tsc && tsc -p tsconfig.test.json && find .test-build/tests -name '*.test.js' -exec node --test {} +",
     "test:unit": "tsc -p tsconfig.test.json && find .test-build/tests -name '*.test.js' -not -path '*e2e*' -exec node --test {} +",
-    "test:e2e": "tsc -p tsconfig.test.json && find .test-build/tests/e2e -name '*.test.js' -exec node --test {} +"
+    "test:e2e": "tsc && tsc -p tsconfig.test.json && find .test-build/tests/e2e -name '*.test.js' -exec node --test {} +"
   },
   "dependencies": {
     "@inquirer/prompts": "^7.0.0",
+    "chokidar": "^3.6.0",
     "commander": "^13.0.0",
     "yaml": "^2.7.0",
     "chalk": "^5.4.0"
