@@ -103,6 +103,7 @@ function clearTermTimers() {
 }
 
 function switchTermTab(tab, btnEl) {
+  trackEvent('terminal_tab', { command: tab });
   // Update active tab
   document.querySelectorAll('.term-tab').forEach(t => t.classList.remove('active'));
   if (btnEl) btnEl.classList.add('active');

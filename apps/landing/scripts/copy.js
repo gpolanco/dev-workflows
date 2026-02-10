@@ -1,6 +1,7 @@
 // ── Copy install command ──
 function copyInstall(el) {
   navigator.clipboard.writeText('npx dev-workflows init');
+  trackEvent('copy_command', { command: 'npx dev-workflows init', location: 'hero' });
   const orig = el.textContent || el.innerText;
   if (el.classList.contains('btn-ghost')) {
     const origHTML = el.innerHTML;
@@ -11,12 +12,14 @@ function copyInstall(el) {
 
 function copyBlock(btn, text) {
   navigator.clipboard.writeText(text);
+  trackEvent('copy_command', { command: text, location: 'blocks' });
   btn.classList.add('copied');
   setTimeout(() => btn.classList.remove('copied'), 1500);
 }
 
 function copyCta(el) {
   navigator.clipboard.writeText('npx dev-workflows init');
+  trackEvent('copy_command', { command: 'npx dev-workflows init', location: 'cta_bottom' });
   el.classList.add('copied');
   setTimeout(() => el.classList.remove('copied'), 1500);
 }

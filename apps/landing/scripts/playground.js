@@ -4,6 +4,7 @@ function switchTab(btn) {
   document.querySelectorAll('.pg-tab').forEach(t => t.classList.remove('active'));
   btn.classList.add('active');
   currentTab = btn.dataset.target;
+  trackEvent('playground_tab', { tab: currentTab });
   renderOutput();
 }
 

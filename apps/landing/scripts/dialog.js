@@ -101,6 +101,7 @@ const DIALOG_CONTENT = {
 function openDialog(key) {
   const d = DIALOG_CONTENT[key];
   if (!d) return;
+  trackEvent('dialog_open', { tool: key });
   const overlay = document.getElementById('cfDialogOverlay');
   const icon = document.getElementById('cfDialogIcon');
   const filename = document.getElementById('cfDialogFilename');
