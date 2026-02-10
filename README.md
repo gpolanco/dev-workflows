@@ -4,68 +4,97 @@
 [![license](https://img.shields.io/npm/l/dev-workflows)](./LICENSE)
 [![docs](https://img.shields.io/badge/docs-dev--workflows.com-blue)](https://docs.dev-workflows.com)
 
+Define rules once. Compile them everywhere.
 
-> Define AI coding rules once. Compile to CLAUDE.md, .cursor/rules, GEMINI.md.
+A local-first CLI to define AI coding rules and compile them for every editor and agent.
 
-AI coding tools (Claude Code, Cursor, Gemini CLI) each use different config files for project rules. dev-workflows lets you define rules once in YAML and compile them to each tool's native format. No duplication, no drift.
+---
 
-## Quick start
+## Quick Start
 
 ```bash
 npx dev-workflows init
-devw add typescript-strict
+devw add react-conventions
 devw compile
 ```
 
-Requires Node.js >= 22.
+---
 
-## Usage
+## What it does
 
-```bash
-devw init                        # set up .dwf/ in your project
-devw add typescript-strict       # install a rule block
-devw compile                     # generate CLAUDE.md, .cursor/rules, GEMINI.md
+```
+.dwf/rules/*.yml        →  devw compile  →  CLAUDE.md
+                                             .cursor/rules
+                                             GEMINI.md
 ```
 
-## What it generates
+You define rules in YAML. The compiler generates each editor's native format. Change a rule, recompile — every editor stays in sync.
 
-Running `devw compile` produces tool-specific files with your rules between markers:
-
-```md
-<!-- BEGIN dev-workflows -->
-- Never use `any`. Use `unknown` when the type is truly unknown.
-- Always declare explicit return types on exported functions.
-- Prefer union types over enums. Use `as const` objects when you need runtime values.
-<!-- END dev-workflows -->
-```
-
-Content outside the markers is preserved — your manual notes stay intact.
-
-## Available blocks
-
-| Block | Description |
-|-------|-------------|
-| `typescript-strict` | Strict TypeScript conventions (no any, explicit returns) |
-| `react-conventions` | Hooks rules, component patterns, naming |
-| `nextjs-approuter` | App Router patterns, RSC, server actions |
-| `tailwind` | Utility-first CSS conventions and design tokens |
-| `testing-basics` | Test naming, AAA pattern, mock boundaries |
-| `supabase-rls` | Row-Level Security enforcement and auth patterns |
+---
 
 ## Commands
 
 | Command | Description |
 |---------|-------------|
-| `devw init` | Initialize config in current project |
-| `devw compile` | Compile rules to editor-specific formats |
-| `devw add <block>` | Install a rule block |
-| `devw remove <block>` | Remove an installed block |
-| `devw list` | List available blocks and rules |
-| `devw doctor` | Validate configuration |
+| `devw init` | Initialize a `.dwf/` ruleset in your project |
+| `devw add <block>` | Install a prebuilt rule block |
+| `devw remove <block>` | Remove a rule block |
+| `devw compile` | Generate editor-specific rule files |
+| `devw doctor` | Validate config and detect rule drift |
+| `devw list rules` | List all active rules |
+| `devw list blocks` | List installed blocks |
+| `devw list tools` | List configured editors |
+
+---
+
+## Rule Blocks
+
+Prebuilt rule blocks you can stack. Install with `devw add <block>`.
+
+| Block | Purpose |
+|-------|---------|
+| `typescript-strict` | Enforces strict TypeScript patterns |
+| `react-conventions` | Common React component and hook rules |
+| `nextjs-approuter` | Next.js App Router best practices |
+| `tailwind` | Utility-first styling conventions |
+| `supabase-rls` | Database security and RLS rules |
+| `testing-basics` | Test naming and structure rules |
+
+---
+
+## Bridges
+
+Bridges generate editor-compatible rule files. One adapter per tool.
+
+| Tool | Output |
+|------|--------|
+| Claude Code | `CLAUDE.md` |
+| Cursor | `.cursor/rules/devworkflows.mdc` |
+| Gemini CLI | `GEMINI.md` |
+| Windsurf | `.windsurfrules` |
+| VS Code Copilot | `.github/copilot-instructions.md` |
+
+---
+
+## Why
+
+- Every AI coding tool requires rules in a different format.
+- Maintaining the same rules in three files means they drift apart.
+- dev-workflows makes your rules a single source of truth.
+
+---
+
+## Philosophy
+
+- Local-first
+- Source over output
+- No accounts. No cloud.
+
+---
 
 ## Contributing
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
+Issues and PRs welcome. If you find a bug or have an idea, [open an issue](https://github.com/gpolanco/dev-workflows/issues).
 
 ## License
 
