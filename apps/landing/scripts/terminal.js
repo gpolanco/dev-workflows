@@ -42,6 +42,21 @@ const TERM_TABS = {
       { html: '<span class="term-success">  Done.</span> <span class="term-muted">3 files compiled in 42ms</span>', delay: 350 },
     ]
   },
+  watch: {
+    comment: '# Watch for changes and recompile automatically',
+    lines: [
+      { html: '<span class="term-prompt">$</span> <span class="term-cmd">devw watch</span>', delay: 0 },
+      { html: '', delay: 400 },
+      { html: '  \uD83D\uDC40 <span class="term-success">Watching .dwf/ for changes...</span>', delay: 500 },
+      { html: '<span class="term-muted">  Running initial compile...</span>', delay: 350 },
+      { html: '', delay: 300 },
+      { html: '<span class="term-success">  \u2714</span> claude     <span class="term-muted">\u2192</span> <span class="term-file">CLAUDE.md</span>', delay: 300 },
+      { html: '<span class="term-success">  \u2714</span> cursor     <span class="term-muted">\u2192</span> <span class="term-file">.cursor/rules/devworkflows.mdc</span>', delay: 250 },
+      { html: '<span class="term-muted">  Done in 21ms</span>', delay: 250 },
+      { html: '', delay: 400 },
+      { html: '<span class="term-muted">  Waiting for changes... (Ctrl+C to stop)</span>', delay: 350 },
+    ]
+  },
   doctor: {
     comment: '# Validate config and diagnose issues',
     lines: [

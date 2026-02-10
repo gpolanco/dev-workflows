@@ -98,6 +98,7 @@ a { color: inherit; text-decoration: none; }
 }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 * { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+*:focus-visible { outline: 1px solid var(--accent); outline-offset: 2px; }
 
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
@@ -1050,8 +1051,8 @@ footer {
 }
 .term-tab.active {
   color: var(--accent);
-  border-bottom-color: var(--accent);
-  background: rgba(34,211,126,0.03);
+  border: 1px solid var(--accent);
+  background: rgba(34,211,126,0.08);
 }
 .term-tab-arrow {
   font-weight: 700;
@@ -1439,7 +1440,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <!-- ═══════ NAV ═══════ -->
 <nav>
   <div class="nav-left">
-    <a href="#" class="nav-logo">
+    <a href="/" class="nav-logo">
       <img src="dark-logo-sm.png" alt="dev-workflows" class="logo-img">
     </a>
     <div class="nav-links">
@@ -1731,7 +1732,7 @@ rules:
     <div class="section-label">See it in action</div>
     <div class="section-title">Every command at a glance.</div>
     <p class="section-sub">
-      Six commands. That's the entire CLI. Click a tab to see what each one does.
+      Seven commands. That's the entire CLI. Click a tab to see what each one does.
     </p>
   </div>
 
@@ -1744,6 +1745,7 @@ rules:
       <button class="term-tab active" onclick="switchTermTab('init', this)"><span class="term-tab-arrow">›</span> init</button>
       <button class="term-tab" onclick="switchTermTab('add', this)"><span class="term-tab-arrow">›</span> add</button>
       <button class="term-tab" onclick="switchTermTab('compile', this)"><span class="term-tab-arrow">›</span> compile</button>
+      <button class="term-tab" onclick="switchTermTab('watch', this)"><span class="term-tab-arrow">›</span> watch</button>
       <button class="term-tab" onclick="switchTermTab('doctor', this)"><span class="term-tab-arrow">›</span> doctor</button>
       <button class="term-tab" onclick="switchTermTab('list', this)"><span class="term-tab-arrow">›</span> list</button>
       <button class="term-tab" onclick="switchTermTab('remove', this)"><span class="term-tab-arrow">›</span> remove</button>
