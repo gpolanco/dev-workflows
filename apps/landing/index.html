@@ -1394,6 +1394,38 @@ footer {
   color: var(--text-muted);
   position: relative;
 }
+/* ═══════════════════════════════════════
+   FEEDBACK BUTTON
+   ═══════════════════════════════════════ */
+.feedback-btn {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  padding: 10px 18px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  text-decoration: none;
+  z-index: 50;
+  transition: all 0.2s;
+}
+.feedback-btn:hover {
+  border-color: var(--accent-dim);
+  color: var(--accent);
+  transform: translateY(-2px);
+}
+@media (max-width: 600px) {
+  .feedback-btn {
+    bottom: 16px;
+    right: 16px;
+    padding: 8px 14px;
+    font-size: 11px;
+  }
+}
 </style>
 </head>
 <body>
@@ -1885,6 +1917,14 @@ rules:
 <script src="scripts/terminal.js"></script>
 <script src="scripts/playground.js"></script>
 <script src="scripts/main.js"></script>
+
+<a href="https://github.com/gpolanco/dev-workflows/issues/new?labels=feedback&title=Feedback:+&body=**How+did+you+find+dev-workflows?**%0A%0A**What+editors+do+you+use?**%0A%0A**Would+you+use+this?+Why/why+not?**%0A"
+   target="_blank"
+   class="feedback-btn"
+   aria-label="Send feedback"
+   onclick="trackEvent('outbound_click', { destination: 'feedback' })">
+  💬 Feedback
+</a>
 
 </body>
 </html>
