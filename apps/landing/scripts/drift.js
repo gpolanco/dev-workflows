@@ -168,6 +168,7 @@ function renderDriftStage(stage) {
 }
 
 function startDrift() {
+  trackEvent('drift_watch', { action: 'start' });
   const watchBtn = document.getElementById('driftWatchBtn');
   const hint = document.getElementById('driftHint');
   const resetBtn = document.getElementById('driftResetBtn');
@@ -215,6 +216,7 @@ function resetDrift() {
 }
 
 function fixDrift() {
+  trackEvent('drift_fix', { action: 'compile_fix' });
   clearInterval(driftTimer);
   document.getElementById('driftHint').classList.remove('show');
 

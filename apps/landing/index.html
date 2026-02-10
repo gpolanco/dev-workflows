@@ -1,6 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-WVW97Q3V');</script>
+<!-- End Google Tag Manager -->
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4HVP1PLDB3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-4HVP1PLDB3');
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>dev-workflows — Write rules once, compile everywhere</title>
@@ -1382,6 +1397,10 @@ footer {
 </style>
 </head>
 <body>
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-WVW97Q3V"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
 
 <a href="#problem" class="skip-link">Skip to content</a>
 
@@ -1392,10 +1411,10 @@ footer {
       <img src="dark-logo-sm.png" alt="dev-workflows" class="logo-img">
     </a>
     <div class="nav-links">
-      <a href="#problem">Problem</a>
-      <a href="#demo">Demo</a>
-      <a href="#blocks">Blocks</a>
-      <a href="https://docs.dev-workflows.com" target="_blank">Docs</a>
+      <a href="#problem" onclick="trackEvent('nav_click', { target: 'problem' })">Problem</a>
+      <a href="#demo" onclick="trackEvent('nav_click', { target: 'demo' })">Demo</a>
+      <a href="#blocks" onclick="trackEvent('nav_click', { target: 'blocks' })">Blocks</a>
+      <a href="https://docs.dev-workflows.com" target="_blank" onclick="trackEvent('nav_click', { target: 'docs' })">Docs</a>
     </div>
   </div>
   <div class="nav-right">
@@ -1424,7 +1443,7 @@ footer {
     No accounts. No cloud. Your rules live with your code.
   </p>
   <div class="hero-actions">
-    <a href="#problem" class="btn btn-primary">See how it works →</a>
+    <a href="#problem" class="btn btn-primary" onclick="trackEvent('cta_click', { cta_location: 'hero', cta_text: 'see_how_it_works' })">See how it works →</a>
     <button class="btn btn-ghost" onclick="copyInstall(this)">
       <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
       npx dev-workflows init
@@ -1853,12 +1872,13 @@ rules:
 <footer>
   <div>dev-workflows — Define rules once. Compile them everywhere.</div>
   <div class="footer-links">
-    <a href="https://github.com/gpolanco/dev-workflows" target="_blank">GitHub</a>
-    <a href="https://www.npmjs.com/package/dev-workflows" target="_blank">npm</a>
+    <a href="https://github.com/gpolanco/dev-workflows" target="_blank" onclick="trackEvent('outbound_click', { destination: 'github' })">GitHub</a>
+    <a href="https://www.npmjs.com/package/dev-workflows" target="_blank" onclick="trackEvent('outbound_click', { destination: 'npm' })">npm</a>
   </div>
 </footer>
 
 <!-- ═══════ SCRIPTS ═══════ -->
+<script src="scripts/analytics.js"></script>
 <script src="scripts/copy.js"></script>
 <script src="scripts/dialog.js"></script>
 <script src="scripts/drift.js"></script>
