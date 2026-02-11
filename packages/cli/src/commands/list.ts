@@ -46,7 +46,14 @@ async function listRules(): Promise<void> {
   for (const rule of active) {
     const severityIcon = rule.severity === 'error' ? chalk.red(ICONS.error) : rule.severity === 'warning' ? chalk.yellow(ICONS.warn) : chalk.dim(ICONS.dot);
     const severityColor = rule.severity === 'error' ? chalk.red : rule.severity === 'warning' ? chalk.yellow : chalk.dim;
-    const source = rule.sourceBlock ? chalk.dim(` [${rule.sourceBlock}]`) : '';
+    let source = '';
+    if (rule.source) {
+      source = chalk.dim(` (pulled: ${rule.source})`);
+    } else if (rule.sourceBlock) {
+      source = chalk.dim(` [${rule.sourceBlock}]`);
+    } else {
+      source = chalk.dim(` ${ICONS.arrow} manual`);
+    }
     console.log(`    ${severityIcon} ${severityColor(rule.severity.padEnd(8))}${chalk.cyan(rule.scope.padEnd(15))}${rule.id}${source}`);
   }
 }

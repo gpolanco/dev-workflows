@@ -1,7 +1,7 @@
 import { readFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { parse } from 'yaml';
-import type { Rule, ProjectConfig } from '../bridges/types.js';
+import type { Rule, ProjectConfig, PulledEntry } from '../bridges/types.js';
 import { isValidScope } from './schema.js';
 
 interface RawRule {
@@ -11,6 +11,7 @@ interface RawRule {
   tags?: string[];
   enabled?: boolean;
   sourceBlock?: string;
+  source?: string;
 }
 
 interface RawRuleFile {
@@ -55,12 +56,25 @@ export async function readConfig(cwd: string): Promise<ProjectConfig> {
     ? blocksRaw.filter((b): b is string => typeof b === 'string')
     : [];
 
+  const pulledRaw = doc['pulled'];
+  const pulled: PulledEntry[] = Array.isArray(pulledRaw)
+    ? pulledRaw
+        .filter((p): p is Record<string, unknown> => p !== null && typeof p === 'object')
+        .map((p) => ({
+          path: typeof p['path'] === 'string' ? p['path'] : '',
+          version: typeof p['version'] === 'string' ? p['version'] : '',
+          pulled_at: typeof p['pulled_at'] === 'string' ? p['pulled_at'] : '',
+        }))
+        .filter((p) => p.path !== '')
+    : [];
+
   return {
     version,
     project: { name: projectName, description: projectDescription },
     tools,
     mode: modeRaw,
     blocks,
+    pulled,
   };
 }
 
@@ -80,6 +94,7 @@ function normalizeRule(raw: RawRule, scope: string): Rule | null {
     tags: raw.tags,
     enabled,
     sourceBlock: raw.sourceBlock,
+    source: raw.source,
   };
 }
 

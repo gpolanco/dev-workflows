@@ -9,7 +9,7 @@ import { cursorBridge } from '../bridges/cursor.js';
 import { geminiBridge } from '../bridges/gemini.js';
 import { windsurfBridge } from '../bridges/windsurf.js';
 import { copilotBridge } from '../bridges/copilot.js';
-import type { Bridge, ProjectConfig, Rule } from '../bridges/types.js';
+import type { Bridge, ProjectConfig, PulledEntry, Rule } from '../bridges/types.js';
 import { fileExists } from '../utils/fs.js';
 import { isValidScope } from '../core/schema.js';
 import * as ui from '../utils/ui.js';
@@ -184,6 +184,32 @@ export async function checkSymlinks(cwd: string, config: ProjectConfig): Promise
   return { passed: true, message: 'Symlinks are valid' };
 }
 
+export async function checkPulledFilesExist(cwd: string, pulled: PulledEntry[]): Promise<CheckResult> {
+  if (pulled.length === 0) {
+    return { passed: true, message: 'Pulled files check skipped (no pulled rules)', skipped: true };
+  }
+
+  const missing: string[] = [];
+
+  for (const entry of pulled) {
+    const slug = entry.path.replace(/\//g, '-');
+    const fileName = `pulled-${slug}.yml`;
+    const filePath = join(cwd, '.dwf', 'rules', fileName);
+    if (!(await fileExists(filePath))) {
+      missing.push(fileName);
+    }
+  }
+
+  if (missing.length > 0) {
+    return {
+      passed: false,
+      message: `Missing pulled rule files: ${missing.join(', ')}`,
+    };
+  }
+
+  return { passed: true, message: `Pulled rule files exist (${String(pulled.length)} entries)` };
+}
+
 export async function checkHashSync(cwd: string, rules: Rule[]): Promise<CheckResult> {
   const storedHash = await readStoredHash(cwd);
   if (storedHash === null) {
@@ -273,7 +299,11 @@ async function runDoctor(): Promise<void> {
   const symlinkResult = await checkSymlinks(cwd, config!);
   results.push(symlinkResult);
 
-  // Check 8: Hash sync (conditional on compiled files existing)
+  // Check 8: Pulled files exist
+  const pulledResult = await checkPulledFilesExist(cwd, config!.pulled);
+  results.push(pulledResult);
+
+  // Check 9: Hash sync (conditional on compiled files existing)
   const hashResult = await checkHashSync(cwd, rules);
   results.push(hashResult);
 

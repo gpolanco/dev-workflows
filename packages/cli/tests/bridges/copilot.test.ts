@@ -20,6 +20,7 @@ const CONFIG: ProjectConfig = {
   tools: ['copilot'],
   mode: 'copy',
   blocks: [],
+  pulled: [],
 };
 
 describe('copilotBridge', () => {

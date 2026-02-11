@@ -6,6 +6,13 @@ export interface Rule {
   tags?: string[];
   enabled: boolean;
   sourceBlock?: string;
+  source?: string;
+}
+
+export interface PulledEntry {
+  path: string;
+  version: string;
+  pulled_at: string;
 }
 
 export interface ProjectConfig {
@@ -17,6 +24,7 @@ export interface ProjectConfig {
   tools: string[];
   mode: 'copy' | 'link';
   blocks: string[];
+  pulled: PulledEntry[];
 }
 
 export interface Bridge {
