@@ -1,6 +1,6 @@
-const BRANCH = 'feat/pull-command'; // TODO: revert to 'main' before merge
-const RAW_BASE = `https://raw.githubusercontent.com/gpolanco/dev-workflows/${BRANCH}/rules`;
-const API_BASE = 'https://api.github.com/repos/gpolanco/dev-workflows/contents/rules';
+const BRANCH = 'main';
+const RAW_BASE = `https://raw.githubusercontent.com/gpolanco/dev-workflows/${BRANCH}/content/rules`;
+const API_BASE = 'https://api.github.com/repos/gpolanco/dev-workflows/contents/content/rules';
 
 export class GitHubError extends Error {
   constructor(

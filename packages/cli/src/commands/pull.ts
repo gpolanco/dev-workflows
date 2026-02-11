@@ -21,7 +21,7 @@ export interface PullOptions {
   dryRun?: boolean;
 }
 
-function validateInput(input: string): { category: string; name: string } | null {
+export function validateInput(input: string): { category: string; name: string } | null {
   const parts = input.split('/');
   if (parts.length !== 2) return null;
 
@@ -129,14 +129,14 @@ async function runList(categoryFilter: string | undefined): Promise<void> {
   console.log(`  ${chalk.dim(`Pull a rule:  devw pull <category>/<rule>`)}`);
 }
 
-function generateYamlOutput(
+export function generateYamlOutput(
   category: string,
   name: string,
   result: ReturnType<typeof convert>,
   pulledAt: string,
 ): string {
   const source = `${category}/${name}`;
-  const githubUrl = `https://github.com/gpolanco/dev-workflows/blob/main/rules/${source}.md`;
+  const githubUrl = `https://github.com/gpolanco/dev-workflows/blob/main/content/rules/${source}.md`;
 
   const header = [
     `# Pulled from: ${source} (v${result.version})`,
@@ -165,7 +165,7 @@ function generateYamlOutput(
   return header + stringify(doc, { lineWidth: 0 });
 }
 
-async function updateConfig(cwd: string, entry: PulledEntry): Promise<void> {
+export async function updateConfig(cwd: string, entry: PulledEntry): Promise<void> {
   const configPath = join(cwd, '.dwf', 'config.yml');
   const raw = await readFile(configPath, 'utf-8');
   const doc = parse(raw) as Record<string, unknown>;
