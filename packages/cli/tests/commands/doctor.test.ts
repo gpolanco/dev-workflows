@@ -212,6 +212,7 @@ blocks: []
         tools: ['claude', 'cursor', 'gemini'],
         mode: 'copy',
         blocks: [],
+        pulled: [],
       };
 
       const result = checkBridgesAvailable(config);
@@ -225,6 +226,7 @@ blocks: []
         tools: ['claude', 'windsurf', 'copilot'],
         mode: 'copy',
         blocks: [],
+        pulled: [],
       };
 
       const result = checkBridgesAvailable(config);
@@ -238,6 +240,7 @@ blocks: []
         tools: ['claude', 'vscode'],
         mode: 'copy',
         blocks: [],
+        pulled: [],
       };
 
       const result = checkBridgesAvailable(config);
@@ -254,6 +257,7 @@ blocks: []
         tools: ['claude'],
         mode: 'copy',
         blocks: [],
+        pulled: [],
       };
 
       const result = await checkSymlinks(tmpDir, config);
@@ -268,6 +272,7 @@ blocks: []
         tools: ['claude'],
         mode: 'link',
         blocks: [],
+        pulled: [],
       };
 
       // Create a target file and a symlink pointing to it
@@ -288,6 +293,7 @@ blocks: []
         tools: ['claude'],
         mode: 'link',
         blocks: [],
+        pulled: [],
       };
 
       // Create a symlink pointing to a non-existent target

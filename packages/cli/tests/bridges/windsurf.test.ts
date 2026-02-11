@@ -20,6 +20,7 @@ const CONFIG: ProjectConfig = {
   tools: ['windsurf'],
   mode: 'copy',
   blocks: [],
+  pulled: [],
 };
 
 describe('windsurfBridge', () => {
