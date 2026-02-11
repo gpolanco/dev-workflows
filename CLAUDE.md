@@ -31,7 +31,8 @@ pnpm dev              # dev mode
 - `docs/internal/CLI_SPEC_v0.2.md` → v0.2 specification (COMPLETE)
 - `docs/internal/CLI_SPEC_v0.2.1.md` → v0.2.1 UX polish specification (COMPLETE)
 - `docs/internal/DOCS_SPEC.md` → Mintlify documentation spec (COMPLETE)
-- `docs/internal/WATCH_SPEC.md` → v0.3 watch mode specification (ACTIVE — implement this)
+- `docs/internal/WATCH_SPEC.md` → v0.3 watch mode specification (COMPLETE)
+- `docs/internal/PULL_SPEC.md` → v0.4 Pull rules specification (IMPLEMENT THIS)
 - `docs/internal/DECISIONS.md` → accepted decisions (source of truth if conflict)
 - `docs/internal/` is gitignored — internal specs not published
 
