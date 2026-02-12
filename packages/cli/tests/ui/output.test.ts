@@ -41,16 +41,6 @@ mode: copy
 blocks: []
 `;
 
-const CONFIG_WITH_BLOCK = (tools: string[], blocks: string[]): string => `version: "0.1"
-project:
-  name: "test-project"
-tools:
-${tools.map((t) => `  - ${t}`).join('\n')}
-mode: copy
-blocks:
-${blocks.map((b) => `  - ${b}`).join('\n')}
-`;
-
 const RULES_CONVENTIONS = `scope: conventions
 rules:
   - id: ts-strict-no-any
@@ -155,36 +145,7 @@ describe('output format: doctor', () => {
   });
 });
 
-describe('output format: add --list', () => {
-  let tmpDir: string;
-
-  beforeEach(async () => {
-    tmpDir = await mkdtemp(join(tmpdir(), 'devw-output-'));
-  });
-
-  afterEach(async () => {
-    await rm(tmpDir, { recursive: true, force: true });
-  });
-
-  it('shows blocks with middle dot separator', async () => {
-    const result = await run(['add', '--list'], tmpDir);
-
-    assert.equal(result.exitCode, 0);
-    assert.ok(result.stdout.includes('\u00B7'), 'should have middle dot separator');
-    assert.ok(result.stdout.includes('rules'), 'should show rule count');
-  });
-
-  it('shows installed indicator when block is installed', async () => {
-    await mkdir(join(tmpDir, '.dwf', 'rules'), { recursive: true });
-    await writeFile(join(tmpDir, '.dwf', 'config.yml'), CONFIG_WITH_BLOCK(['claude'], ['typescript-strict']));
-    await writeFile(join(tmpDir, '.dwf', 'rules', 'conventions.yml'), RULES_CONVENTIONS);
-
-    const result = await run(['add', '--list'], tmpDir);
-
-    assert.equal(result.exitCode, 0);
-    assert.ok(result.stdout.includes('installed'), 'should show installed indicator');
-  });
-});
+// add --list tests removed: now fetches from GitHub, requires network mocks
 
 describe('output format: list rules', () => {
   let tmpDir: string;
