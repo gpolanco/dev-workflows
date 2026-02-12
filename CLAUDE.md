@@ -6,23 +6,26 @@ CLI tool that compiles developer rules into editor-specific config files (CLAUDE
 
 - Monorepo with pnpm workspaces
 - CLI in `packages/cli/` (TypeScript, commander)
-- Rule blocks in `content/blocks/` (YAML)
+- Rules in `content/rules/` (Markdown with YAML frontmatter, hosted on GitHub)
 - Tests with node:test
 
 ## Architecture
 
 - `content/core/` → tool-agnostic source of truth (workflows, skills, templates)
-- `content/blocks/` → precooked rule blocks (YAML)
+- `content/rules/` → official rule files (Markdown), fetched from GitHub via `devw add`
 - `packages/cli/src/bridges/` → per-tool adapters that translate core → native format
 - Bridges only translate. They do not add new intent or logic.
 
 ## Key commands
 
 ```bash
-pnpm install          # install deps
-pnpm build            # build CLI
-pnpm test             # run tests
-pnpm dev              # dev mode
+pnpm install                    # install deps
+pnpm build                      # build CLI
+pnpm test                       # run tests
+pnpm dev                        # dev mode
+devw add                        # interactive: browse and install rules from registry
+devw add typescript/strict      # direct: install specific rule
+devw add --list                 # list available rules
 ```
 
 ## Specs (read before implementing)
@@ -32,7 +35,7 @@ pnpm dev              # dev mode
 - `docs/internal/CLI_SPEC_v0.2.1.md` → v0.2.1 UX polish specification (COMPLETE)
 - `docs/internal/DOCS_SPEC.md` → Mintlify documentation spec (COMPLETE)
 - `docs/internal/WATCH_SPEC.md` → v0.3 watch mode specification (COMPLETE)
-- `docs/internal/PULL_SPEC.md` → v0.4 Pull rules specification (IMPLEMENT THIS)
+- `docs/internal/PULL_SPEC.md` → v0.4 Pull rules specification (ABSORBED into `devw add`)
 - `docs/internal/DECISIONS.md` → accepted decisions (source of truth if conflict)
 - `docs/internal/` is gitignored — internal specs not published
 

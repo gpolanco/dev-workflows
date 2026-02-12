@@ -15,7 +15,7 @@ If you use Claude Code, Cursor, and Gemini CLI, you maintain the same rules in t
 
 ```bash
 npx dev-workflows init                    # create .dwf/ with config
-npx dev-workflows add typescript-strict   # install a rule block
+npx dev-workflows add typescript/strict   # install a rule from the registry
 npx dev-workflows compile                 # generate CLAUDE.md, .cursor/rules, GEMINI.md
 ```
 
@@ -33,27 +33,27 @@ Define rules once in YAML, compile to each editor's native format.
   </Card>
 </Columns>
 
-## Prebuilt Rule Blocks
+## Rules Registry
 
-Start with battle-tested presets instead of writing from scratch:
+Start with battle-tested rules instead of writing from scratch. Browse with `devw add --list` or run `devw add` for interactive selection.
 
 <Columns cols={3}>
-  <Card title="typescript-strict" href="/concepts/blocks">
+  <Card title="typescript/strict" href="/commands/add">
     No any, explicit returns, union types over enums
   </Card>
-  <Card title="react-conventions" href="/concepts/blocks">
+  <Card title="javascript/react" href="/commands/add">
     Hooks rules, component patterns, naming
   </Card>
-  <Card title="nextjs-approuter" href="/concepts/blocks">
+  <Card title="javascript/nextjs" href="/commands/add">
     App Router, RSC, server actions
   </Card>
-  <Card title="tailwind" href="/concepts/blocks">
+  <Card title="css/tailwind" href="/commands/add">
     Utility-first, no custom CSS, design tokens
   </Card>
-  <Card title="testing-basics" href="/concepts/blocks">
+  <Card title="testing/vitest" href="/commands/add">
     Test naming, coverage, mocks
   </Card>
-  <Card title="supabase-rls" href="/concepts/blocks">
+  <Card title="security/supabase-rls" href="/commands/add">
     RLS enforcement, auth patterns
   </Card>
 </Columns>

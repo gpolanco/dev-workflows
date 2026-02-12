@@ -52,7 +52,7 @@ Examples:
 
 > This repo is still in early stage.
 
-Expected setup (will be finalized in Block 4 - CLI):
+Expected setup:
 
 ```bash
 pnpm install

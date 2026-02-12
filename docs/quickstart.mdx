@@ -19,11 +19,11 @@ description: "Install dev-workflows and compile your first rules in 60 seconds"
     The CLI detects existing AI tools in your project (CLAUDE.md, .cursor/, GEMINI.md) and pre-selects them.
   </Step>
 
-  <Step title="Add a rule block (optional)">
+  <Step title="Add rules from the registry (optional)">
     ```bash
-    npx dev-workflows add typescript-strict
+    npx dev-workflows add typescript/strict
     ```
-    Installs prebuilt rules into your `.dwf/rules/` files. Run `devw add --list` to see all available blocks.
+    Installs rules from the GitHub registry into your `.dwf/rules/` directory. Run `devw add --list` to see all available rules, or `devw add` for interactive selection.
   </Step>
 
   <Step title="Compile">

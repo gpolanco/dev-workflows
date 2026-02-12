@@ -13,14 +13,13 @@ Shows information about your current configuration.
 
 | Type | Description |
 |------|-------------|
-| `rules` | All active rules with scope and severity |
-| `blocks` | Installed block IDs |
-| `tools` | Configured tools |
+| `rules` | All active rules with scope, severity, and source (pulled vs manual) |
+| `blocks` | Deprecated — shows migration message |
+| `tools` | Configured tools with output paths |
 
 ## Examples
 
 ```bash
 devw list rules
-devw list blocks
 devw list tools
 ```
