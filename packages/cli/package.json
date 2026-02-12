@@ -1,6 +1,6 @@
 {
   "name": "dev-workflows",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "type": "module",
   "description": "CLI that compiles developer rules into editor-specific config files",
   "license": "MIT",
