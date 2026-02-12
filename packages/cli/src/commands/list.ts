@@ -59,20 +59,9 @@ async function listRules(): Promise<void> {
 }
 
 async function listBlocks(): Promise<void> {
-  const cwd = process.cwd();
-  if (!(await ensureConfig(cwd))) return;
-
-  const config = await readConfig(cwd);
-
-  if (config.blocks.length === 0) {
-    ui.warn('No blocks installed');
-    ui.info('Run devw add --list to see available blocks');
-    return;
-  }
-
-  ui.header(`Installed blocks (${String(config.blocks.length)})`);
-  ui.newline();
-  ui.list(config.blocks);
+  ui.warn('Blocks have been replaced by pulled rules');
+  ui.info('Run devw list rules to see installed rules');
+  ui.info('Run devw add --list to browse available rules');
 }
 
 async function listTools(): Promise<void> {

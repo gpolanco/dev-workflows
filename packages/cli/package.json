@@ -42,7 +42,7 @@
     "access": "public"
   },
   "scripts": {
-    "prebuild": "rm -rf content/blocks && mkdir -p content && cp -r ../../content/blocks content/blocks && cp ../../README.md README.md",
+    "prebuild": "cp ../../README.md README.md",
     "prepublishOnly": "pnpm build",
     "build": "tsc",
     "dev": "tsc --watch",

@@ -11,21 +11,20 @@ const TERM_TABS = {
       { html: '<span class="term-success">  \u2713</span> Created <span class="term-file">.dwf/config.yml</span>', delay: 350 },
       { html: '<span class="term-success">  \u2713</span> Created <span class="term-file">.dwf/rules/</span> <span class="term-muted">(5 scope files)</span>', delay: 250 },
       { html: '', delay: 300 },
-      { html: '<span class="term-success">  Ready.</span> <span class="term-muted">Add rules or install a block to get started.</span>', delay: 400 },
+      { html: '<span class="term-success">  Ready.</span> <span class="term-muted">Run</span> devw add <span class="term-muted">to browse the registry.</span>', delay: 400 },
     ]
   },
   add: {
-    comment: '# Install a prebuilt rule block',
+    comment: '# Add rules from the registry',
     lines: [
-      { html: '<span class="term-prompt">$</span> <span class="term-cmd">devw add typescript-strict</span>', delay: 0 },
+      { html: '<span class="term-prompt">$</span> <span class="term-cmd">devw add</span>', delay: 0 },
       { html: '', delay: 400 },
-      { html: '<span class="term-success">  \u2713</span> Added <span class="term-val">ts-strict-no-any</span> to <span class="term-file">conventions.yml</span>', delay: 350 },
-      { html: '<span class="term-success">  \u2713</span> Added <span class="term-val">ts-strict-explicit-returns</span> to <span class="term-file">conventions.yml</span>', delay: 250 },
-      { html: '<span class="term-success">  \u2713</span> Added <span class="term-val">ts-strict-no-enums</span> to <span class="term-file">conventions.yml</span>', delay: 250 },
-      { html: '<span class="term-success">  \u2713</span> Added <span class="term-val">ts-strict-no-non-null</span> to <span class="term-file">conventions.yml</span>', delay: 250 },
+      { html: '<span class="term-success">  \u2714</span> Choose a category: <span class="term-val">typescript</span>', delay: 500 },
+      { html: '<span class="term-success">  \u2714</span> Select rules to add: <span class="term-val">strict</span> <span class="term-muted">\u2014 Strict TypeScript conventions</span>', delay: 500 },
+      { html: '<span class="term-success">  \u2714</span> Install 1 rule? <span class="term-val">Yes</span>', delay: 400 },
       { html: '', delay: 300 },
-      { html: '<span class="term-muted">  Block registered in config.yml</span>', delay: 200 },
-      { html: '<span class="term-success">  4 rules added.</span> <span class="term-muted">Run</span> devw compile <span class="term-muted">to apply.</span>', delay: 350 },
+      { html: '<span class="term-success">  \u2713</span> Added <span class="term-val">typescript/strict</span> <span class="term-muted">(8 rules)</span>', delay: 350 },
+      { html: '<span class="term-success">  \u2713</span> Compiled for <span class="term-file">claude</span>, <span class="term-file">cursor</span>', delay: 250 },
     ]
   },
   compile: {
@@ -66,7 +65,7 @@ const TERM_TABS = {
       { html: '', delay: 200 },
       { html: '<span class="term-success">  \u2713</span> config.yml                  <strong>valid</strong>', delay: 300 },
       { html: '<span class="term-success">  \u2713</span> rules.yml                   <strong>valid</strong>', delay: 250 },
-      { html: '<span class="term-success">  \u2713</span> 2 blocks installed          <span class="term-success">ok</span>', delay: 250 },
+      { html: '<span class="term-success">  \u2713</span> 2 pulled rules              <span class="term-success">ok</span>', delay: 250 },
       { html: '<span class="term-warn">  \u26a0</span> CLAUDE.md                   <span class="term-warn"><strong>stale</strong> (recompile needed)</span>', delay: 350 },
       { html: '<span class="term-success">  \u2713</span> .cursor/rules               <span class="term-success">up to date</span>', delay: 250 },
       { html: '<span class="term-success">  \u2713</span> GEMINI.md                   <span class="term-success">up to date</span>', delay: 250 },
@@ -75,7 +74,7 @@ const TERM_TABS = {
     ]
   },
   list: {
-    comment: '# List rules, blocks, or tools',
+    comment: '# List rules or tools',
     lines: [
       { html: '<span class="term-prompt">$</span> <span class="term-cmd">devw list rules</span>', delay: 0 },
       { html: '', delay: 400 },
@@ -92,19 +91,12 @@ const TERM_TABS = {
     ]
   },
   remove: {
-    comment: '# Remove a rule block',
+    comment: '# Remove a pulled rule',
     lines: [
-      { html: '<span class="term-prompt">$</span> <span class="term-cmd">devw remove typescript-strict</span>', delay: 0 },
+      { html: '<span class="term-prompt">$</span> <span class="term-cmd">devw remove typescript/strict</span>', delay: 0 },
       { html: '', delay: 400 },
-      { html: '<span class="term-muted">  Removing block typescript-strict...</span>', delay: 500 },
-      { html: '', delay: 200 },
-      { html: '<span class="term-success">  \u2713</span> Removed <span class="term-val">ts-strict-no-any</span> from <span class="term-file">conventions.yml</span>', delay: 250 },
-      { html: '<span class="term-success">  \u2713</span> Removed <span class="term-val">ts-strict-explicit-returns</span> from <span class="term-file">conventions.yml</span>', delay: 200 },
-      { html: '<span class="term-success">  \u2713</span> Removed <span class="term-val">ts-strict-no-enums</span> from <span class="term-file">conventions.yml</span>', delay: 200 },
-      { html: '<span class="term-success">  \u2713</span> Removed <span class="term-val">ts-strict-no-non-null</span> from <span class="term-file">conventions.yml</span>', delay: 200 },
-      { html: '', delay: 300 },
-      { html: '<span class="term-muted">  Block unregistered from config.yml</span>', delay: 200 },
-      { html: '<span class="term-success">  Done.</span> <span class="term-muted">4 rules removed. Run</span> devw compile <span class="term-muted">to update outputs.</span>', delay: 350 },
+      { html: '<span class="term-success">  \u2713</span> Removed <span class="term-val">typescript/strict</span>', delay: 350 },
+      { html: '<span class="term-success">  \u2713</span> Compiled for <span class="term-file">claude</span>, <span class="term-file">cursor</span>', delay: 250 },
     ]
   }
 };

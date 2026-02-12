@@ -1,18 +1,34 @@
 ---
 title: "devw remove"
-description: "Remove an installed rule block"
+description: "Remove an installed rule"
 ---
 
 ```bash
-devw remove <block>
+devw remove [category/rule]
 ```
 
-Removes all rules installed by a specific block and updates `config.yml`.
+Removes a rule that was installed via `devw add` and recompiles.
 
-## Example
+## Interactive Mode
+
+Running `devw remove` without arguments shows installed rules and lets you select which to remove.
+
+## Direct Mode
 
 ```bash
-devw remove typescript-strict
+devw remove typescript/strict
 ```
 
-Rules added manually (without `sourceBlock`) are never affected.
+Removes the rule file (`pulled-typescript-strict.yml`) and updates `config.yml`.
+
+## Examples
+
+```bash
+# Remove a specific rule
+devw remove typescript/strict
+
+# Interactive — select rules to remove
+devw remove
+```
+
+Rules added manually (not via `devw add`) are not affected.

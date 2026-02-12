@@ -1,32 +1,35 @@
 # Official Rules
 
-Rules for AI coding agents, distributed via `devw pull`.
+Rules for AI coding agents, distributed via `devw add`.
 
 ## Available Rules
 
 | Rule | Category | Description | Command |
 |------|----------|-------------|---------|
-| `typescript/strict` | TypeScript | Strict TypeScript conventions | `devw pull typescript/strict` |
-| `javascript/react` | JavaScript | React conventions and best practices | `devw pull javascript/react` |
-| `javascript/nextjs` | JavaScript | Next.js App Router patterns and RSC | `devw pull javascript/nextjs` |
-| `css/tailwind` | CSS | Utility-first Tailwind conventions | `devw pull css/tailwind` |
-| `testing/vitest` | Testing | Vitest testing patterns | `devw pull testing/vitest` |
-| `security/supabase-rls` | Security | Supabase RLS enforcement | `devw pull security/supabase-rls` |
+| `typescript/strict` | TypeScript | Strict TypeScript conventions | `devw add typescript/strict` |
+| `javascript/react` | JavaScript | React conventions and best practices | `devw add javascript/react` |
+| `javascript/nextjs` | JavaScript | Next.js App Router patterns and RSC | `devw add javascript/nextjs` |
+| `css/tailwind` | CSS | Utility-first Tailwind conventions | `devw add css/tailwind` |
+| `testing/vitest` | Testing | Vitest testing patterns | `devw add testing/vitest` |
+| `security/supabase-rls` | Security | Supabase RLS enforcement | `devw add security/supabase-rls` |
 
 ## Usage
 
 ```bash
 # List all available rules
-devw pull --list
+devw add --list
 
-# Pull a specific rule
-devw pull typescript/strict
+# Add a specific rule
+devw add typescript/strict
+
+# Interactive mode — browse categories and select
+devw add
 
 # Preview without writing
-devw pull typescript/strict --dry-run
+devw add typescript/strict --dry-run
 
 # Force overwrite
-devw pull typescript/strict --force
+devw add typescript/strict --force
 ```
 
 ## Rule Format

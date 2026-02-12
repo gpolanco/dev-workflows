@@ -1754,78 +1754,106 @@ rules:
   </div>
 </section>
 
-<!-- ═══════ BLOCKS ═══════ -->
+<!-- ═══════ REGISTRY ═══════ -->
 <section class="blocks-section reveal" id="blocks">
   <div class="blocks-header">
-    <div class="section-label">Prebuilt rule blocks</div>
+    <div class="section-label">Rules registry</div>
     <div class="section-title">Don't write rules from scratch.</div>
     <p class="section-sub">
-      Install curated rule packs with one command. Stack them — TypeScript + React + Tailwind in seconds.
+      Browse, select, and install rules interactively. No need to memorize names.
     </p>
+  </div>
+
+  <div class="registry-demo">
+    <div class="registry-panel registry-panel--main">
+      <div class="registry-bar">
+        <span class="registry-label">Interactive mode</span>
+      </div>
+      <div class="registry-body">
+        <div class="reg-line"><span class="term-prompt">$</span> <span class="term-cmd">devw add</span></div>
+        <div class="reg-line"><span class="term-success">&#10004;</span> Choose a category: <span class="term-val">typescript</span></div>
+        <div class="reg-line"><span class="term-success">&#10004;</span> Select rules to add: <span class="term-val">strict</span> <span class="term-muted">&mdash; Strict TypeScript conventions</span></div>
+        <div class="reg-line"><span class="term-success">&#10004;</span> Install 1 rule? <span class="term-val">Yes</span></div>
+        <div class="reg-line">&nbsp;</div>
+        <div class="reg-line">  <span class="term-success">&#10003;</span> Added <span class="term-val">typescript/strict</span> <span class="term-muted">(8 rules)</span></div>
+        <div class="reg-line">  <span class="term-success">&#10003;</span> Compiled for <span class="term-file">claude</span>, <span class="term-file">cursor</span></div>
+      </div>
+    </div>
+    <div class="registry-panel registry-panel--alt">
+      <div class="registry-bar">
+        <span class="registry-label">Direct mode</span>
+      </div>
+      <div class="registry-body">
+        <div class="reg-line"><span class="term-prompt">$</span> <span class="term-cmd">devw add</span> <span class="term-val">typescript/strict</span></div>
+        <div class="reg-line">&nbsp;</div>
+        <div class="reg-line">  <span class="term-success">&#10003;</span> Added <span class="term-val">typescript/strict</span> <span class="term-muted">(8 rules)</span></div>
+        <div class="reg-line">  <span class="term-success">&#10003;</span> Compiled for <span class="term-file">claude</span>, <span class="term-file">cursor</span></div>
+      </div>
+    </div>
   </div>
 
   <div class="blocks-grid">
     <div class="block-card">
-      <div class="block-name">typescript-strict</div>
+      <div class="block-name">typescript/strict</div>
       <div class="block-desc">No any, explicit returns, union types over enums, no non-null assertions.</div>
       <div class="block-install">
-        <span><span class="cmd">devw add</span> typescript-strict</span>
-        <button class="block-copy" aria-label="Copy install command" onclick="copyBlock(this, 'devw add typescript-strict')">
+        <span><span class="cmd">devw add</span> typescript/strict</span>
+        <button class="block-copy" aria-label="Copy install command" onclick="copyBlock(this, 'devw add typescript/strict')">
           <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
           <svg aria-hidden="true" class="check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
         </button>
       </div>
     </div>
     <div class="block-card">
-      <div class="block-name">react-conventions</div>
+      <div class="block-name">javascript/react</div>
       <div class="block-desc">Hooks rules, component patterns, naming conventions, prop types.</div>
       <div class="block-install">
-        <span><span class="cmd">devw add</span> react-conventions</span>
-        <button class="block-copy" aria-label="Copy install command" onclick="copyBlock(this, 'devw add react-conventions')">
+        <span><span class="cmd">devw add</span> javascript/react</span>
+        <button class="block-copy" aria-label="Copy install command" onclick="copyBlock(this, 'devw add javascript/react')">
           <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
           <svg aria-hidden="true" class="check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
         </button>
       </div>
     </div>
     <div class="block-card">
-      <div class="block-name">nextjs-approuter</div>
+      <div class="block-name">javascript/nextjs</div>
       <div class="block-desc">App Router patterns, RSC boundaries, server actions, metadata API.</div>
       <div class="block-install">
-        <span><span class="cmd">devw add</span> nextjs-approuter</span>
-        <button class="block-copy" aria-label="Copy install command" onclick="copyBlock(this, 'devw add nextjs-approuter')">
+        <span><span class="cmd">devw add</span> javascript/nextjs</span>
+        <button class="block-copy" aria-label="Copy install command" onclick="copyBlock(this, 'devw add javascript/nextjs')">
           <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
           <svg aria-hidden="true" class="check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
         </button>
       </div>
     </div>
     <div class="block-card">
-      <div class="block-name">tailwind</div>
+      <div class="block-name">css/tailwind</div>
       <div class="block-desc">Utility-first, no custom CSS, design tokens, responsive patterns.</div>
       <div class="block-install">
-        <span><span class="cmd">devw add</span> tailwind</span>
-        <button class="block-copy" aria-label="Copy install command" onclick="copyBlock(this, 'devw add tailwind')">
+        <span><span class="cmd">devw add</span> css/tailwind</span>
+        <button class="block-copy" aria-label="Copy install command" onclick="copyBlock(this, 'devw add css/tailwind')">
           <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
           <svg aria-hidden="true" class="check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
         </button>
       </div>
     </div>
     <div class="block-card">
-      <div class="block-name">supabase-rls</div>
+      <div class="block-name">security/supabase-rls</div>
       <div class="block-desc">RLS enforcement on every table, auth patterns, security policies.</div>
       <div class="block-install">
-        <span><span class="cmd">devw add</span> supabase-rls</span>
-        <button class="block-copy" aria-label="Copy install command" onclick="copyBlock(this, 'devw add supabase-rls')">
+        <span><span class="cmd">devw add</span> security/supabase-rls</span>
+        <button class="block-copy" aria-label="Copy install command" onclick="copyBlock(this, 'devw add security/supabase-rls')">
           <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
           <svg aria-hidden="true" class="check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
         </button>
       </div>
     </div>
     <div class="block-card">
-      <div class="block-name">testing-basics</div>
+      <div class="block-name">testing/vitest</div>
       <div class="block-desc">Test naming, coverage expectations, mock patterns, arrange-act-assert.</div>
       <div class="block-install">
-        <span><span class="cmd">devw add</span> testing-basics</span>
-        <button class="block-copy" aria-label="Copy install command" onclick="copyBlock(this, 'devw add testing-basics')">
+        <span><span class="cmd">devw add</span> testing/vitest</span>
+        <button class="block-copy" aria-label="Copy install command" onclick="copyBlock(this, 'devw add testing/vitest')">
           <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
           <svg aria-hidden="true" class="check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
         </button>
@@ -1838,12 +1866,12 @@ rules:
 <section class="proof-strip reveal">
   <div class="proof-items">
     <div class="proof-item">
-      <div class="proof-num">137</div>
+      <div class="proof-num">243</div>
       <div class="proof-label">Tests passing</div>
     </div>
     <div class="proof-item">
       <div class="proof-num">6</div>
-      <div class="proof-label">Rule blocks</div>
+      <div class="proof-label">Registry rules</div>
     </div>
     <div class="proof-item">
       <div class="proof-num">5</div>

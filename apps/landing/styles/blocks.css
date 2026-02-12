@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════
-   BLOCKS
+   REGISTRY / BLOCKS
    ═══════════════════════════════════════ */
 .blocks-section {
   padding-bottom: 120px;
@@ -7,6 +7,47 @@
 .blocks-header { text-align: center; margin-bottom: 48px; }
 .blocks-header .section-sub { margin: 0 auto; }
 
+/* ── Registry demo ── */
+.registry-demo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 40px;
+}
+.registry-panel {
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg-code);
+  overflow: hidden;
+}
+.registry-bar {
+  padding: 10px 16px;
+  background: var(--bg-raised);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.registry-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+.registry-body {
+  padding: 16px 20px;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  line-height: 1.9;
+  color: var(--text-secondary);
+}
+.reg-line .term-prompt { color: var(--accent); }
+.reg-line .term-cmd { color: var(--text); font-weight: 600; }
+.reg-line .term-success { color: var(--accent); }
+.reg-line .term-val { color: #8b9fcc; }
+.reg-line .term-muted { color: var(--text-muted); }
+.reg-line .term-file { color: #ffaa44; }
+
+/* ── Rule cards grid ── */
 .blocks-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -95,6 +136,7 @@
    RESPONSIVE
    ═══════════════════════════════════════ */
 @media (max-width: 900px) {
+  .registry-demo { grid-template-columns: 1fr; }
   .blocks-grid { grid-template-columns: 1fr 1fr; }
 }
 @media (max-width: 600px) {

@@ -1,48 +1,71 @@
 ---
 title: "devw add"
-description: "Install a prebuilt rule block"
+description: "Add rules from the dev-workflows registry"
 ---
 
 ```bash
-devw add <block>
+devw add [category/rule]
 ```
 
-Installs a prebuilt rule block into your `.dwf/rules/` files and auto-compiles.
+Adds rules from the official dev-workflows registry. Supports both interactive and direct modes.
 
-## Behavior
+## Interactive Mode
 
-1. Loads the block from the internal registry
-2. Merges rules into the corresponding scope files
-3. Adds the block ID to `config.yml > blocks[]`
-4. Runs `devw compile` automatically
+Running `devw add` without arguments launches an interactive flow:
+
+1. Browse categories from the registry
+2. Select rules to install (with back navigation)
+3. Optionally add rules from multiple categories
+4. Review a summary and confirm
+5. Rules are downloaded, converted to YAML, and compiled
+
+Rules already installed are shown with an `(already installed)` indicator.
+
+## Direct Mode
+
+```bash
+devw add typescript/strict
+```
+
+Downloads and installs a specific rule by path. If the rule already exists at the same version, reports "Already up to date".
 
 ## Flags
 
 | Flag | Description |
 |------|-------------|
-| `--list` | List all available blocks |
+| `--list [category]` | List available rules from the registry |
 | `--no-compile` | Skip auto-compile after adding |
+| `--force` | Overwrite existing rules without asking |
+| `--dry-run` | Show output without writing files |
 
 ## Examples
 
 ```bash
-# List available blocks
+# Interactive — browse and select rules
+devw add
+
+# Install a specific rule
+devw add typescript/strict
+
+# List all available rules
 devw add --list
 
-# Install a block
-devw add typescript-strict
+# Preview what would be written
+devw add javascript/react --dry-run
 
-# Install without auto-compiling
-devw add react-conventions --no-compile
+# Force overwrite without confirmation
+devw add css/tailwind --force
 ```
 
-## Available Blocks
+## Available Rules
 
-| Block | Scope | Description |
-|-------|-------|-------------|
-| `typescript-strict` | conventions | No any, explicit returns, union types over enums |
-| `react-conventions` | conventions | Hooks rules, component patterns, naming |
-| `nextjs-approuter` | architecture | App Router, RSC, server actions |
-| `tailwind` | conventions | Utility-first, no custom CSS, design tokens |
-| `testing-basics` | testing | Test naming, coverage, mocks |
-| `supabase-rls` | security | RLS enforcement, auth patterns |
+Rules are organized by category. Run `devw add --list` for the latest list.
+
+| Rule | Category | Description |
+|------|----------|-------------|
+| `typescript/strict` | TypeScript | Strict TypeScript conventions |
+| `javascript/react` | JavaScript | React conventions and best practices |
+| `javascript/nextjs` | JavaScript | Next.js App Router patterns |
+| `css/tailwind` | CSS | Utility-first Tailwind conventions |
+| `testing/vitest` | Testing | Vitest testing patterns |
+| `security/supabase-rls` | Security | Supabase RLS enforcement |
