@@ -12,7 +12,7 @@ function copyInstall(el) {
 
 function copyBlock(btn, text) {
   navigator.clipboard.writeText(text);
-  trackEvent('copy_command', { command: text, location: 'blocks' });
+  trackEvent('copy_command', { command: text, location: 'registry' });
   btn.classList.add('copied');
   setTimeout(() => btn.classList.remove('copied'), 1500);
 }
