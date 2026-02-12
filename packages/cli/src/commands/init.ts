@@ -165,8 +165,8 @@ async function runInit(options: InitOptions): Promise<void> {
   ui.newline();
   ui.header("What's next");
   ui.newline();
-  console.log(`    1. Browse available rule blocks   ${chalk.cyan('devw add --list')}`);
-  console.log(`    2. Install a block                ${chalk.cyan('devw add typescript-strict')}`);
+  console.log(`    1. Browse available rules         ${chalk.cyan('devw add --list')}`);
+  console.log(`    2. Add a rule                     ${chalk.cyan('devw add <category>/<rule>')}`);
   console.log(`    3. Or write your own rules in     ${chalk.cyan('.dwf/rules/')}`);
   console.log(`    4. When ready, compile            ${chalk.cyan('devw compile')}`);
 }
