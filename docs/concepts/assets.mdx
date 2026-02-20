@@ -1,0 +1,110 @@
+---
+title: "Assets"
+description: "Commands, templates, hooks, and presets for AI-powered workflows"
+---
+
+Assets extend dev-workflows beyond rules. They are static files (Markdown, JSON) that get placed in specific directories during compilation.
+
+## Asset Types
+
+### Commands
+
+Slash commands are Markdown files with prompts that AI editors (like Claude Code) can execute via `/command-name`.
+
+```bash
+devw add command/spec
+devw compile
+# → .claude/commands/spec.md
+```
+
+Commands are stored in `.dwf/assets/commands/` and deployed to `.claude/commands/` with frontmatter stripped.
+
+**Available commands:**
+
+| Command | Description |
+|---------|-------------|
+| `command/spec` | Generate a feature spec through guided questions |
+| `command/plan` | Create an implementation plan from a spec |
+| `command/build` | Execute a plan step by step with verification |
+| `command/learn` | Capture a lesson learned as a project rule |
+
+### Templates
+
+Templates are Markdown files that provide structure for documents like feature specs.
+
+```bash
+devw add template/feature-spec
+devw compile
+# → docs/specs/feature-spec.md
+```
+
+Templates are stored in `.dwf/assets/templates/` and deployed to the path specified in their `output_path` frontmatter field (defaults to `docs/specs/`).
+
+**Available templates:**
+
+| Template | Description |
+|----------|-------------|
+| `template/feature-spec` | Markdown template for feature specifications |
+
+### Hooks
+
+Hooks are JSON files that configure editor behavior (e.g., auto-formatting after edits).
+
+```bash
+devw add hook/auto-format
+devw compile
+# → .claude/settings.local.json (deep-merged)
+```
+
+Hooks are stored in `.dwf/assets/hooks/` and their `settings` object is deep-merged into `.claude/settings.local.json`. Arrays are concatenated, objects are recursively merged.
+
+**Available hooks:**
+
+| Hook | Description |
+|------|-------------|
+| `hook/auto-format` | Auto-format files after AI edits (PostToolUse) |
+
+### Presets
+
+Presets are YAML manifests that bundle multiple rules and assets into a single install.
+
+```bash
+devw add preset/spec-driven
+```
+
+This installs all rules, commands, templates, and hooks listed in the preset.
+
+**Available presets:**
+
+| Preset | Includes |
+|--------|----------|
+| `preset/spec-driven` | `workflow/spec-driven` rule, 4 commands (spec, plan, build, learn), feature-spec template, auto-format hook |
+
+## Asset Lifecycle
+
+1. **Install**: `devw add command/spec` downloads the file to `.dwf/assets/commands/spec.md` and records it in `config.yml`
+2. **Deploy**: `devw compile` copies the file (stripping frontmatter) to the output location
+3. **Remove**: `devw remove command/spec` deletes the source file and removes the config entry
+4. **Verify**: `devw doctor` checks that all registered assets have corresponding files on disk
+
+## Config Format
+
+Assets are tracked in `.dwf/config.yml`:
+
+```yaml
+assets:
+  - type: command
+    name: spec
+    version: 0.1.0
+    installed_at: "2026-02-20T00:00:00Z"
+  - type: template
+    name: feature-spec
+    version: 0.1.0
+    installed_at: "2026-02-20T00:00:00Z"
+  - type: hook
+    name: auto-format
+    version: 0.1.0
+    installed_at: "2026-02-20T00:00:00Z"
+```
+
+The `assets` field is optional and backwards-compatible. Configs without it default to an empty array.

@@ -18,6 +18,7 @@ Rules for AI coding agents, distributed via `devw add`.
 | `workflow/git-conventions` | Workflow | Git workflow and commit conventions | `devw add workflow/git-conventions` |
 | `workflow/debugging` | Workflow | Systematic debugging methodology | `devw add workflow/debugging` |
 | `security/auth-patterns` | Security | Authentication and authorization best practices | `devw add security/auth-patterns` |
+| `workflow/spec-driven` | Workflow | Spec-driven development workflow | `devw add workflow/spec-driven` |
 
 ## Usage
 

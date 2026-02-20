@@ -15,9 +15,12 @@ Runs a series of checks to validate your `.dwf/` setup.
 2. `config.yml` is valid YAML with correct schema
 3. Rule files are valid YAML
 4. No duplicate rule IDs across files
-5. All configured tools have available bridges
-6. Symlinks are valid (if mode is `link`)
-7. Compiled files are in sync with rules (hash comparison)
+5. All scopes have valid format
+6. All configured tools have available bridges
+7. Symlinks are valid (if mode is `link`)
+8. Pulled rule files exist for each config entry
+9. Asset files exist for each config entry
+10. Compiled files are in sync with rules (hash comparison)
 
 ## Output
 
@@ -26,7 +29,10 @@ Runs a series of checks to validate your `.dwf/` setup.
 ✓ config.yml is valid
 ✓ Rule files are valid YAML (12 rules loaded)
 ✓ No duplicate rule IDs
+✓ All scopes have valid format
 ✓ All configured tools have bridges
 - Symlink check skipped (mode: copy)
+✓ Pulled rule files exist (3 entries)
+✓ Asset files exist (6 entries)
 ✗ Compiled files out of sync — run "devw compile"
 ```

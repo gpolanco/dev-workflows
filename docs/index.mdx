@@ -5,7 +5,7 @@ description: "Write rules once, compile to every AI editor"
 
 # Write once, **run everywhere**
 
-A single source of truth for your development rules. Compile to any AI editor.
+A single source of truth for your development rules, slash commands, templates, and hooks. Compile to any AI editor.
 
 ## The Problem
 
@@ -19,7 +19,13 @@ npx dev-workflows add typescript/strict   # install a rule from the registry
 npx dev-workflows compile                 # generate CLAUDE.md, .cursor/rules, GEMINI.md
 ```
 
-Define rules once in YAML, compile to each editor's native format.
+Or bootstrap a complete spec-driven workflow:
+
+```bash
+npx dev-workflows init --preset spec-driven -y
+```
+
+Define rules once in YAML, compile to each editor's native format. Install slash commands, spec templates, and editor hooks from the registry.
 
 <Columns cols={3}>
   <Card title="CLAUDE.md" icon="robot" href="/concepts/bridges">
@@ -55,6 +61,22 @@ Start with battle-tested rules instead of writing from scratch. Browse with `dev
   </Card>
   <Card title="security/supabase-rls" href="/commands/add">
     RLS enforcement, auth patterns
+  </Card>
+</Columns>
+
+## Assets
+
+Beyond rules, install **slash commands**, **spec templates**, and **editor hooks** that power AI-assisted workflows.
+
+<Columns cols={3}>
+  <Card title="Commands" icon="terminal" href="/concepts/assets">
+    /spec, /plan, /build, /learn
+  </Card>
+  <Card title="Templates" icon="file-lines" href="/concepts/assets">
+    Feature spec template
+  </Card>
+  <Card title="Presets" icon="layer-group" href="/concepts/assets">
+    Bundle rules + assets in one install
   </Card>
 </Columns>
 

@@ -1,6 +1,6 @@
 ---
 title: "devw list"
-description: "List rules, blocks, or tools"
+description: "List rules, assets, or tools"
 ---
 
 ```bash
@@ -14,12 +14,18 @@ Shows information about your current configuration.
 | Type | Description |
 |------|-------------|
 | `rules` | All active rules with scope, severity, and source (pulled vs manual) |
-| `blocks` | Deprecated — shows migration message |
+| `assets` | All installed assets (commands, templates, hooks) |
+| `commands` | Installed slash commands only |
+| `templates` | Installed spec templates only |
+| `hooks` | Installed editor hooks only |
 | `tools` | Configured tools with output paths |
+| `blocks` | Deprecated — shows migration message |
 
 ## Examples
 
 ```bash
 devw list rules
+devw list assets
+devw list commands
 devw list tools
 ```

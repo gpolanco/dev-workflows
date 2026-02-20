@@ -16,7 +16,12 @@ description: "Install dev-workflows and compile your first rules in 60 seconds"
     ```
     This creates a `.dwf/` directory with `config.yml` and empty rule files for each scope: architecture, conventions, security, testing, and workflow.
 
-    The CLI detects existing AI tools in your project (CLAUDE.md, .cursor/, GEMINI.md) and pre-selects them.
+    The CLI detects existing AI tools in your project (CLAUDE.md, .cursor/, GEMINI.md, .windsurf/, .github/copilot-instructions.md) and pre-selects them.
+
+    **With a preset** — bootstrap a full spec-driven workflow in one command:
+    ```bash
+    npx dev-workflows init --preset spec-driven -y
+    ```
   </Step>
 
   <Step title="Add rules from the registry (optional)">
@@ -24,24 +29,42 @@ description: "Install dev-workflows and compile your first rules in 60 seconds"
     npx dev-workflows add typescript/strict
     ```
     Installs rules from the GitHub registry into your `.dwf/rules/` directory. Run `devw add --list` to see all available rules, or `devw add` for interactive selection.
+
+    You can also install slash commands, templates, and hooks:
+    ```bash
+    devw add command/spec         # slash command
+    devw add template/feature-spec # spec template
+    devw add hook/auto-format      # editor hook
+    ```
   </Step>
 
   <Step title="Compile">
     ```bash
     npx dev-workflows compile
     ```
-    Generates editor-specific config files:
+    Generates editor-specific config files and deploys assets:
 
     | Tool | Output |
     |------|--------|
     | Claude Code | `CLAUDE.md` |
     | Cursor | `.cursor/rules/devworkflows.mdc` |
     | Gemini CLI | `GEMINI.md` |
+    | Windsurf | `.windsurf/rules/devworkflows.md` |
+    | VS Code Copilot | `.github/copilot-instructions.md` |
+
+    Assets are also deployed:
+
+    | Asset Type | Output |
+    |------------|--------|
+    | Commands | `.claude/commands/*.md` |
+    | Templates | `docs/specs/*.md` |
+    | Hooks | `.claude/settings.local.json` |
   </Step>
 </Steps>
 
 ## What's Next
 
 - Write your own rules in `.dwf/rules/` → [Rules format](/concepts/rules)
+- Learn about assets (commands, templates, hooks) → [Assets](/concepts/assets)
 - Validate your setup → `devw doctor`
 - Browse all commands → [Commands](/commands/init)

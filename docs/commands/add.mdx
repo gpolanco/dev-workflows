@@ -1,13 +1,13 @@
 ---
 title: "devw add"
-description: "Add rules from the dev-workflows registry"
+description: "Add rules, commands, templates, hooks, and presets from the registry"
 ---
 
 ```bash
-devw add [category/rule]
+devw add [category/name]
 ```
 
-Adds rules from the official dev-workflows registry. Supports both interactive and direct modes.
+Adds rules and assets from the official dev-workflows registry. Supports both interactive and direct modes.
 
 ## Interactive Mode
 
@@ -24,10 +24,26 @@ Rules already installed are shown with an `(already installed)` indicator.
 ## Direct Mode
 
 ```bash
-devw add typescript/strict
+devw add typescript/strict       # add a rule
+devw add command/spec            # add a slash command
+devw add template/feature-spec   # add a spec template
+devw add hook/auto-format        # add an editor hook
+devw add preset/spec-driven      # add a preset (bundle)
 ```
 
-Downloads and installs a specific rule by path. If the rule already exists at the same version, reports "Already up to date".
+Downloads and installs a specific rule or asset by path. If the rule already exists at the same version, reports "Already up to date".
+
+## Asset Types
+
+The `category` prefix determines the type:
+
+| Prefix | Type | Destination |
+|--------|------|-------------|
+| `command/` | Slash command | `.dwf/assets/commands/` → `.claude/commands/` |
+| `template/` | Spec template | `.dwf/assets/templates/` → `docs/specs/` |
+| `hook/` | Editor hook | `.dwf/assets/hooks/` → `.claude/settings.local.json` |
+| `preset/` | Bundle | Installs multiple rules + assets at once |
+| _anything else_ | Rule | `.dwf/rules/` → editor configs |
 
 ## Flags
 
@@ -46,6 +62,12 @@ devw add
 
 # Install a specific rule
 devw add typescript/strict
+
+# Install a slash command
+devw add command/spec
+
+# Install a full workflow preset
+devw add preset/spec-driven
 
 # List all available rules
 devw add --list
@@ -69,3 +91,22 @@ Rules are organized by category. Run `devw add --list` for the latest list.
 | `css/tailwind` | CSS | Utility-first Tailwind conventions |
 | `testing/vitest` | Testing | Vitest testing patterns |
 | `security/supabase-rls` | Security | Supabase RLS enforcement |
+| `security/auth-patterns` | Security | Authentication best practices |
+| `frontend/design-guidelines` | Frontend | UI/UX design conventions |
+| `frontend/accessibility` | Frontend | Accessibility (a11y) rules |
+| `frontend/performance` | Frontend | Frontend performance patterns |
+| `workflow/git-conventions` | Workflow | Git commit and branch conventions |
+| `workflow/debugging` | Workflow | Systematic debugging methodology |
+| `workflow/spec-driven` | Workflow | Spec-driven development workflow |
+
+## Available Assets
+
+| Asset | Type | Description |
+|-------|------|-------------|
+| `command/spec` | Command | Generate a feature spec through guided questions |
+| `command/plan` | Command | Create an implementation plan from a spec |
+| `command/build` | Command | Execute a plan step by step with verification |
+| `command/learn` | Command | Capture a lesson learned as a project rule |
+| `template/feature-spec` | Template | Markdown template for feature specifications |
+| `hook/auto-format` | Hook | Auto-format files after AI edits |
+| `preset/spec-driven` | Preset | Complete spec-driven development workflow |

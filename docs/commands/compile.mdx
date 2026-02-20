@@ -7,7 +7,7 @@ description: "Compile .dwf/ rules into editor-specific config files"
 devw compile
 ```
 
-Reads your `.dwf/` rules and generates output for each configured tool using the appropriate bridge.
+Reads your `.dwf/` rules and generates output for each configured tool using the appropriate bridge. Also deploys installed assets (commands, templates, hooks).
 
 ## Output by Tool
 
@@ -16,6 +16,18 @@ Reads your `.dwf/` rules and generates output for each configured tool using the
 | Claude Code | `CLAUDE.md` |
 | Cursor | `.cursor/rules/devworkflows.mdc` |
 | Gemini CLI | `GEMINI.md` |
+| Windsurf | `.windsurf/rules/devworkflows.md` |
+| VS Code Copilot | `.github/copilot-instructions.md` |
+
+## Asset Deployment
+
+During compilation, installed assets are also deployed:
+
+| Asset Type | Source | Output |
+|------------|--------|--------|
+| Commands | `.dwf/assets/commands/*.md` | `.claude/commands/*.md` (frontmatter stripped) |
+| Templates | `.dwf/assets/templates/*.md` | `docs/specs/*.md` (frontmatter stripped) |
+| Hooks | `.dwf/assets/hooks/*.json` | `.claude/settings.local.json` (deep-merged) |
 
 ## Flags
 
@@ -27,7 +39,7 @@ Reads your `.dwf/` rules and generates output for each configured tool using the
 
 ## Markers
 
-When compiling to markdown-based outputs (CLAUDE.md, GEMINI.md), the generated content is wrapped in `<!-- BEGIN dev-workflows -->` and `<!-- END dev-workflows -->` markers.
+When compiling to markdown-based outputs (CLAUDE.md, GEMINI.md, .github/copilot-instructions.md), the generated content is wrapped in `<!-- BEGIN dev-workflows -->` and `<!-- END dev-workflows -->` markers.
 
 This means you can have **manual content** in your CLAUDE.md and dev-workflows will only replace the section between markers. Your hand-written rules are preserved.
 
