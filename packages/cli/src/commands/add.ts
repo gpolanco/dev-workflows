@@ -4,14 +4,15 @@ import type { Command } from 'commander';
 import chalk from 'chalk';
 import { stringify, parse } from 'yaml';
 import { select, checkbox, confirm } from '@inquirer/prompts';
-import { fetchRawContent, listDirectory } from '../utils/github.js';
+import { fetchRawContent, fetchContent, listDirectory } from '../utils/github.js';
 import { convert } from '../core/converter.js';
+import { isAssetType, parseAssetFrontmatter } from '../core/assets.js';
 import { fileExists } from '../utils/fs.js';
 import { readConfig } from '../core/parser.js';
 import * as cache from '../utils/cache.js';
 import * as ui from '../utils/ui.js';
 import { ICONS } from '../utils/ui.js';
-import type { PulledEntry } from '../bridges/types.js';
+import type { PulledEntry, AssetEntry, AssetType } from '../bridges/types.js';
 
 const KEBAB_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
@@ -190,6 +191,108 @@ export async function updateConfig(cwd: string, entry: PulledEntry): Promise<voi
 
   doc['pulled'] = pulled;
   await writeFile(configPath, stringify(doc, { lineWidth: 0 }), 'utf-8');
+}
+
+export async function updateConfigAssets(cwd: string, entry: AssetEntry): Promise<void> {
+  const configPath = join(cwd, '.dwf', 'config.yml');
+  const raw = await readFile(configPath, 'utf-8');
+  const doc = parse(raw) as Record<string, unknown>;
+
+  const assets = Array.isArray(doc['assets']) ? (doc['assets'] as AssetEntry[]) : [];
+
+  const existingIdx = assets.findIndex((a) => a.type === entry.type && a.name === entry.name);
+  if (existingIdx >= 0) {
+    assets[existingIdx] = entry;
+  } else {
+    assets.push(entry);
+  }
+
+  doc['assets'] = assets;
+  await writeFile(configPath, stringify(doc, { lineWidth: 0 }), 'utf-8');
+}
+
+function getAssetContentPath(type: AssetType, name: string): string {
+  const ext = type === 'hook' ? 'json' : 'md';
+  return `${type}s/${name}.${ext}`;
+}
+
+export async function downloadAndInstallAsset(
+  cwd: string,
+  type: AssetType,
+  name: string,
+  options: AddOptions,
+): Promise<boolean> {
+  const source = `${type}/${name}`;
+  const ext = type === 'hook' ? 'json' : 'md';
+  const fileName = `${name}.${ext}`;
+  const assetDir = join(cwd, '.dwf', 'assets', `${type}s`);
+  const filePath = join(assetDir, fileName);
+
+  ui.info(`Downloading ${source}...`);
+
+  let content: string;
+  try {
+    content = await fetchContent(getAssetContentPath(type, name));
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    ui.error(msg);
+    process.exitCode = 1;
+    return false;
+  }
+
+  let version = '0.1.0';
+  if (type === 'hook') {
+    try {
+      const parsed = JSON.parse(content) as Record<string, unknown>;
+      if (typeof parsed['version'] === 'string') version = parsed['version'];
+    } catch {
+      // Use default version
+    }
+  } else {
+    const { frontmatter } = parseAssetFrontmatter(content);
+    version = frontmatter.version;
+  }
+
+  if (await fileExists(filePath)) {
+    if (!options.force) {
+      ui.info(`${source} already exists locally`);
+      try {
+        const shouldOverwrite = await confirm({
+          message: 'Overwrite?',
+          default: true,
+        });
+        if (!shouldOverwrite) {
+          ui.error('Cancelled');
+          return false;
+        }
+      } catch {
+        ui.error('Cancelled');
+        return false;
+      }
+    }
+  }
+
+  if (options.dryRun) {
+    ui.newline();
+    ui.header('Dry run — would write:');
+    ui.newline();
+    console.log(chalk.dim(`  .dwf/assets/${type}s/${fileName}`));
+    return false;
+  }
+
+  await mkdir(assetDir, { recursive: true });
+  await writeFile(filePath, content, 'utf-8');
+
+  const entry: AssetEntry = {
+    type,
+    name,
+    version,
+    installed_at: new Date().toISOString(),
+  };
+  await updateConfigAssets(cwd, entry);
+
+  ui.success(`Added ${source} (v${version})`);
+  return true;
 }
 
 async function downloadAndInstall(
@@ -419,6 +522,81 @@ async function runInteractive(cwd: string, options: AddOptions): Promise<void> {
   }
 }
 
+interface PresetManifest {
+  name: string;
+  description: string;
+  version: string;
+  includes: {
+    rules?: string[];
+    commands?: string[];
+    templates?: string[];
+    hooks?: string[];
+  };
+}
+
+export async function installPreset(
+  cwd: string,
+  presetName: string,
+  options: AddOptions,
+): Promise<boolean> {
+  ui.info(`Downloading preset ${presetName}...`);
+
+  let content: string;
+  try {
+    content = await fetchContent(`presets/${presetName}.yml`);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    ui.error(`Preset not found: ${msg}`);
+    process.exitCode = 1;
+    return false;
+  }
+
+  let manifest: PresetManifest;
+  try {
+    manifest = parse(content) as PresetManifest;
+  } catch {
+    ui.error(`Invalid preset YAML: ${presetName}`);
+    process.exitCode = 1;
+    return false;
+  }
+
+  ui.newline();
+  ui.header(`Preset: ${manifest.name}`);
+  if (manifest.description) {
+    ui.info(manifest.description);
+  }
+  ui.newline();
+
+  const noCompileOptions: AddOptions = { ...options, noCompile: true };
+  let anyAdded = false;
+
+  const rules = manifest.includes.rules ?? [];
+  for (const rule of rules) {
+    const added = await downloadAndInstall(cwd, rule.split('/')[0] ?? '', rule.split('/')[1] ?? rule, noCompileOptions);
+    if (added) anyAdded = true;
+  }
+
+  const commands = manifest.includes.commands ?? [];
+  for (const cmd of commands) {
+    const added = await downloadAndInstallAsset(cwd, 'command', cmd, noCompileOptions);
+    if (added) anyAdded = true;
+  }
+
+  const templates = manifest.includes.templates ?? [];
+  for (const tmpl of templates) {
+    const added = await downloadAndInstallAsset(cwd, 'template', tmpl, noCompileOptions);
+    if (added) anyAdded = true;
+  }
+
+  const hooks = manifest.includes.hooks ?? [];
+  for (const hook of hooks) {
+    const added = await downloadAndInstallAsset(cwd, 'hook', hook, noCompileOptions);
+    if (added) anyAdded = true;
+  }
+
+  return anyAdded;
+}
+
 async function runAdd(ruleArg: string | undefined, options: AddOptions): Promise<void> {
   if (options.list) {
     await runList(ruleArg);
@@ -461,6 +639,25 @@ async function runAdd(ruleArg: string | undefined, options: AddOptions): Promise
   }
 
   const { category, name } = parsed;
+
+  if (category === 'preset') {
+    const anyAdded = await installPreset(cwd, name, options);
+    if (anyAdded && !options.noCompile) {
+      const { runCompileFromAdd } = await import('./compile.js');
+      await runCompileFromAdd();
+    }
+    return;
+  }
+
+  if (isAssetType(category)) {
+    const added = await downloadAndInstallAsset(cwd, category, name, options);
+    if (added && !options.noCompile) {
+      const { runCompileFromAdd } = await import('./compile.js');
+      await runCompileFromAdd();
+    }
+    return;
+  }
+
   const added = await downloadAndInstall(cwd, category, name, options);
 
   if (added && !options.noCompile) {

@@ -44,7 +44,7 @@ async function runWatch(options: WatchOptions): Promise<void> {
     return;
   }
 
-  const watcher = chokidar.watch(['**/*.yml', '**/*.yaml'], {
+  const watcher = chokidar.watch(['**/*.yml', '**/*.yaml', 'assets/**/*.md', 'assets/**/*.json'], {
     cwd: dwfDir,
     ignoreInitial: true,
     awaitWriteFinish: { stabilityThreshold: 100, pollInterval: 50 },

@@ -1,7 +1,8 @@
 import { readFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { parse } from 'yaml';
-import type { Rule, ProjectConfig, PulledEntry } from '../bridges/types.js';
+import type { Rule, ProjectConfig, PulledEntry, AssetEntry, AssetType } from '../bridges/types.js';
+import { ASSET_TYPE } from '../bridges/types.js';
 import { isValidScope } from './schema.js';
 
 interface RawRule {
@@ -68,6 +69,20 @@ export async function readConfig(cwd: string): Promise<ProjectConfig> {
         .filter((p) => p.path !== '')
     : [];
 
+  const assetTypeValues = new Set<string>(Object.values(ASSET_TYPE));
+  const assetsRaw = doc['assets'];
+  const assets: AssetEntry[] = Array.isArray(assetsRaw)
+    ? assetsRaw
+        .filter((a): a is Record<string, unknown> => a !== null && typeof a === 'object')
+        .map((a) => ({
+          type: (typeof a['type'] === 'string' ? a['type'] : '') as AssetType,
+          name: typeof a['name'] === 'string' ? a['name'] : '',
+          version: typeof a['version'] === 'string' ? a['version'] : '',
+          installed_at: typeof a['installed_at'] === 'string' ? a['installed_at'] : '',
+        }))
+        .filter((a) => a.name !== '' && assetTypeValues.has(a.type))
+    : [];
+
   return {
     version,
     project: { name: projectName, description: projectDescription },
@@ -75,6 +90,7 @@ export async function readConfig(cwd: string): Promise<ProjectConfig> {
     mode: modeRaw,
     blocks,
     pulled,
+    assets,
   };
 }
 

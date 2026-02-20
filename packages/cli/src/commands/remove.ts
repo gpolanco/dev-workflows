@@ -5,9 +5,10 @@ import { parse, stringify } from 'yaml';
 import { checkbox, confirm } from '@inquirer/prompts';
 import { readConfig } from '../core/parser.js';
 import { fileExists } from '../utils/fs.js';
+import { isAssetType, removeAsset } from '../core/assets.js';
 import { validateInput } from './add.js';
 import * as ui from '../utils/ui.js';
-import type { PulledEntry } from '../bridges/types.js';
+import type { PulledEntry, AssetEntry } from '../bridges/types.js';
 
 async function removePulledEntry(cwd: string, path: string): Promise<void> {
   const configPath = join(cwd, '.dwf', 'config.yml');
@@ -16,6 +17,17 @@ async function removePulledEntry(cwd: string, path: string): Promise<void> {
 
   const pulled = Array.isArray(doc['pulled']) ? (doc['pulled'] as PulledEntry[]) : [];
   doc['pulled'] = pulled.filter((p) => p.path !== path);
+
+  await writeFile(configPath, stringify(doc, { lineWidth: 0 }), 'utf-8');
+}
+
+async function removeAssetEntry(cwd: string, type: string, name: string): Promise<void> {
+  const configPath = join(cwd, '.dwf', 'config.yml');
+  const raw = await readFile(configPath, 'utf-8');
+  const doc = parse(raw) as Record<string, unknown>;
+
+  const assets = Array.isArray(doc['assets']) ? (doc['assets'] as AssetEntry[]) : [];
+  doc['assets'] = assets.filter((a) => !(a.type === type && a.name === name));
 
   await writeFile(configPath, stringify(doc, { lineWidth: 0 }), 'utf-8');
 }
@@ -113,7 +125,31 @@ async function runRemove(ruleArg: string | undefined): Promise<void> {
     return;
   }
 
-  const source = `${parsed.category}/${parsed.name}`;
+  const { category, name } = parsed;
+
+  if (isAssetType(category)) {
+    const installed = config.assets.find((a) => a.type === category && a.name === name);
+    if (!installed) {
+      ui.error(
+        `Asset "${category}/${name}" is not installed`,
+        config.assets.length > 0
+          ? `Installed assets: ${config.assets.map((a) => `${a.type}/${a.name}`).join(', ')}`
+          : 'No assets installed',
+      );
+      process.exitCode = 1;
+      return;
+    }
+
+    await removeAsset(cwd, category, name);
+    await removeAssetEntry(cwd, category, name);
+    ui.success(`Removed ${category}/${name}`);
+
+    const { runCompileFromAdd } = await import('./compile.js');
+    await runCompileFromAdd();
+    return;
+  }
+
+  const source = `${category}/${name}`;
   const installed = config.pulled.find((p) => p.path === source);
   if (!installed) {
     ui.error(

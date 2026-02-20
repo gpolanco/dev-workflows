@@ -213,6 +213,7 @@ blocks: []
         mode: 'copy',
         blocks: [],
         pulled: [],
+        assets: [],
       };
 
       const result = checkBridgesAvailable(config);
@@ -227,6 +228,7 @@ blocks: []
         mode: 'copy',
         blocks: [],
         pulled: [],
+        assets: [],
       };
 
       const result = checkBridgesAvailable(config);
@@ -241,6 +243,7 @@ blocks: []
         mode: 'copy',
         blocks: [],
         pulled: [],
+        assets: [],
       };
 
       const result = checkBridgesAvailable(config);
@@ -258,6 +261,7 @@ blocks: []
         mode: 'copy',
         blocks: [],
         pulled: [],
+        assets: [],
       };
 
       const result = await checkSymlinks(tmpDir, config);
@@ -273,6 +277,7 @@ blocks: []
         mode: 'link',
         blocks: [],
         pulled: [],
+        assets: [],
       };
 
       // Create a target file and a symlink pointing to it
@@ -294,6 +299,7 @@ blocks: []
         mode: 'link',
         blocks: [],
         pulled: [],
+        assets: [],
       };
 
       // Create a symlink pointing to a non-existent target

@@ -1,0 +1,16 @@
+{
+  "name": "auto-format",
+  "description": "Auto-format files after AI edits",
+  "version": "0.1.0",
+  "tool": "claude",
+  "settings": {
+    "hooks": {
+      "PostToolUse": [
+        {
+          "matcher": "Write|Edit",
+          "command": "pnpm format || true"
+        }
+      ]
+    }
+  }
+}

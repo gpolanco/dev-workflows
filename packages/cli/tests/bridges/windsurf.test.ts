@@ -21,6 +21,7 @@ const CONFIG: ProjectConfig = {
   mode: 'copy',
   blocks: [],
   pulled: [],
+  assets: [],
 };
 
 describe('windsurfBridge', () => {
