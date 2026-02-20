@@ -25,6 +25,22 @@ export interface ProjectConfig {
   mode: 'copy' | 'link';
   blocks: string[];
   pulled: PulledEntry[];
+  assets: AssetEntry[];
+}
+
+export const ASSET_TYPE = {
+  Command: 'command',
+  Template: 'template',
+  Hook: 'hook',
+} as const;
+
+export type AssetType = typeof ASSET_TYPE[keyof typeof ASSET_TYPE];
+
+export interface AssetEntry {
+  type: AssetType;
+  name: string;
+  version: string;
+  installed_at: string;
 }
 
 export interface Bridge {

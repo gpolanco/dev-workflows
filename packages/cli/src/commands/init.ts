@@ -13,6 +13,7 @@ export interface InitOptions {
   tools?: string;
   mode?: 'copy' | 'link';
   yes?: boolean;
+  preset?: string;
 }
 
 import { BUILTIN_SCOPES } from '../core/schema.js';
@@ -130,9 +131,10 @@ async function runInit(options: InitOptions): Promise<void> {
   }
   const projectName = basename(cwd);
 
-  // Create .dwf/rules/
+  // Create .dwf/rules/ and .dwf/assets/
   const rulesDir = join(dwfDir, 'rules');
   await mkdir(rulesDir, { recursive: true });
+  await mkdir(join(dwfDir, 'assets'), { recursive: true });
 
   // Write config.yml
   const config = {
@@ -169,6 +171,17 @@ async function runInit(options: InitOptions): Promise<void> {
   console.log(`    2. Add a rule                     ${chalk.cyan('devw add <category>/<rule>')}`);
   console.log(`    3. Or write your own rules in     ${chalk.cyan('.dwf/rules/')}`);
   console.log(`    4. When ready, compile            ${chalk.cyan('devw compile')}`);
+
+  if (options.preset) {
+    ui.newline();
+    ui.info(`Installing preset: ${options.preset}...`);
+    const { installPreset } = await import('./add.js');
+    const { runCompileFromAdd } = await import('./compile.js');
+    const anyAdded = await installPreset(cwd, options.preset, { force: true });
+    if (anyAdded) {
+      await runCompileFromAdd();
+    }
+  }
 }
 
 export function registerInitCommand(program: Command): void {
@@ -177,6 +190,7 @@ export function registerInitCommand(program: Command): void {
     .description('Initialize .dwf/ in the current project')
     .option('--tools <tools>', 'Comma-separated list of tools (claude,cursor,gemini)')
     .option('--mode <mode>', 'Output mode: copy or link')
+    .option('--preset <preset>', 'Install a preset after initialization (e.g., spec-driven)')
     .option('-y, --yes', 'Accept all defaults')
     .action((options: InitOptions) => runInit(options));
 }

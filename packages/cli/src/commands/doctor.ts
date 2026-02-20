@@ -9,7 +9,7 @@ import { cursorBridge } from '../bridges/cursor.js';
 import { geminiBridge } from '../bridges/gemini.js';
 import { windsurfBridge } from '../bridges/windsurf.js';
 import { copilotBridge } from '../bridges/copilot.js';
-import type { Bridge, ProjectConfig, PulledEntry, Rule } from '../bridges/types.js';
+import type { Bridge, ProjectConfig, PulledEntry, AssetEntry, Rule } from '../bridges/types.js';
 import { fileExists } from '../utils/fs.js';
 import { isValidScope } from '../core/schema.js';
 import * as ui from '../utils/ui.js';
@@ -210,6 +210,32 @@ export async function checkPulledFilesExist(cwd: string, pulled: PulledEntry[]):
   return { passed: true, message: `Pulled rule files exist (${String(pulled.length)} entries)` };
 }
 
+export async function checkAssetFilesExist(cwd: string, assets: AssetEntry[]): Promise<CheckResult> {
+  if (assets.length === 0) {
+    return { passed: true, message: 'Asset files check skipped (no assets installed)', skipped: true };
+  }
+
+  const missing: string[] = [];
+
+  for (const asset of assets) {
+    const ext = asset.type === 'hook' ? 'json' : 'md';
+    const fileName = `${asset.name}.${ext}`;
+    const filePath = join(cwd, '.dwf', 'assets', `${asset.type}s`, fileName);
+    if (!(await fileExists(filePath))) {
+      missing.push(`${asset.type}/${asset.name}`);
+    }
+  }
+
+  if (missing.length > 0) {
+    return {
+      passed: false,
+      message: `Missing asset files: ${missing.join(', ')}`,
+    };
+  }
+
+  return { passed: true, message: `Asset files exist (${String(assets.length)} entries)` };
+}
+
 export async function checkHashSync(cwd: string, rules: Rule[]): Promise<CheckResult> {
   const storedHash = await readStoredHash(cwd);
   if (storedHash === null) {
@@ -303,7 +329,11 @@ async function runDoctor(): Promise<void> {
   const pulledResult = await checkPulledFilesExist(cwd, config!.pulled);
   results.push(pulledResult);
 
-  // Check 9: Hash sync (conditional on compiled files existing)
+  // Check 9: Asset files exist
+  const assetResult = await checkAssetFilesExist(cwd, config!.assets);
+  results.push(assetResult);
+
+  // Check 10: Hash sync (conditional on compiled files existing)
   const hashResult = await checkHashSync(cwd, rules);
   results.push(hashResult);
 

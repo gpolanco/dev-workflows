@@ -1,0 +1,15 @@
+name: spec-driven
+description: "Complete spec-driven AI development workflow"
+version: "0.1.0"
+includes:
+  rules:
+    - workflow/spec-driven
+  commands:
+    - spec
+    - plan
+    - build
+    - learn
+  templates:
+    - feature-spec
+  hooks:
+    - auto-format

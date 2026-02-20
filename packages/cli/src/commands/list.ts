@@ -9,6 +9,7 @@ import { geminiBridge } from '../bridges/gemini.js';
 import { windsurfBridge } from '../bridges/windsurf.js';
 import { copilotBridge } from '../bridges/copilot.js';
 import type { Bridge } from '../bridges/types.js';
+import { ASSET_TYPE } from '../bridges/types.js';
 import * as ui from '../utils/ui.js';
 import { ICONS } from '../utils/ui.js';
 
@@ -88,9 +89,34 @@ async function listTools(): Promise<void> {
   }
 }
 
+async function listAssets(typeFilter?: string): Promise<void> {
+  const cwd = process.cwd();
+  if (!(await ensureConfig(cwd))) return;
+
+  const config = await readConfig(cwd);
+
+  const filtered = typeFilter
+    ? config.assets.filter((a) => a.type === typeFilter || `${a.type}s` === typeFilter)
+    : config.assets;
+
+  if (filtered.length === 0) {
+    const label = typeFilter ?? 'assets';
+    ui.warn(`No ${label} installed`);
+    ui.info('Run devw add command/<name> or devw add preset/<name> to install');
+    return;
+  }
+
+  const label = typeFilter ?? 'assets';
+  ui.header(`Installed ${label} (${String(filtered.length)})`);
+  ui.newline();
+  for (const asset of filtered) {
+    console.log(`    ${chalk.dim(ICONS.bullet)} ${chalk.cyan(asset.type.padEnd(10))} ${chalk.white(asset.name.padEnd(20))} ${chalk.dim(`v${asset.version}`)}`);
+  }
+}
+
 async function runList(subcommand: string | undefined): Promise<void> {
   if (!subcommand) {
-    ui.error('Specify what to list', 'Usage: devw list <rules|blocks|tools>');
+    ui.error('Specify what to list', 'Usage: devw list <rules|tools|assets|commands|templates|hooks>');
     process.exitCode = 1;
     return;
   }
@@ -105,8 +131,20 @@ async function runList(subcommand: string | undefined): Promise<void> {
     case 'tools':
       await listTools();
       break;
+    case 'assets':
+      await listAssets();
+      break;
+    case 'commands':
+      await listAssets(ASSET_TYPE.Command);
+      break;
+    case 'templates':
+      await listAssets(ASSET_TYPE.Template);
+      break;
+    case 'hooks':
+      await listAssets(ASSET_TYPE.Hook);
+      break;
     default:
-      ui.error(`Unknown list type "${subcommand}"`, 'Usage: devw list <rules|blocks|tools>');
+      ui.error(`Unknown list type "${subcommand}"`, 'Usage: devw list <rules|tools|assets|commands|templates|hooks>');
       process.exitCode = 1;
   }
 }
@@ -114,7 +152,7 @@ async function runList(subcommand: string | undefined): Promise<void> {
 export function registerListCommand(program: Command): void {
   program
     .command('list')
-    .argument('[type]', 'What to list: rules, blocks, or tools')
-    .description('List rules, installed blocks, or configured tools')
+    .argument('[type]', 'What to list: rules, tools, assets, commands, templates, hooks')
+    .description('List rules, configured tools, or installed assets')
     .action((type: string | undefined) => runList(type));
 }

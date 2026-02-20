@@ -4,6 +4,7 @@ import type { Command } from 'commander';
 import chalk from 'chalk';
 import { readConfig, readRules } from '../core/parser.js';
 import { computeRulesHash, writeHash } from '../core/hash.js';
+import { deployAssets } from '../core/assets.js';
 import type { Bridge } from '../bridges/types.js';
 import { claudeBridge } from '../bridges/claude.js';
 import { cursorBridge } from '../bridges/cursor.js';
@@ -32,6 +33,7 @@ export interface BridgeResult {
 export interface CompileResult {
   results: BridgeResult[];
   activeRuleCount: number;
+  assetPaths: string[];
   elapsedMs: number;
 }
 
@@ -139,13 +141,17 @@ export async function executePipeline(options: PipelineOptions): Promise<Compile
     }
   }
 
+  let assetPaths: string[] = [];
   if (write) {
     const hash = computeRulesHash(activeRules);
     await writeHash(cwd, hash);
+
+    const assetResult = await deployAssets(cwd, config);
+    assetPaths = assetResult.deployed;
   }
 
   const elapsedMs = performance.now() - startTime;
-  return { results, activeRuleCount: activeRules.length, elapsedMs };
+  return { results, activeRuleCount: activeRules.length, assetPaths, elapsedMs };
 }
 
 async function runCompile(options: CompileOptions): Promise<void> {
@@ -182,11 +188,12 @@ async function runCompile(options: CompileOptions): Promise<void> {
 
     const result = await executePipeline({ cwd, tool: options.tool });
     const writtenPaths = result.results.filter((r) => r.success).map((r) => r.outputPath);
+    const allPaths = [...writtenPaths, ...result.assetPaths];
 
     ui.newline();
-    ui.success(`Compiled ${String(result.activeRuleCount)} rules ${ICONS.arrow} ${String(writtenPaths.length)} file${writtenPaths.length !== 1 ? 's' : ''} ${ui.timing(result.elapsedMs)}`);
+    ui.success(`Compiled ${String(result.activeRuleCount)} rules ${ICONS.arrow} ${String(allPaths.length)} file${allPaths.length !== 1 ? 's' : ''} ${ui.timing(result.elapsedMs)}`);
     ui.newline();
-    ui.list(writtenPaths);
+    ui.list(allPaths);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     ui.error(message);
