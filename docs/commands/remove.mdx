@@ -1,34 +1,48 @@
 ---
 title: "devw remove"
-description: "Remove an installed rule"
+description: "Remove an installed rule or asset"
 ---
 
 ```bash
-devw remove [category/rule]
+devw remove [category/name]
 ```
 
-Removes a rule that was installed via `devw add` and recompiles.
+Removes a rule or asset that was installed via `devw add` and recompiles.
 
 ## Interactive Mode
 
 Running `devw remove` without arguments shows installed rules and lets you select which to remove.
 
+> Note: interactive mode only lists rules. To remove an asset, use the direct form.
+
 ## Direct Mode
 
 ```bash
+# Remove a rule
 devw remove typescript/strict
+
+# Remove an asset
+devw remove command/spec
+devw remove template/feature-spec
+devw remove hook/auto-format
 ```
 
-Removes the rule file (`pulled-typescript-strict.yml`) and updates `config.yml`.
+Removes the file from `.dwf/rules/` or `.dwf/assets/<type>s/` and updates `config.yml`. Recompiles automatically.
 
 ## Examples
 
 ```bash
+# Interactive — select rules to remove
+devw remove
+
 # Remove a specific rule
 devw remove typescript/strict
 
-# Interactive — select rules to remove
-devw remove
+# Remove a slash command
+devw remove command/spec
+
+# Remove an editor hook
+devw remove hook/auto-format
 ```
 
 Rules added manually (not via `devw add`) are not affected.

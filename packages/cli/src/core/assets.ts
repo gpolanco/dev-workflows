@@ -5,6 +5,7 @@ import type { AssetType, ProjectConfig } from '../bridges/types.js';
 import { ASSET_TYPE } from '../bridges/types.js';
 import { fileExists } from '../utils/fs.js';
 import { mergeSettingsFile, type JsonValue } from './settings-merge.js';
+import * as ui from '../utils/ui.js';
 
 const ASSET_TYPE_VALUES = new Set<string>(Object.values(ASSET_TYPE));
 
@@ -139,6 +140,9 @@ export async function deployTemplates(cwd: string, _config: ProjectConfig): Prom
     const content = await readFile(join(templatesDir, file), 'utf-8');
     const { frontmatter, body } = parseAssetFrontmatter(content);
     const outputPath = frontmatter.output_path ?? 'docs/specs';
+    if (!frontmatter.output_path) {
+      ui.warn(`Template "${file}" has no output_path — deploying to default: ${outputPath}/`);
+    }
     const outputDir = join(cwd, outputPath);
     await mkdir(outputDir, { recursive: true });
     await writeFile(join(outputDir, file), body.trimStart(), 'utf-8');

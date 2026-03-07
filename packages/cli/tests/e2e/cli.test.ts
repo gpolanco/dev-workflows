@@ -196,7 +196,7 @@ rules:
     const result = await run(['add', 'typescript-strict'], tmpDir);
 
     assert.equal(result.exitCode, 1);
-    assert.ok(result.stderr.includes('Block format is no longer supported'));
+    assert.ok(result.stderr.includes('is no longer supported'));
   });
 
   it('add with invalid format exits with error', async () => {
@@ -213,7 +213,7 @@ rules:
     const result = await run(['remove'], tmpDir);
 
     assert.equal(result.exitCode, 0);
-    assert.ok(result.stdout.includes('No rules installed'));
+    assert.ok(result.stdout.includes('Nothing installed to remove'));
   });
 
   it('remove with old block format exits with error', async () => {
@@ -221,7 +221,7 @@ rules:
     const result = await run(['remove', 'typescript-strict'], tmpDir);
 
     assert.equal(result.exitCode, 1);
-    assert.ok(result.stderr.includes('Block format is no longer supported'));
+    assert.ok(result.stderr.includes('is no longer supported'));
   });
 
   it('remove non-installed rule exits with error', async () => {

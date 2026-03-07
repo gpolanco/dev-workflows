@@ -4,7 +4,7 @@ import type { Command } from 'commander';
 import chalk from 'chalk';
 import { stringify, parse } from 'yaml';
 import { select, checkbox, confirm } from '@inquirer/prompts';
-import { fetchRawContent, fetchContent, listDirectory } from '../utils/github.js';
+import { fetchRawContent, fetchContent, listDirectory, listContentDirectory } from '../utils/github.js';
 import { convert } from '../core/converter.js';
 import { isAssetType, parseAssetFrontmatter } from '../core/assets.js';
 import { fileExists } from '../utils/fs.js';
@@ -65,38 +65,39 @@ export async function fetchRegistry(cwd: string): Promise<CachedRegistry | null>
     return null;
   }
 
-  const categories: CachedRegistry['categories'] = [];
+  const dirs = topLevel.filter((e) => e.type === 'dir');
 
-  for (const entry of topLevel) {
-    if (entry.type !== 'dir') continue;
+  const categoryResults = await Promise.all(
+    dirs.map(async (entry) => {
+      try {
+        const files = await listDirectory(entry.name);
+        const ruleFiles = files.filter((f) => f.type === 'file');
 
-    try {
-      const files = await listDirectory(entry.name);
-      const rules: Array<{ name: string; description: string }> = [];
+        const rules = await Promise.all(
+          ruleFiles.map(async (file) => {
+            try {
+              const content = await fetchRawContent(`${entry.name}/${file.name}`);
+              const fmMatch = /^---\n([\s\S]*?)\n---/.exec(content);
+              if (fmMatch?.[1]) {
+                const fm = parse(fmMatch[1]) as Record<string, unknown>;
+                const description = typeof fm['description'] === 'string' ? fm['description'] : '';
+                return { name: file.name, description };
+              }
+              return { name: file.name, description: '' };
+            } catch {
+              return { name: file.name, description: '' };
+            }
+          }),
+        );
 
-      for (const file of files) {
-        if (file.type !== 'file') continue;
-        try {
-          const content = await fetchRawContent(`${entry.name}/${file.name}`);
-          const fmMatch = /^---\n([\s\S]*?)\n---/.exec(content);
-          if (fmMatch?.[1]) {
-            const fm = parse(fmMatch[1]) as Record<string, unknown>;
-            const description = typeof fm['description'] === 'string' ? fm['description'] : '';
-            rules.push({ name: file.name, description });
-          }
-        } catch {
-          rules.push({ name: file.name, description: '' });
-        }
+        return rules.length > 0 ? { name: entry.name, rules } : null;
+      } catch {
+        return null;
       }
+    }),
+  );
 
-      if (rules.length > 0) {
-        categories.push({ name: entry.name, rules });
-      }
-    } catch {
-      // Skip categories that fail to list
-    }
-  }
-
+  const categories = categoryResults.filter((c): c is NonNullable<typeof c> => c !== null);
   const registry: CachedRegistry = { categories };
   await cache.set(cwd, 'registry', registry);
   return registry;
@@ -137,6 +138,38 @@ async function runList(categoryFilter: string | undefined): Promise<void> {
   }
 
   console.log(`  ${chalk.dim(`Add a rule:  devw add <category>/<rule>`)}`);
+
+  // Show available assets if not filtering by category
+  if (!categoryFilter) {
+    const assetTypes = ['commands', 'templates', 'hooks', 'presets'] as const;
+    const assetResults = await Promise.allSettled(
+      assetTypes.map((dir) => listContentDirectory(dir)),
+    );
+
+    const hasAnyAssets = assetResults.some(
+      (r) => r.status === 'fulfilled' && r.value.some((e) => e.type === 'file'),
+    );
+
+    if (hasAnyAssets) {
+      ui.newline();
+      ui.header('Available assets');
+      ui.newline();
+      for (let i = 0; i < assetTypes.length; i++) {
+        const type = assetTypes[i]!;
+        const result = assetResults[i]!;
+        if (result.status !== 'fulfilled') continue;
+        const names = result.value.filter((e) => e.type === 'file').map((e) => e.name);
+        if (names.length === 0) continue;
+        const singular = type.replace(/s$/, '');
+        console.log(`  ${chalk.cyan(`${singular}/`)}`);
+        for (const name of names) {
+          console.log(`    ${chalk.white(name)}`);
+        }
+        ui.newline();
+      }
+      console.log(`  ${chalk.dim(`Add an asset: devw add command/<name>`)}`);
+    }
+  }
 }
 
 export function generateYamlOutput(
@@ -388,7 +421,94 @@ async function downloadAndInstall(
   return true;
 }
 
+async function runInteractiveAsset(cwd: string, options: AddOptions): Promise<void> {
+  let assetType: AssetType | 'preset';
+  try {
+    assetType = await select<AssetType | 'preset'>({
+      message: 'Asset type',
+      choices: [
+        { name: 'command  — Slash commands for Claude Code', value: 'command' },
+        { name: 'template — Spec and document templates', value: 'template' },
+        { name: 'hook     — Editor hooks (auto-format, etc.)', value: 'hook' },
+        { name: 'preset   — Bundle of rules + assets', value: 'preset' },
+      ],
+    });
+  } catch {
+    ui.error('Cancelled');
+    return;
+  }
+
+  ui.info(`Fetching available ${assetType}s from GitHub...`);
+
+  let names: string[];
+  try {
+    const entries = await listContentDirectory(`${assetType}s`);
+    names = entries.filter((e) => e.type === 'file').map((e) => e.name);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    ui.error(`Could not fetch ${assetType} list: ${msg}`);
+    process.exitCode = 1;
+    return;
+  }
+
+  if (names.length === 0) {
+    ui.warn(`No ${assetType}s available in registry`);
+    return;
+  }
+
+  let selected: string[];
+  try {
+    selected = await checkbox<string>({
+      message: `Select ${assetType}s to install`,
+      choices: names.map((name) => ({ name, value: name })),
+    });
+  } catch {
+    ui.error('Cancelled');
+    return;
+  }
+
+  if (selected.length === 0) {
+    ui.warn('No assets selected');
+    return;
+  }
+
+  let anyAdded = false;
+  for (const name of selected) {
+    if (assetType === 'preset') {
+      const added = await installPreset(cwd, name, options);
+      if (added) anyAdded = true;
+    } else {
+      const added = await downloadAndInstallAsset(cwd, assetType, name, options);
+      if (added) anyAdded = true;
+    }
+  }
+
+  if (anyAdded && !options.noCompile) {
+    const { runCompileFromAdd } = await import('./compile.js');
+    await runCompileFromAdd();
+  }
+}
+
 async function runInteractive(cwd: string, options: AddOptions): Promise<void> {
+  let mode: 'rules' | 'assets';
+  try {
+    mode = await select<'rules' | 'assets'>({
+      message: 'What do you want to add?',
+      choices: [
+        { name: 'Rules    — Install rules from the registry', value: 'rules' },
+        { name: 'Assets   — Commands, templates, hooks, presets', value: 'assets' },
+      ],
+    });
+  } catch {
+    ui.error('Cancelled');
+    return;
+  }
+
+  if (mode === 'assets') {
+    await runInteractiveAsset(cwd, options);
+    return;
+  }
+
   const registry = await fetchRegistry(cwd);
   if (!registry) {
     process.exitCode = 1;
@@ -623,7 +743,15 @@ async function runAdd(ruleArg: string | undefined, options: AddOptions): Promise
   }
 
   if (!ruleArg.includes('/')) {
-    ui.error('Block format is no longer supported', 'Use: devw add <category>/<rule>. Run devw add --list to browse.');
+    const dashIdx = ruleArg.indexOf('-');
+    const hint =
+      dashIdx > 0
+        ? `devw add ${ruleArg.slice(0, dashIdx)}/${ruleArg.slice(dashIdx + 1)}`
+        : `devw add <category>/<rule>`;
+    ui.error(
+      `Block format "${ruleArg}" is no longer supported`,
+      `Use category/name format — e.g., ${hint}. Run devw add --list to browse.`,
+    );
     process.exitCode = 1;
     return;
   }
