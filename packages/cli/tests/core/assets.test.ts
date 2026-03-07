@@ -184,7 +184,12 @@ describe('deployHooks', () => {
       version: '0.1.0',
       settings: {
         hooks: {
-          PostToolUse: [{ matcher: 'Write|Edit', command: 'pnpm format || true' }],
+          PostToolUse: [
+            {
+              matcher: 'Write|Edit',
+              hooks: [{ type: 'command', command: 'pnpm format || true' }],
+            },
+          ],
         },
       },
     });
@@ -198,6 +203,8 @@ describe('deployHooks', () => {
     );
     assert.ok(Array.isArray(settings.hooks.PostToolUse));
     assert.equal(settings.hooks.PostToolUse[0].matcher, 'Write|Edit');
+    assert.ok(Array.isArray(settings.hooks.PostToolUse[0].hooks));
+    assert.equal(settings.hooks.PostToolUse[0].hooks[0].type, 'command');
   });
 });
 
