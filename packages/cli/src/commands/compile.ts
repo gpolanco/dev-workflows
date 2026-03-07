@@ -193,7 +193,15 @@ async function runCompile(options: CompileOptions): Promise<void> {
     ui.newline();
     ui.success(`Compiled ${String(result.activeRuleCount)} rules ${ICONS.arrow} ${String(allPaths.length)} file${allPaths.length !== 1 ? 's' : ''} ${ui.timing(result.elapsedMs)}`);
     ui.newline();
-    ui.list(allPaths);
+
+    if (options.verbose && result.assetPaths.length > 0) {
+      ui.list(writtenPaths);
+      ui.newline();
+      console.log(`  ${chalk.dim('Assets deployed:')}`);
+      ui.list(result.assetPaths);
+    } else {
+      ui.list(allPaths);
+    }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     ui.error(message);

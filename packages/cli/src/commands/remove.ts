@@ -2,7 +2,7 @@ import { join } from 'node:path';
 import { readFile, writeFile, unlink } from 'node:fs/promises';
 import type { Command } from 'commander';
 import { parse, stringify } from 'yaml';
-import { checkbox, confirm } from '@inquirer/prompts';
+import { checkbox, confirm, Separator } from '@inquirer/prompts';
 import { readConfig } from '../core/parser.js';
 import { fileExists } from '../utils/fs.js';
 import { isAssetType, removeAsset } from '../core/assets.js';
@@ -63,32 +63,57 @@ async function runRemove(ruleArg: string | undefined): Promise<void> {
   const config = await readConfig(cwd);
 
   if (!ruleArg) {
-    if (config.pulled.length === 0) {
-      ui.warn('No rules installed');
+    const hasRules = config.pulled.length > 0;
+    const hasAssets = config.assets.length > 0;
+
+    if (!hasRules && !hasAssets) {
+      ui.warn('Nothing installed to remove');
       return;
     }
 
-    let selectedRules: string[];
+    type RemoveChoice = { kind: 'rule'; path: string } | { kind: 'asset'; type: string; name: string };
+
+    const choices: (RemoveChoice | Separator)[] = [];
+
+    if (hasRules) {
+      choices.push(new Separator('── Rules ──'));
+      for (const p of config.pulled) {
+        choices.push({ kind: 'rule', path: p.path } as RemoveChoice);
+      }
+    }
+
+    if (hasAssets) {
+      choices.push(new Separator('── Assets ──'));
+      for (const a of config.assets) {
+        choices.push({ kind: 'asset', type: a.type, name: a.name } as RemoveChoice);
+      }
+    }
+
+    let selected: RemoveChoice[];
     try {
-      selectedRules = await checkbox<string>({
-        message: 'Which rules to remove?',
-        choices: config.pulled.map((p) => ({
-          name: `${p.path} (v${p.version})`,
-          value: p.path,
-        })),
+      selected = await checkbox<RemoveChoice>({
+        message: 'Select items to remove',
+        choices: choices.map((c) => {
+          if (c instanceof Separator) return c;
+          if (c.kind === 'rule') {
+            const entry = config.pulled.find((p) => p.path === c.path);
+            return { name: `${c.path} (v${entry?.version ?? '?'})`, value: c };
+          }
+          return { name: `${c.type}/${c.name}`, value: c };
+        }),
       });
     } catch {
       return;
     }
 
-    if (selectedRules.length === 0) {
-      ui.warn('No rules selected');
+    if (selected.length === 0) {
+      ui.warn('Nothing selected');
       return;
     }
 
     try {
       const shouldProceed = await confirm({
-        message: `Remove ${String(selectedRules.length)} rule(s)?`,
+        message: `Remove ${String(selected.length)} item(s)?`,
         default: true,
       });
       if (!shouldProceed) {
@@ -99,9 +124,15 @@ async function runRemove(ruleArg: string | undefined): Promise<void> {
       return;
     }
 
-    for (const path of selectedRules) {
-      await removeRule(cwd, path);
-      ui.success(`Removed ${path}`);
+    for (const item of selected) {
+      if (item.kind === 'rule') {
+        await removeRule(cwd, item.path);
+        ui.success(`Removed ${item.path}`);
+      } else {
+        await removeAsset(cwd, item.type as Parameters<typeof removeAsset>[1], item.name);
+        await removeAssetEntry(cwd, item.type, item.name);
+        ui.success(`Removed ${item.type}/${item.name}`);
+      }
     }
 
     const { runCompileFromAdd } = await import('./compile.js');
@@ -110,7 +141,15 @@ async function runRemove(ruleArg: string | undefined): Promise<void> {
   }
 
   if (!ruleArg.includes('/')) {
-    ui.error('Block format is no longer supported', 'Use: devw remove <category>/<rule>');
+    const dashIdx = ruleArg.indexOf('-');
+    const hint =
+      dashIdx > 0
+        ? `devw remove ${ruleArg.slice(0, dashIdx)}/${ruleArg.slice(dashIdx + 1)}`
+        : `devw remove <category>/<rule>`;
+    ui.error(
+      `Block format "${ruleArg}" is no longer supported`,
+      `Use category/name format — e.g., ${hint}`,
+    );
     process.exitCode = 1;
     return;
   }

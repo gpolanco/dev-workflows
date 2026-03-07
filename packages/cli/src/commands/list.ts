@@ -89,6 +89,19 @@ async function listTools(): Promise<void> {
   }
 }
 
+function getAssetOutputHint(type: string, name: string): string {
+  switch (type) {
+    case ASSET_TYPE.Command:
+      return `.claude/commands/${name}.md`;
+    case ASSET_TYPE.Template:
+      return `docs/specs/${name}.md`;
+    case ASSET_TYPE.Hook:
+      return `.claude/settings.local.json`;
+    default:
+      return '';
+  }
+}
+
 async function listAssets(typeFilter?: string): Promise<void> {
   const cwd = process.cwd();
   if (!(await ensureConfig(cwd))) return;
@@ -110,7 +123,8 @@ async function listAssets(typeFilter?: string): Promise<void> {
   ui.header(`Installed ${label} (${String(filtered.length)})`);
   ui.newline();
   for (const asset of filtered) {
-    console.log(`    ${chalk.dim(ICONS.bullet)} ${chalk.cyan(asset.type.padEnd(10))} ${chalk.white(asset.name.padEnd(20))} ${chalk.dim(`v${asset.version}`)}`);
+    const outputHint = getAssetOutputHint(asset.type, asset.name);
+    console.log(`    ${chalk.dim(ICONS.bullet)} ${chalk.cyan(asset.type.padEnd(10))} ${chalk.white(asset.name.padEnd(20))} ${chalk.dim(`v${asset.version}`)}  ${chalk.dim(ICONS.arrow)} ${chalk.dim(outputHint)}`);
   }
 }
 

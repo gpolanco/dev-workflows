@@ -43,6 +43,5 @@ coverage/
 # Misc
 *.tgz
 .dwf/.cache/
-docs/internal
 openspec/
 .vercel
