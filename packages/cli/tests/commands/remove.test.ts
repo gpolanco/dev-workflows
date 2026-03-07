@@ -6,11 +6,12 @@ import { tmpdir } from 'node:os';
 import { parse, stringify } from 'yaml';
 import { fileExists } from '../../src/utils/fs.js';
 import { readConfig } from '../../src/core/parser.js';
-import type { PulledEntry } from '../../src/bridges/types.js';
+import type { PulledEntry, AssetEntry } from '../../src/bridges/types.js';
 
 async function createProjectWithPulled(
   dir: string,
   pulled: PulledEntry[] = [],
+  assets: AssetEntry[] = [],
 ): Promise<void> {
   await mkdir(join(dir, '.dwf', 'rules'), { recursive: true });
 
@@ -24,6 +25,10 @@ async function createProjectWithPulled(
 
   if (pulled.length > 0) {
     config['pulled'] = pulled;
+  }
+
+  if (assets.length > 0) {
+    config['assets'] = assets;
   }
 
   await writeFile(
@@ -123,6 +128,42 @@ describe('remove command', () => {
     await createProjectWithPulled(tempDir);
     const config = await readConfig(tempDir);
     assert.deepEqual(config.pulled, []);
+  });
+
+  it('removing asset entry from config leaves other assets intact', async () => {
+    const assets: AssetEntry[] = [
+      { type: 'command', name: 'spec', version: '0.1.0', installed_at: '2026-01-01T00:00:00Z' },
+      { type: 'hook', name: 'auto-format', version: '0.1.0', installed_at: '2026-01-01T00:00:00Z' },
+    ];
+    await createProjectWithPulled(tempDir, [], assets);
+
+    const configPath = join(tempDir, '.dwf', 'config.yml');
+    const raw = await readFile(configPath, 'utf-8');
+    const doc = parse(raw) as Record<string, unknown>;
+    const existing = Array.isArray(doc['assets']) ? (doc['assets'] as AssetEntry[]) : [];
+    doc['assets'] = existing.filter((a) => !(a.type === 'command' && a.name === 'spec'));
+    await writeFile(configPath, stringify(doc, { lineWidth: 0 }), 'utf-8');
+
+    const config = await readConfig(tempDir);
+    assert.equal(config.assets.length, 1);
+    assert.equal(config.assets[0]?.type, 'hook');
+    assert.equal(config.assets[0]?.name, 'auto-format');
+  });
+
+  it('project with both pulled rules and assets loads correctly', async () => {
+    const pulled: PulledEntry[] = [
+      { path: 'typescript/strict', version: '0.1.0', pulled_at: '2026-01-01T00:00:00Z' },
+    ];
+    const assets: AssetEntry[] = [
+      { type: 'command', name: 'spec', version: '0.1.0', installed_at: '2026-01-01T00:00:00Z' },
+    ];
+    await createProjectWithPulled(tempDir, pulled, assets);
+
+    const config = await readConfig(tempDir);
+    assert.equal(config.pulled.length, 1);
+    assert.equal(config.assets.length, 1);
+    assert.equal(config.pulled[0]?.path, 'typescript/strict');
+    assert.equal(config.assets[0]?.name, 'spec');
   });
 
   it('validates rule path format', async () => {

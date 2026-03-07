@@ -172,6 +172,39 @@ describe('deployTemplates', () => {
     assert.ok(output.includes('# Feature Spec'));
     assert.ok(!output.includes('---'));
   });
+
+  it('deploys to docs/specs when output_path is missing (fallback)', async () => {
+    const templatesDir = join(tmpDir, '.dwf', 'assets', 'templates');
+    await mkdir(templatesDir, { recursive: true });
+
+    await writeFile(
+      join(templatesDir, 'my-template.md'),
+      '---\nname: my-template\ndescription: No output path\n---\n# My Template',
+    );
+
+    const result = await deployTemplates(tmpDir, CONFIG);
+    assert.equal(result.deployed.length, 1);
+    assert.equal(result.deployed[0], 'docs/specs/my-template.md');
+
+    const output = await readFile(join(tmpDir, 'docs', 'specs', 'my-template.md'), 'utf-8');
+    assert.ok(output.includes('# My Template'));
+  });
+
+  it('deploys template to custom output_path from frontmatter', async () => {
+    const templatesDir = join(tmpDir, '.dwf', 'assets', 'templates');
+    await mkdir(templatesDir, { recursive: true });
+
+    await writeFile(
+      join(templatesDir, 'arch.md'),
+      '---\nname: arch\ndescription: Architecture doc\noutput_path: docs/architecture\n---\n# Architecture',
+    );
+
+    const result = await deployTemplates(tmpDir, CONFIG);
+    assert.equal(result.deployed[0], 'docs/architecture/arch.md');
+
+    const output = await readFile(join(tmpDir, 'docs', 'architecture', 'arch.md'), 'utf-8');
+    assert.ok(output.includes('# Architecture'));
+  });
 });
 
 describe('deployHooks', () => {

@@ -4,9 +4,9 @@ import { mkdtemp, rm, mkdir, writeFile, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { parse } from 'yaml';
-import { validateInput, generateYamlOutput, updateConfig, pluralRules, BACK_VALUE } from '../../src/commands/add.js';
+import { validateInput, generateYamlOutput, updateConfig, updateConfigAssets, pluralRules, BACK_VALUE } from '../../src/commands/add.js';
 import { convert } from '../../src/core/converter.js';
-import type { PulledEntry } from '../../src/bridges/types.js';
+import type { PulledEntry, AssetEntry } from '../../src/bridges/types.js';
 
 const MOCK_MARKDOWN = `---
 name: strict
@@ -219,6 +219,86 @@ tags: []
       assert.ok(Array.isArray(pulled));
       assert.equal(pulled.length, 1);
       assert.equal(pulled[0]?.path, 'typescript/strict');
+    });
+  });
+
+  describe('updateConfigAssets', () => {
+    let tempDir: string;
+
+    beforeEach(async () => {
+      tempDir = await mkdtemp(join(tmpdir(), 'dwf-add-assets-test-'));
+    });
+
+    afterEach(async () => {
+      await rm(tempDir, { recursive: true, force: true });
+    });
+
+    it('adds asset entry to config', async () => {
+      await createProject(tempDir);
+
+      const entry: AssetEntry = {
+        type: 'command',
+        name: 'spec',
+        version: '0.1.0',
+        installed_at: '2026-02-11T00:00:00Z',
+      };
+
+      await updateConfigAssets(tempDir, entry);
+
+      const raw = await readFile(join(tempDir, '.dwf', 'config.yml'), 'utf-8');
+      const doc = parse(raw) as Record<string, unknown>;
+      const assets = doc['assets'] as AssetEntry[];
+      assert.ok(Array.isArray(assets));
+      assert.equal(assets.length, 1);
+      assert.equal(assets[0]?.type, 'command');
+      assert.equal(assets[0]?.name, 'spec');
+    });
+
+    it('replaces asset with same type+name (no duplication)', async () => {
+      await createProject(tempDir, `assets:
+  - type: command
+    name: spec
+    version: "0.1.0"
+    installed_at: "2026-01-01T00:00:00Z"`);
+
+      const updated: AssetEntry = {
+        type: 'command',
+        name: 'spec',
+        version: '0.2.0',
+        installed_at: '2026-02-11T00:00:00Z',
+      };
+
+      await updateConfigAssets(tempDir, updated);
+
+      const raw = await readFile(join(tempDir, '.dwf', 'config.yml'), 'utf-8');
+      const doc = parse(raw) as Record<string, unknown>;
+      const assets = doc['assets'] as AssetEntry[];
+      assert.equal(assets.length, 1);
+      assert.equal(assets[0]?.version, '0.2.0');
+    });
+
+    it('preserves existing assets when adding a different one', async () => {
+      await createProject(tempDir, `assets:
+  - type: command
+    name: spec
+    version: "0.1.0"
+    installed_at: "2026-01-01T00:00:00Z"`);
+
+      const newEntry: AssetEntry = {
+        type: 'hook',
+        name: 'auto-format',
+        version: '0.1.0',
+        installed_at: '2026-02-11T00:00:00Z',
+      };
+
+      await updateConfigAssets(tempDir, newEntry);
+
+      const raw = await readFile(join(tempDir, '.dwf', 'config.yml'), 'utf-8');
+      const doc = parse(raw) as Record<string, unknown>;
+      const assets = doc['assets'] as AssetEntry[];
+      assert.equal(assets.length, 2);
+      assert.ok(assets.some((a) => a.type === 'command' && a.name === 'spec'));
+      assert.ok(assets.some((a) => a.type === 'hook' && a.name === 'auto-format'));
     });
   });
 

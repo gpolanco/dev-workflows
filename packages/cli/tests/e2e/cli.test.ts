@@ -199,6 +199,15 @@ rules:
     assert.ok(result.stderr.includes('is no longer supported'));
   });
 
+  it('add with old block format includes category/name hint in error', async () => {
+    await run(['init', '--tools', 'claude', '--mode', 'copy', '-y'], tmpDir);
+    const result = await run(['add', 'typescript-strict'], tmpDir);
+
+    assert.equal(result.exitCode, 1);
+    // Should suggest typescript/strict based on first dash split
+    assert.ok(result.stderr.includes('typescript/strict'));
+  });
+
   it('add with invalid format exits with error', async () => {
     await run(['init', '--tools', 'claude', '--mode', 'copy', '-y'], tmpDir);
     const result = await run(['add', 'INVALID/FORMAT'], tmpDir);
@@ -222,6 +231,14 @@ rules:
 
     assert.equal(result.exitCode, 1);
     assert.ok(result.stderr.includes('is no longer supported'));
+  });
+
+  it('remove with old block format includes category/name hint in error', async () => {
+    await run(['init', '--tools', 'claude', '--mode', 'copy', '-y'], tmpDir);
+    const result = await run(['remove', 'typescript-strict'], tmpDir);
+
+    assert.equal(result.exitCode, 1);
+    assert.ok(result.stderr.includes('typescript/strict'));
   });
 
   it('remove non-installed rule exits with error', async () => {
