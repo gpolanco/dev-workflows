@@ -11,9 +11,9 @@ CLI tool that compiles developer rules into editor-specific config files (CLAUDE
 
 ## Architecture
 
-- `content/core/` → tool-agnostic source of truth (workflows, skills, templates)
 - `content/rules/` → official rule files (Markdown), fetched from GitHub via `devw add`
-- `packages/cli/src/bridges/` → per-tool adapters that translate core → native format
+- `content/blocks/` → local prebuilt blocks installed via `devw add <block-id>`
+- `packages/cli/src/bridges/` → per-tool adapters that translate rules → native format
 - Bridges only translate. They do not add new intent or logic.
 
 ## Key commands
@@ -30,15 +30,12 @@ devw add --list                 # list available rules
 
 ## Specs (read before implementing)
 
-- `docs/internal/CLI_SPEC.md` → v0.1 specification (COMPLETE)
-- `docs/internal/CLI_SPEC_v0.2.md` → v0.2 specification (COMPLETE)
-- `docs/internal/CLI_SPEC_v0.2.1.md` → v0.2.1 UX polish specification (COMPLETE)
-- `docs/internal/DOCS_SPEC.md` → Mintlify documentation spec (COMPLETE)
-- `docs/internal/WATCH_SPEC.md` → v0.3 watch mode specification (COMPLETE)
-- `docs/internal/PULL_SPEC.md` → v0.4 Pull rules specification (ABSORBED into `devw add`)
-- `docs/internal/DECISIONS.md` → accepted decisions (source of truth if conflict)
-- `docs/internal/` is gitignored — internal specs not published
-
+- `openspec/specs/cli/spec.md` → CLI spec (commands, bridges, UI, registry) — current state
+- `openspec/specs/decisions/spec.md` → accepted decisions (source of truth if conflict)
+- `openspec/specs/docs/spec.md` → Mintlify documentation site spec
+- `openspec/specs/theme/spec.md` → design system for the landing page
+- `openspec/changes/pull-command/tasks.md` → `feat/pull-command` branch state (pending merge)
+- `openspec/` is gitignored — internal specs not published
 
 If a decision is not in the specs, do not implement it. Propose a documentation change first.
 
@@ -55,7 +52,7 @@ If you are on `main`, stop and create a branch before doing anything else.
 
 ## What NOT to do
 
-- Do not add dependencies not listed in `docs/internal/CLI_SPEC.md` without asking.
+- Do not add dependencies not listed in `openspec/specs/cli/spec.md` without asking.
 - Do not create new documentation trees. Update existing docs instead.
 - Do not move files or rename directories unless explicitly instructed.
 
