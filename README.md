@@ -60,14 +60,18 @@ You define rules in YAML and assets in Markdown/JSON. The compiler generates eac
 | `devw watch` | Watch `.dwf/` and recompile on changes |
 | `devw doctor` | Validate config and detect drift |
 | `devw list rules` | List all active rules |
-| `devw list assets` | List installed assets |
+| `devw list assets` | List installed assets (all types) |
+| `devw list commands` | List installed slash commands |
+| `devw list templates` | List installed templates |
+| `devw list hooks` | List installed hooks |
 | `devw list tools` | List configured editors |
+| `devw explain` | Preview what each editor receives without writing files |
 
 ---
 
 ## Rules Registry
 
-Install rules from the registry with `devw add <category>/<rule>`.
+Install rules from the registry with `devw add <category>/<rule>`. Rules support custom scopes using the `kind:name` pattern (e.g., `architecture:api-design`) to organize rules by concern within a file.
 
 | Rule | Description |
 |------|-------------|
