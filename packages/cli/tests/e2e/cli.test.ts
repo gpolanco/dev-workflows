@@ -182,6 +182,14 @@ rules:
     assert.ok(result.stdout.includes('config.yml is valid'));
   });
 
+  it('devw with no args in non-TTY exits 0 and prints usage', async () => {
+    // execFile runs in non-TTY by default — menu should display help instead of prompting
+    const result = await run([], tmpDir);
+
+    assert.equal(result.exitCode, 0);
+    assert.ok(result.stdout.includes('Usage:'));
+  });
+
   it('add without args and non-TTY exits with error', async () => {
     await run(['init', '--tools', 'claude', '--mode', 'copy', '-y'], tmpDir);
     // execFile runs in non-TTY mode by default

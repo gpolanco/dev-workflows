@@ -257,7 +257,7 @@ export async function checkHashSync(cwd: string, rules: Rule[]): Promise<CheckRe
   };
 }
 
-async function runDoctor(): Promise<void> {
+export async function runDoctor(): Promise<void> {
   const cwd = process.cwd();
   const startTime = performance.now();
   const results: CheckResult[] = [];

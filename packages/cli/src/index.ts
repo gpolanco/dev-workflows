@@ -8,6 +8,7 @@ import { registerRemoveCommand } from './commands/remove.js';
 import { registerListCommand } from './commands/list.js';
 import { registerExplainCommand } from './commands/explain.js';
 import { registerWatchCommand } from './commands/watch.js';
+import { runMainMenu } from './commands/menu.js';
 
 const require = createRequire(import.meta.url);
 const pkg = require('../package.json') as { version: string };
@@ -27,6 +28,10 @@ registerRemoveCommand(program);
 registerListCommand(program);
 registerExplainCommand(program);
 registerWatchCommand(program);
+
+program.action(async (_, command: Command) => {
+  await runMainMenu(command);
+});
 
 program.parse();
 
