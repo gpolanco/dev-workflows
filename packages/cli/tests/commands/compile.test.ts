@@ -65,7 +65,7 @@ describe('executePipeline', () => {
     const claudeResult = result.results.find((r) => r.bridgeId === 'claude');
     assert.ok(claudeResult);
     assert.equal(claudeResult.success, true);
-    assert.ok(await fileExists(join(tmpDir, 'CLAUDE.md')));
+    assert.ok(await fileExists(join(tmpDir, '.claude', 'rules', 'dwf-conventions.md')));
 
     const cursorResult = result.results.find((r) => r.bridgeId === 'cursor');
     assert.ok(cursorResult);

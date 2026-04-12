@@ -102,7 +102,7 @@ describe('output format: compile', () => {
     const result = await run(['compile'], tmpDir);
 
     assert.ok(result.stdout.includes('\u203A'), 'should have bullet prefix');
-    assert.ok(result.stdout.includes('CLAUDE.md'), 'should list CLAUDE.md');
+    assert.ok(result.stdout.includes('.claude/rules/dwf-conventions.md'), 'should list .claude/rules/dwf-conventions.md');
   });
 });
 

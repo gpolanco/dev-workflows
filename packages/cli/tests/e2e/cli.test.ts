@@ -99,8 +99,8 @@ rules:
     assert.equal(result.exitCode, 0);
     assert.ok(result.stdout.includes('Compiled'));
 
-    const claudeMd = await readFile(join(tmpDir, 'CLAUDE.md'), 'utf-8');
-    assert.ok(claudeMd.includes('# Project Rules'));
+    const claudeMd = await readFile(join(tmpDir, '.claude', 'rules', 'dwf-conventions.md'), 'utf-8');
+    assert.ok(claudeMd.includes('# Conventions'));
     assert.ok(claudeMd.includes('Always test your code.'));
   });
 
