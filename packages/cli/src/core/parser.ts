@@ -1,9 +1,9 @@
 import { readFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { parse } from 'yaml';
-import type { Rule, ProjectConfig, PulledEntry, AssetEntry, AssetType } from '../bridges/types.js';
+import type { Rule, ProjectConfig, PulledEntry, AssetEntry, AssetType, ScopeMetadata } from '../bridges/types.js';
 import { ASSET_TYPE } from '../bridges/types.js';
-import { isValidScope } from './schema.js';
+import { isValidScope, validateScopeMetadata, VALID_CONFIG_VERSIONS } from './schema.js';
 
 interface RawRule {
   id?: string;
@@ -17,6 +17,10 @@ interface RawRule {
 
 interface RawRuleFile {
   scope?: string;
+  metadata?: Record<string, unknown>;
+  globs?: unknown;
+  paths?: unknown;
+  trigger?: unknown;
   rules?: RawRule[];
 }
 
@@ -32,6 +36,11 @@ export async function readConfig(cwd: string): Promise<ProjectConfig> {
   const doc = parsed as Record<string, unknown>;
 
   const version = typeof doc['version'] === 'string' ? doc['version'] : '0.1';
+
+  const validVersions = VALID_CONFIG_VERSIONS as readonly string[];
+  if (!validVersions.includes(version)) {
+    throw new Error(`Invalid config.yml: unsupported version "${version}". Supported versions: ${VALID_CONFIG_VERSIONS.join(', ')}`);
+  }
 
   const projectRaw = doc['project'];
   if (!projectRaw || typeof projectRaw !== 'object') {
@@ -83,6 +92,9 @@ export async function readConfig(cwd: string): Promise<ProjectConfig> {
         .filter((a) => a.name !== '' && assetTypeValues.has(a.type))
     : [];
 
+  const globalRaw = doc['global'];
+  const global = typeof globalRaw === 'boolean' ? globalRaw : true;
+
   return {
     version,
     project: { name: projectName, description: projectDescription },
@@ -91,14 +103,19 @@ export async function readConfig(cwd: string): Promise<ProjectConfig> {
     blocks,
     pulled,
     assets,
+    global,
   };
 }
 
-function normalizeRule(raw: RawRule, scope: string): Rule | null {
-  if (!raw.id || !raw.content) return null;
+function normalizeRule(raw: RawRule, scope: string, scopeMetadata?: ScopeMetadata): Rule | null {
+  if (!raw.id || !raw.content) {
+    return null;
+  }
 
   const severity = raw.severity ?? 'error';
-  if (severity !== 'error' && severity !== 'warning' && severity !== 'info') return null;
+  if (severity !== 'error' && severity !== 'warning' && severity !== 'info') {
+    return null;
+  }
 
   const enabled = raw.enabled !== false;
 
@@ -111,12 +128,54 @@ function normalizeRule(raw: RawRule, scope: string): Rule | null {
     enabled,
     sourceBlock: raw.sourceBlock,
     source: raw.source,
+    metadata: scopeMetadata,
   };
+}
+
+function extractScopeMetadata(doc: RawRuleFile, file: string): ScopeMetadata | undefined {
+  // Support both nested metadata block and top-level fields
+  const metadataRaw: Record<string, unknown> = {};
+
+  if (doc.metadata && typeof doc.metadata === 'object') {
+    Object.assign(metadataRaw, doc.metadata);
+  }
+
+  // Top-level fields take precedence over nested metadata block
+  if (doc.globs !== undefined) {
+    metadataRaw['globs'] = doc.globs;
+  }
+  if (doc.paths !== undefined) {
+    metadataRaw['paths'] = doc.paths;
+  }
+  if (doc.trigger !== undefined) {
+    metadataRaw['trigger'] = doc.trigger;
+  }
+
+  if (Object.keys(metadataRaw).length === 0) {
+    return undefined;
+  }
+
+  const { metadata, errors } = validateScopeMetadata(metadataRaw);
+
+  for (const error of errors) {
+    console.warn(`Warning: ${error.field} in ${file}: ${error.message}`);
+  }
+
+  if (errors.length > 0) {
+    return undefined;
+  }
+
+  return metadata;
 }
 
 export async function readRules(cwd: string): Promise<Rule[]> {
   const rulesDir = join(cwd, '.dwf', 'rules');
-  const entries = await readdir(rulesDir);
+  let entries: string[];
+  try {
+    entries = await readdir(rulesDir);
+  } catch {
+    return [];
+  }
   const ymlFiles = entries.filter((f) => f.endsWith('.yml') || f.endsWith('.yaml'));
 
   const allRules: Rule[] = [];
@@ -125,22 +184,32 @@ export async function readRules(cwd: string): Promise<Rule[]> {
     const raw = await readFile(join(rulesDir, file), 'utf-8');
     const parsed: unknown = parse(raw);
 
-    if (!parsed || typeof parsed !== 'object') continue;
+    if (!parsed || typeof parsed !== 'object') {
+      continue;
+    }
 
     const doc = parsed as RawRuleFile;
     const scope = doc.scope ?? file.replace(/\.ya?ml$/, '');
 
-    if (!Array.isArray(doc.rules)) continue;
+    if (!Array.isArray(doc.rules)) {
+      continue;
+    }
 
     if (!isValidScope(scope)) {
       console.warn(`Warning: invalid scope "${scope}" in ${file}, skipping rules`);
       continue;
     }
 
+    const scopeMetadata = extractScopeMetadata(doc, file);
+
     for (const rawRule of doc.rules) {
-      if (!rawRule || typeof rawRule !== 'object') continue;
-      const rule = normalizeRule(rawRule, scope);
-      if (rule) allRules.push(rule);
+      if (!rawRule || typeof rawRule !== 'object') {
+        continue;
+      }
+      const rule = normalizeRule(rawRule, scope, scopeMetadata);
+      if (rule) {
+        allRules.push(rule);
+      }
     }
   }
 
