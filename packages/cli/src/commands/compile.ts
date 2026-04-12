@@ -154,7 +154,7 @@ export async function executePipeline(options: PipelineOptions): Promise<Compile
   return { results, activeRuleCount: activeRules.length, assetPaths, elapsedMs };
 }
 
-async function runCompile(options: CompileOptions): Promise<void> {
+export async function runCompile(options: CompileOptions): Promise<void> {
   const cwd = process.cwd();
 
   if (!(await fileExists(join(cwd, '.dwf', 'config.yml')))) {

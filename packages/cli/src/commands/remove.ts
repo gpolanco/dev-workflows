@@ -51,7 +51,7 @@ async function removeRule(cwd: string, path: string): Promise<boolean> {
   return true;
 }
 
-async function runRemove(ruleArg: string | undefined): Promise<void> {
+export async function runRemove(ruleArg: string | undefined): Promise<void> {
   const cwd = process.cwd();
 
   if (!(await fileExists(join(cwd, '.dwf', 'config.yml')))) {

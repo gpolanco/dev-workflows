@@ -717,7 +717,7 @@ export async function installPreset(
   return anyAdded;
 }
 
-async function runAdd(ruleArg: string | undefined, options: AddOptions): Promise<void> {
+export async function runAdd(ruleArg: string | undefined, options: AddOptions): Promise<void> {
   if (options.list) {
     await runList(ruleArg);
     return;
