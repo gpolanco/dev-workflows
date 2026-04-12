@@ -29,6 +29,10 @@ describe('copilotBridge', () => {
     assert.equal(copilotBridge.id, 'copilot');
   });
 
+  it('has kind marker', () => {
+    assert.equal(copilotBridge.kind, 'marker');
+  });
+
   it('has correct output path', () => {
     assert.deepEqual(copilotBridge.outputPaths, ['.github/copilot-instructions.md']);
   });

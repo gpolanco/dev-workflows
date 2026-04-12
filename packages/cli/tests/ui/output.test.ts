@@ -191,7 +191,7 @@ describe('output format: list tools', () => {
     assert.equal(result.exitCode, 0);
     assert.ok(result.stdout.includes('\u203A'), 'should have bullet prefix');
     assert.ok(result.stdout.includes('\u2192'), 'should have arrow');
-    assert.ok(result.stdout.includes('CLAUDE.md'), 'should show output path');
+    assert.ok(result.stdout.includes('.claude/rules/dwf-'), 'should show output directory pattern');
   });
 });
 
@@ -233,12 +233,12 @@ describe('output format: explain', () => {
 
   it('shows new mode labels', async () => {
     await mkdir(join(tmpDir, '.dwf', 'rules'), { recursive: true });
-    await writeFile(join(tmpDir, '.dwf', 'config.yml'), CONFIG_TEMPLATE(['claude', 'cursor']));
+    await writeFile(join(tmpDir, '.dwf', 'config.yml'), CONFIG_TEMPLATE(['copilot', 'cursor']));
     await writeFile(join(tmpDir, '.dwf', 'rules', 'architecture.yml'), RULES_WITH_MIX);
 
     const result = await run(['explain'], tmpDir);
 
-    assert.ok(result.stdout.includes('markers (BEGIN/END)'), 'should show markers mode for claude');
+    assert.ok(result.stdout.includes('markers (BEGIN/END)'), 'should show markers mode for copilot');
     assert.ok(result.stdout.includes('full file'), 'should show full file mode for cursor');
   });
 });

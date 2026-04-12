@@ -10,6 +10,7 @@ import { geminiBridge } from '../bridges/gemini.js';
 import { windsurfBridge } from '../bridges/windsurf.js';
 import { copilotBridge } from '../bridges/copilot.js';
 import type { Bridge, ProjectConfig, PulledEntry, AssetEntry, Rule } from '../bridges/types.js';
+import { getBridgeOutputPaths } from '../bridges/types.js';
 import { fileExists } from '../utils/fs.js';
 import { isValidScope } from '../core/schema.js';
 import * as ui from '../utils/ui.js';
@@ -158,7 +159,7 @@ export async function checkSymlinks(cwd: string, config: ProjectConfig): Promise
   for (const bridge of BRIDGES) {
     if (!config.tools.includes(bridge.id)) continue;
 
-    for (const outputPath of bridge.outputPaths) {
+    for (const outputPath of getBridgeOutputPaths(bridge)) {
       const absolutePath = join(cwd, outputPath);
       try {
         const stat = await lstat(absolutePath);

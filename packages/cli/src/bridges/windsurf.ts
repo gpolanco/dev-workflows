@@ -1,4 +1,4 @@
-import type { Bridge, Rule, ProjectConfig } from './types.js';
+import type { DirectoryBridge, Rule, ProjectConfig } from './types.js';
 import { filterRules, groupByScope, formatScopeHeading } from '../core/helpers.js';
 
 const WINDSURF_CHAR_LIMIT = 6000;
@@ -43,10 +43,12 @@ function buildMarkdown(rules: Rule[]): string {
   return content;
 }
 
-export const windsurfBridge: Bridge = {
+export const windsurfBridge: DirectoryBridge = {
   id: 'windsurf',
-  outputPaths: ['.windsurf/rules/devworkflows.md'],
-  usesMarkers: false,
+  kind: 'directory',
+  outputDir: '.windsurf/rules',
+  filePrefix: 'dwf-',
+  fileExtension: '.md',
 
   compile(rules: Rule[], _config: ProjectConfig): Map<string, string> {
     const output = new Map<string, string>();

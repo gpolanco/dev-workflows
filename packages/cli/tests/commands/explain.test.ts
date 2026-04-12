@@ -75,7 +75,7 @@ describe('devw explain', () => {
 
     assert.equal(result.exitCode, 0);
     assert.ok(result.stdout.includes('claude'));
-    assert.ok(result.stdout.includes('CLAUDE.md'));
+    assert.ok(result.stdout.includes('.claude/rules/dwf-'));
     assert.ok(result.stdout.includes('Rules:'));
     assert.ok(result.stdout.includes('architecture:'));
   });
@@ -102,7 +102,7 @@ describe('devw explain', () => {
 
     assert.equal(result.exitCode, 0);
     assert.ok(result.stdout.includes('windsurf'));
-    assert.ok(result.stdout.includes('.windsurf/rules/devworkflows.md'));
+    assert.ok(result.stdout.includes('.windsurf/rules/dwf-'));
     assert.ok(!result.stdout.includes('claude'));
   });
 

@@ -9,7 +9,7 @@ import { geminiBridge } from '../bridges/gemini.js';
 import { windsurfBridge } from '../bridges/windsurf.js';
 import { copilotBridge } from '../bridges/copilot.js';
 import type { Bridge } from '../bridges/types.js';
-import { ASSET_TYPE } from '../bridges/types.js';
+import { ASSET_TYPE, isDirectoryBridge, getBridgeOutputPaths } from '../bridges/types.js';
 import * as ui from '../utils/ui.js';
 import { ICONS } from '../utils/ui.js';
 
@@ -80,9 +80,17 @@ async function listTools(): Promise<void> {
   ui.newline();
   for (const tool of config.tools) {
     const bridge = BRIDGES.find((b) => b.id === tool);
-    const outputPath = bridge?.outputPaths[0];
-    if (outputPath) {
-      console.log(`    ${chalk.dim(ICONS.bullet)} ${chalk.cyan(tool.padEnd(12))}${chalk.dim(ICONS.arrow)} ${chalk.dim(outputPath)}`);
+    let outputLabel: string | undefined;
+    if (bridge) {
+      if (isDirectoryBridge(bridge)) {
+        outputLabel = `${bridge.outputDir}/${bridge.filePrefix}*${bridge.fileExtension}`;
+      } else {
+        const paths = getBridgeOutputPaths(bridge);
+        outputLabel = paths[0];
+      }
+    }
+    if (outputLabel) {
+      console.log(`    ${chalk.dim(ICONS.bullet)} ${chalk.cyan(tool.padEnd(12))}${chalk.dim(ICONS.arrow)} ${chalk.dim(outputLabel)}`);
     } else {
       console.log(`    ${chalk.dim(ICONS.bullet)} ${chalk.cyan(tool)}`);
     }

@@ -273,7 +273,7 @@ blocks: []
       const config: ProjectConfig = {
         version: '0.1',
         project: { name: 'test' },
-        tools: ['claude'],
+        tools: ['copilot'],
         mode: 'link',
         blocks: [],
         pulled: [],
@@ -281,10 +281,11 @@ blocks: []
       };
 
       // Create a target file and a symlink pointing to it
-      const targetPath = join(tmpDir, '.dwf', '.cache', 'CLAUDE.md');
-      await mkdir(join(tmpDir, '.dwf', '.cache'), { recursive: true });
+      await mkdir(join(tmpDir, '.dwf', '.cache', '.github'), { recursive: true });
+      await mkdir(join(tmpDir, '.github'), { recursive: true });
+      const targetPath = join(tmpDir, '.dwf', '.cache', '.github', 'copilot-instructions.md');
       await writeFile(targetPath, 'content');
-      await symlink(targetPath, join(tmpDir, 'CLAUDE.md'));
+      await symlink(targetPath, join(tmpDir, '.github', 'copilot-instructions.md'));
 
       const result = await checkSymlinks(tmpDir, config);
       assert.equal(result.passed, true);
@@ -295,7 +296,7 @@ blocks: []
       const config: ProjectConfig = {
         version: '0.1',
         project: { name: 'test' },
-        tools: ['claude'],
+        tools: ['copilot'],
         mode: 'link',
         blocks: [],
         pulled: [],
@@ -303,12 +304,13 @@ blocks: []
       };
 
       // Create a symlink pointing to a non-existent target
-      const brokenTarget = join(tmpDir, '.dwf', '.cache', 'CLAUDE.md');
-      await symlink(brokenTarget, join(tmpDir, 'CLAUDE.md'));
+      await mkdir(join(tmpDir, '.github'), { recursive: true });
+      const brokenTarget = join(tmpDir, '.dwf', '.cache', '.github', 'copilot-instructions.md');
+      await symlink(brokenTarget, join(tmpDir, '.github', 'copilot-instructions.md'));
 
       const result = await checkSymlinks(tmpDir, config);
       assert.equal(result.passed, false);
-      assert.ok(result.message.includes('CLAUDE.md'));
+      assert.ok(result.message.includes('copilot-instructions.md'));
     });
   });
 

@@ -1,4 +1,4 @@
-import type { Bridge, Rule, ProjectConfig } from './types.js';
+import type { DirectoryBridge, Rule, ProjectConfig } from './types.js';
 import { filterRules, groupByScope, formatScopeHeading } from '../core/helpers.js';
 
 const FRONTMATTER = `---
@@ -39,10 +39,12 @@ function buildMdc(rules: Rule[]): string {
   return lines.join('\n');
 }
 
-export const cursorBridge: Bridge = {
+export const cursorBridge: DirectoryBridge = {
   id: 'cursor',
-  outputPaths: ['.cursor/rules/devworkflows.mdc'],
-  usesMarkers: false,
+  kind: 'directory',
+  outputDir: '.cursor/rules',
+  filePrefix: 'dwf-',
+  fileExtension: '.mdc',
 
   compile(rules: Rule[], _config: ProjectConfig): Map<string, string> {
     const output = new Map<string, string>();

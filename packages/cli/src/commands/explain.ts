@@ -3,6 +3,7 @@ import type { Command } from 'commander';
 import chalk from 'chalk';
 import { readConfig, readRules } from '../core/parser.js';
 import type { Bridge, Rule } from '../bridges/types.js';
+import { isMarkerBridge, isDirectoryBridge, getBridgeOutputPaths } from '../bridges/types.js';
 import { claudeBridge } from '../bridges/claude.js';
 import { cursorBridge } from '../bridges/cursor.js';
 import { geminiBridge } from '../bridges/gemini.js';
@@ -26,7 +27,7 @@ function getBridge(id: string): Bridge | undefined {
 }
 
 function getModeLabel(bridge: Bridge): string {
-  if (bridge.usesMarkers) {
+  if (isMarkerBridge(bridge)) {
     return 'markers (BEGIN/END)';
   }
   return 'full file';
@@ -81,7 +82,8 @@ async function runExplain(options: ExplainOptions): Promise<void> {
     const bridge = getBridge(toolId);
     if (!bridge) continue;
 
-    const outputPath = bridge.outputPaths[0] ?? toolId;
+    const bridgePaths = getBridgeOutputPaths(bridge);
+    const outputPath = bridgePaths[0] ?? (isDirectoryBridge(bridge) ? `${bridge.outputDir}/${bridge.filePrefix}*${bridge.fileExtension}` : toolId);
 
     console.log(`  ${formatSeparator(toolId)}`);
     ui.newline();
@@ -108,7 +110,10 @@ async function runExplain(options: ExplainOptions): Promise<void> {
 
     if (bridge.id === 'windsurf') {
       const outputs = bridge.compile(rules, config);
-      const content = outputs.get('.windsurf/rules/devworkflows.md') ?? '';
+      let content = '';
+      for (const [, val] of outputs) {
+        content += val;
+      }
       const charCount = content.length;
       const formatted = `${String(charCount).replace(/\B(?=(\d{3})+(?!\d))/g, ',')} / ${String(WINDSURF_CHAR_LIMIT).replace(/\B(?=(\d{3})+(?!\d))/g, ',')} chars`;
       ui.newline();

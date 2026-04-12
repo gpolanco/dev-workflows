@@ -6,6 +6,7 @@ import { readConfig, readRules } from '../core/parser.js';
 import { computeRulesHash, writeHash } from '../core/hash.js';
 import { deployAssets } from '../core/assets.js';
 import type { Bridge } from '../bridges/types.js';
+import { isMarkerBridge, getBridgeOutputPaths } from '../bridges/types.js';
 import { claudeBridge } from '../bridges/claude.js';
 import { cursorBridge } from '../bridges/cursor.js';
 import { geminiBridge } from '../bridges/gemini.js';
@@ -75,11 +76,13 @@ export async function executePipeline(options: PipelineOptions): Promise<Compile
 
     try {
       if (activeRules.length === 0 && write) {
-        for (const relativePath of bridge.outputPaths) {
+        for (const relativePath of getBridgeOutputPaths(bridge)) {
           const absolutePath = join(cwd, relativePath);
-          if (!(await fileExists(absolutePath))) continue;
+          if (!(await fileExists(absolutePath))) {
+            continue;
+          }
 
-          if (bridge.usesMarkers) {
+          if (isMarkerBridge(bridge)) {
             const existing = await readFile(absolutePath, 'utf-8');
             const cleaned = removeMarkedBlock(existing);
             if (cleaned.length === 0) {
@@ -99,7 +102,7 @@ export async function executePipeline(options: PipelineOptions): Promise<Compile
 
       for (const [relativePath, rawContent] of outputs) {
         let content = rawContent;
-        if (bridge.usesMarkers) {
+        if (isMarkerBridge(bridge)) {
           const absoluteCheck = join(cwd, relativePath);
           let existing: string | null = null;
           try {
@@ -135,8 +138,13 @@ export async function executePipeline(options: PipelineOptions): Promise<Compile
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      for (const relativePath of bridge.outputPaths) {
-        results.push({ bridgeId: bridge.id, outputPath: relativePath, success: false, error: message });
+      const errorPaths = getBridgeOutputPaths(bridge);
+      if (errorPaths.length > 0) {
+        for (const relativePath of errorPaths) {
+          results.push({ bridgeId: bridge.id, outputPath: relativePath, success: false, error: message });
+        }
+      } else {
+        results.push({ bridgeId: bridge.id, outputPath: bridge.id, success: false, error: message });
       }
     }
   }

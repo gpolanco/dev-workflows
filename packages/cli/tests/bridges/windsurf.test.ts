@@ -29,12 +29,14 @@ describe('windsurfBridge', () => {
     assert.equal(windsurfBridge.id, 'windsurf');
   });
 
-  it('has correct output path', () => {
-    assert.deepEqual(windsurfBridge.outputPaths, ['.windsurf/rules/devworkflows.md']);
+  it('has kind directory', () => {
+    assert.equal(windsurfBridge.kind, 'directory');
   });
 
-  it('does not use markers', () => {
-    assert.equal(windsurfBridge.usesMarkers, false);
+  it('has correct output directory config', () => {
+    assert.equal(windsurfBridge.outputDir, '.windsurf/rules');
+    assert.equal(windsurfBridge.filePrefix, 'dwf-');
+    assert.equal(windsurfBridge.fileExtension, '.md');
   });
 
   it('generates correct markdown output', () => {

@@ -1,4 +1,4 @@
-import type { Bridge, Rule, ProjectConfig } from './types.js';
+import type { DirectoryBridge, Rule, ProjectConfig } from './types.js';
 import { filterRules, groupByScope, formatScopeHeading } from '../core/helpers.js';
 
 function buildMarkdown(rules: Rule[]): string {
@@ -31,10 +31,12 @@ function buildMarkdown(rules: Rule[]): string {
   return lines.join('\n');
 }
 
-export const claudeBridge: Bridge = {
+export const claudeBridge: DirectoryBridge = {
   id: 'claude',
-  outputPaths: ['CLAUDE.md'],
-  usesMarkers: true,
+  kind: 'directory',
+  outputDir: '.claude/rules',
+  filePrefix: 'dwf-',
+  fileExtension: '.md',
 
   compile(rules: Rule[], _config: ProjectConfig): Map<string, string> {
     const output = new Map<string, string>();

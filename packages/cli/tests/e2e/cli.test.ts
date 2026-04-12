@@ -78,7 +78,7 @@ describe('devw CLI e2e', () => {
     assert.ok(result.stderr.includes('already exists'));
   });
 
-  it('compile generates CLAUDE.md with markers when rules exist', async () => {
+  it('compile generates CLAUDE.md when rules exist', async () => {
     await run(['init', '--tools', 'claude', '--mode', 'copy', '-y'], tmpDir);
 
     // Write a manual rule so compile has something to output
@@ -100,12 +100,12 @@ rules:
     assert.ok(result.stdout.includes('Compiled'));
 
     const claudeMd = await readFile(join(tmpDir, 'CLAUDE.md'), 'utf-8');
-    assert.ok(claudeMd.includes('<!-- BEGIN dev-workflows -->'));
-    assert.ok(claudeMd.includes('<!-- END dev-workflows -->'));
+    assert.ok(claudeMd.includes('# Project Rules'));
+    assert.ok(claudeMd.includes('Always test your code.'));
   });
 
-  it('compile preserves user content outside markers', async () => {
-    await run(['init', '--tools', 'claude', '--mode', 'copy', '-y'], tmpDir);
+  it('compile with copilot preserves user content outside markers', async () => {
+    await run(['init', '--tools', 'copilot', '--mode', 'copy', '-y'], tmpDir);
 
     const rulesPath = join(tmpDir, '.dwf', 'rules', 'conventions.yml');
     await writeFile(
@@ -121,14 +121,14 @@ rules:
 
     await run(['compile'], tmpDir);
 
-    const claudeMd = await readFile(join(tmpDir, 'CLAUDE.md'), 'utf-8');
-    const withUserContent = `# My Custom Rules\n\nDo not touch this.\n\n${claudeMd}\n# Footer\n\nAlso keep this.\n`;
-    await writeFile(join(tmpDir, 'CLAUDE.md'), withUserContent, 'utf-8');
+    const copilotMd = await readFile(join(tmpDir, '.github', 'copilot-instructions.md'), 'utf-8');
+    const withUserContent = `# My Custom Rules\n\nDo not touch this.\n\n${copilotMd}\n# Footer\n\nAlso keep this.\n`;
+    await writeFile(join(tmpDir, '.github', 'copilot-instructions.md'), withUserContent, 'utf-8');
 
     const result = await run(['compile'], tmpDir);
     assert.equal(result.exitCode, 0);
 
-    const updated = await readFile(join(tmpDir, 'CLAUDE.md'), 'utf-8');
+    const updated = await readFile(join(tmpDir, '.github', 'copilot-instructions.md'), 'utf-8');
     assert.ok(updated.includes('# My Custom Rules'));
     assert.ok(updated.includes('Do not touch this.'));
     assert.ok(updated.includes('# Footer'));
