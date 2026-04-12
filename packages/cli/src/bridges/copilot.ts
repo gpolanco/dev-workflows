@@ -1,4 +1,4 @@
-import type { Bridge, Rule, ProjectConfig } from './types.js';
+import type { MarkerBridge, Rule, ProjectConfig } from './types.js';
 import { filterRules, groupByScope, formatScopeHeading } from '../core/helpers.js';
 
 function buildMarkdown(rules: Rule[]): string {
@@ -31,8 +31,9 @@ function buildMarkdown(rules: Rule[]): string {
   return lines.join('\n');
 }
 
-export const copilotBridge: Bridge = {
+export const copilotBridge: MarkerBridge = {
   id: 'copilot',
+  kind: 'marker',
   outputPaths: ['.github/copilot-instructions.md'],
   usesMarkers: true,
 

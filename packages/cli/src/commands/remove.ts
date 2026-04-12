@@ -2,11 +2,11 @@ import { join } from 'node:path';
 import { readFile, writeFile, unlink } from 'node:fs/promises';
 import type { Command } from 'commander';
 import { parse, stringify } from 'yaml';
-import { checkbox, confirm, Separator } from '@inquirer/prompts';
 import { readConfig } from '../core/parser.js';
 import { fileExists } from '../utils/fs.js';
 import { isAssetType, removeAsset } from '../core/assets.js';
 import { validateInput } from './add.js';
+import { multiselectPrompt, confirmPrompt, introPrompt, outroPrompt, isInteractiveSession } from '../utils/prompt.js';
 import * as ui from '../utils/ui.js';
 import type { PulledEntry, AssetEntry } from '../bridges/types.js';
 
@@ -54,6 +54,10 @@ async function removeRule(cwd: string, path: string): Promise<boolean> {
 export async function runRemove(ruleArg: string | undefined): Promise<void> {
   const cwd = process.cwd();
 
+  if (isInteractiveSession()) {
+    introPrompt('Remove rules or assets');
+  }
+
   if (!(await fileExists(join(cwd, '.dwf', 'config.yml')))) {
     ui.error('.dwf/config.yml not found', 'Run devw init to initialize the project');
     process.exitCode = 1;
@@ -63,6 +67,12 @@ export async function runRemove(ruleArg: string | undefined): Promise<void> {
   const config = await readConfig(cwd);
 
   if (!ruleArg) {
+    if (!isInteractiveSession()) {
+      ui.error('No rule specified', 'Usage: devw remove <category>/<rule>');
+      process.exitCode = 1;
+      return;
+    }
+
     const hasRules = config.pulled.length > 0;
     const hasAssets = config.assets.length > 0;
 
@@ -73,33 +83,30 @@ export async function runRemove(ruleArg: string | undefined): Promise<void> {
 
     type RemoveChoice = { kind: 'rule'; path: string } | { kind: 'asset'; type: string; name: string };
 
-    const choices: (RemoveChoice | Separator)[] = [];
+    const choices: RemoveChoice[] = [];
 
     if (hasRules) {
-      choices.push(new Separator('── Rules ──'));
       for (const p of config.pulled) {
-        choices.push({ kind: 'rule', path: p.path } as RemoveChoice);
+        choices.push({ kind: 'rule', path: p.path });
       }
     }
 
     if (hasAssets) {
-      choices.push(new Separator('── Assets ──'));
       for (const a of config.assets) {
-        choices.push({ kind: 'asset', type: a.type, name: a.name } as RemoveChoice);
+        choices.push({ kind: 'asset', type: a.type, name: a.name });
       }
     }
 
     let selected: RemoveChoice[];
     try {
-      selected = await checkbox<RemoveChoice>({
+      selected = await multiselectPrompt<RemoveChoice>({
         message: 'Select items to remove',
-        choices: choices.map((c) => {
-          if (c instanceof Separator) return c;
+        options: choices.map((c) => {
           if (c.kind === 'rule') {
             const entry = config.pulled.find((p) => p.path === c.path);
-            return { name: `${c.path} (v${entry?.version ?? '?'})`, value: c };
+            return { label: `[rule] ${c.path} (v${entry?.version ?? '?'})`, value: c };
           }
-          return { name: `${c.type}/${c.name}`, value: c };
+          return { label: `[asset] ${c.type}/${c.name}`, value: c };
         }),
       });
     } catch {
@@ -112,9 +119,9 @@ export async function runRemove(ruleArg: string | undefined): Promise<void> {
     }
 
     try {
-      const shouldProceed = await confirm({
+      const shouldProceed = await confirmPrompt({
         message: `Remove ${String(selected.length)} item(s)?`,
-        default: true,
+        defaultValue: true,
       });
       if (!shouldProceed) {
         ui.info('Remove cancelled');
@@ -137,6 +144,7 @@ export async function runRemove(ruleArg: string | undefined): Promise<void> {
 
     const { runCompileFromAdd } = await import('./compile.js');
     await runCompileFromAdd();
+    outroPrompt('Remove command completed');
     return;
   }
 
@@ -185,6 +193,7 @@ export async function runRemove(ruleArg: string | undefined): Promise<void> {
 
     const { runCompileFromAdd } = await import('./compile.js');
     await runCompileFromAdd();
+    outroPrompt('Remove command completed');
     return;
   }
 
@@ -206,6 +215,7 @@ export async function runRemove(ruleArg: string | undefined): Promise<void> {
 
   const { runCompileFromAdd } = await import('./compile.js');
   await runCompileFromAdd();
+  outroPrompt('Remove command completed');
 }
 
 export function registerRemoveCommand(program: Command): void {

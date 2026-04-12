@@ -12,8 +12,14 @@ import {
   checkBridgesAvailable,
   checkSymlinks,
   checkHashSync,
+  checkCanonicalExists,
+  checkCanonicalSync,
+  checkLegacyMigration,
+  checkNativeFrontmatter,
 } from '../../src/commands/doctor.js';
 import { computeRulesHash, writeHash } from '../../src/core/hash.js';
+import { executePipeline } from '../../src/commands/compile.js';
+import { readConfig, readRules } from '../../src/core/parser.js';
 import type { Rule, ProjectConfig } from '../../src/bridges/types.js';
 
 const VALID_CONFIG = `version: "0.1"
@@ -214,6 +220,7 @@ blocks: []
         blocks: [],
         pulled: [],
         assets: [],
+        global: true,
       };
 
       const result = checkBridgesAvailable(config);
@@ -229,6 +236,7 @@ blocks: []
         blocks: [],
         pulled: [],
         assets: [],
+        global: true,
       };
 
       const result = checkBridgesAvailable(config);
@@ -244,6 +252,7 @@ blocks: []
         blocks: [],
         pulled: [],
         assets: [],
+        global: true,
       };
 
       const result = checkBridgesAvailable(config);
@@ -262,6 +271,7 @@ blocks: []
         blocks: [],
         pulled: [],
         assets: [],
+        global: true,
       };
 
       const result = await checkSymlinks(tmpDir, config);
@@ -273,18 +283,20 @@ blocks: []
       const config: ProjectConfig = {
         version: '0.1',
         project: { name: 'test' },
-        tools: ['claude'],
+        tools: ['copilot'],
         mode: 'link',
         blocks: [],
         pulled: [],
         assets: [],
+        global: true,
       };
 
       // Create a target file and a symlink pointing to it
-      const targetPath = join(tmpDir, '.dwf', '.cache', 'CLAUDE.md');
-      await mkdir(join(tmpDir, '.dwf', '.cache'), { recursive: true });
+      await mkdir(join(tmpDir, '.dwf', '.cache', '.github'), { recursive: true });
+      await mkdir(join(tmpDir, '.github'), { recursive: true });
+      const targetPath = join(tmpDir, '.dwf', '.cache', '.github', 'copilot-instructions.md');
       await writeFile(targetPath, 'content');
-      await symlink(targetPath, join(tmpDir, 'CLAUDE.md'));
+      await symlink(targetPath, join(tmpDir, '.github', 'copilot-instructions.md'));
 
       const result = await checkSymlinks(tmpDir, config);
       assert.equal(result.passed, true);
@@ -295,20 +307,22 @@ blocks: []
       const config: ProjectConfig = {
         version: '0.1',
         project: { name: 'test' },
-        tools: ['claude'],
+        tools: ['copilot'],
         mode: 'link',
         blocks: [],
         pulled: [],
         assets: [],
+        global: true,
       };
 
       // Create a symlink pointing to a non-existent target
-      const brokenTarget = join(tmpDir, '.dwf', '.cache', 'CLAUDE.md');
-      await symlink(brokenTarget, join(tmpDir, 'CLAUDE.md'));
+      await mkdir(join(tmpDir, '.github'), { recursive: true });
+      const brokenTarget = join(tmpDir, '.dwf', '.cache', '.github', 'copilot-instructions.md');
+      await symlink(brokenTarget, join(tmpDir, '.github', 'copilot-instructions.md'));
 
       const result = await checkSymlinks(tmpDir, config);
       assert.equal(result.passed, false);
-      assert.ok(result.message.includes('CLAUDE.md'));
+      assert.ok(result.message.includes('copilot-instructions.md'));
     });
   });
 
@@ -337,6 +351,114 @@ blocks: []
       const result = await checkHashSync(tmpDir, rules);
       assert.equal(result.passed, false);
       assert.ok(result.message.includes('out of sync'));
+    });
+  });
+
+  describe('checkCanonicalExists', () => {
+    it('fails when canonical directory does not exist', async () => {
+      const result = await checkCanonicalExists(tmpDir);
+      assert.equal(result.passed, false);
+      assert.ok(result.message.includes('.agents/rules/devw'));
+    });
+
+    it('passes when canonical files exist', async () => {
+      await mkdir(join(tmpDir, '.agents', 'rules', 'devw'), { recursive: true });
+      await writeFile(join(tmpDir, '.agents', 'rules', 'devw', 'dwf-conventions.md'), 'content', 'utf-8');
+
+      const result = await checkCanonicalExists(tmpDir);
+      assert.equal(result.passed, true);
+      assert.ok(result.message.includes('1 file'));
+    });
+  });
+
+  describe('checkCanonicalSync', () => {
+    it('passes when canonical and native files are aligned', async () => {
+      await mkdir(join(tmpDir, '.dwf', 'rules'), { recursive: true });
+      await writeFile(join(tmpDir, '.dwf', 'config.yml'), VALID_CONFIG);
+      await writeFile(join(tmpDir, '.dwf', 'rules', 'conventions.yml'), VALID_RULES);
+
+      await executePipeline({ cwd: tmpDir });
+
+      const config = await readConfig(tmpDir);
+      const rules = await readRules(tmpDir);
+      const result = await checkCanonicalSync(tmpDir, rules, config);
+
+      assert.equal(result.passed, true);
+      assert.ok(result.message.includes('in sync'));
+    });
+
+    it('fails when native file was manually edited', async () => {
+      await mkdir(join(tmpDir, '.dwf', 'rules'), { recursive: true });
+      await writeFile(join(tmpDir, '.dwf', 'config.yml'), VALID_CONFIG);
+      await writeFile(join(tmpDir, '.dwf', 'rules', 'conventions.yml'), VALID_RULES);
+
+      await executePipeline({ cwd: tmpDir });
+      await writeFile(
+        join(tmpDir, '.claude', 'rules', 'dwf-conventions.md'),
+        '<!-- Generated by dev-workflows. Do not edit manually. -->\n# Conventions\n\n- Tampered content\n',
+        'utf-8',
+      );
+
+      const config = await readConfig(tmpDir);
+      const rules = await readRules(tmpDir);
+      const result = await checkCanonicalSync(tmpDir, rules, config);
+
+      assert.equal(result.passed, false);
+      assert.ok(result.message.includes('Canonical/native mismatch'));
+    });
+  });
+
+  describe('checkLegacyMigration', () => {
+    it('passes when no legacy files are present', async () => {
+      const result = await checkLegacyMigration(tmpDir);
+      assert.equal(result.passed, true);
+    });
+
+    it('fails when legacy files still exist', async () => {
+      await mkdir(join(tmpDir, '.cursor', 'rules'), { recursive: true });
+      await writeFile(join(tmpDir, '.cursor', 'rules', 'devworkflows.mdc'), 'legacy', 'utf-8');
+
+      const result = await checkLegacyMigration(tmpDir);
+      assert.equal(result.passed, false);
+      assert.ok(result.message.includes('devworkflows.mdc'));
+    });
+  });
+
+  describe('checkNativeFrontmatter', () => {
+    it('passes with valid native frontmatter', async () => {
+      await mkdir(join(tmpDir, '.dwf', 'rules'), { recursive: true });
+      await writeFile(join(tmpDir, '.dwf', 'config.yml'), VALID_CONFIG);
+      await writeFile(join(tmpDir, '.dwf', 'rules', 'conventions.yml'), VALID_RULES);
+
+      await executePipeline({ cwd: tmpDir });
+
+      const config = await readConfig(tmpDir);
+      const result = await checkNativeFrontmatter(tmpDir, config);
+      assert.equal(result.passed, true);
+    });
+
+    it('fails with invalid YAML frontmatter', async () => {
+      const config: ProjectConfig = {
+        version: '0.1',
+        project: { name: 'test' },
+        tools: ['cursor'],
+        mode: 'copy',
+        blocks: [],
+        pulled: [],
+        assets: [],
+        global: true,
+      };
+
+      await mkdir(join(tmpDir, '.cursor', 'rules'), { recursive: true });
+      await writeFile(
+        join(tmpDir, '.cursor', 'rules', 'dwf-conventions.mdc'),
+        '---\ndescription: broken: yaml\n---\n<!-- Generated by dev-workflows. Do not edit manually. -->\n',
+        'utf-8',
+      );
+
+      const result = await checkNativeFrontmatter(tmpDir, config);
+      assert.equal(result.passed, false);
+      assert.ok(result.message.includes('invalid YAML frontmatter'));
     });
   });
 });

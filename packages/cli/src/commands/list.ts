@@ -1,6 +1,6 @@
 import { join } from 'node:path';
 import type { Command } from 'commander';
-import chalk from 'chalk';
+import pc from 'picocolors';
 import { readConfig, readRules } from '../core/parser.js';
 import { fileExists } from '../utils/fs.js';
 import { claudeBridge } from '../bridges/claude.js';
@@ -9,7 +9,8 @@ import { geminiBridge } from '../bridges/gemini.js';
 import { windsurfBridge } from '../bridges/windsurf.js';
 import { copilotBridge } from '../bridges/copilot.js';
 import type { Bridge } from '../bridges/types.js';
-import { ASSET_TYPE } from '../bridges/types.js';
+import { ASSET_TYPE, isDirectoryBridge, getBridgeOutputPaths } from '../bridges/types.js';
+import { filterRules, groupByScope } from '../core/helpers.js';
 import * as ui from '../utils/ui.js';
 import { ICONS } from '../utils/ui.js';
 
@@ -45,17 +46,17 @@ async function listRules(): Promise<void> {
   ui.header(`Active rules (${String(active.length)})`);
   ui.newline();
   for (const rule of active) {
-    const severityIcon = rule.severity === 'error' ? chalk.red(ICONS.error) : rule.severity === 'warning' ? chalk.yellow(ICONS.warn) : chalk.dim(ICONS.dot);
-    const severityColor = rule.severity === 'error' ? chalk.red : rule.severity === 'warning' ? chalk.yellow : chalk.dim;
+    const severityIcon = rule.severity === 'error' ? pc.red(ICONS.error) : rule.severity === 'warning' ? pc.yellow(ICONS.warn) : pc.dim(ICONS.dot);
+    const severityColor = rule.severity === 'error' ? pc.red : rule.severity === 'warning' ? pc.yellow : pc.dim;
     let source = '';
     if (rule.source) {
-      source = chalk.dim(` (pulled: ${rule.source})`);
+      source = pc.dim(` (pulled: ${rule.source})`);
     } else if (rule.sourceBlock) {
-      source = chalk.dim(` [${rule.sourceBlock}]`);
+      source = pc.dim(` [${rule.sourceBlock}]`);
     } else {
-      source = chalk.dim(` ${ICONS.arrow} manual`);
+      source = pc.dim(` ${ICONS.arrow} manual`);
     }
-    console.log(`    ${severityIcon} ${severityColor(rule.severity.padEnd(8))}${chalk.cyan(rule.scope.padEnd(15))}${rule.id}${source}`);
+    console.log(`    ${severityIcon} ${severityColor(rule.severity.padEnd(8))}${pc.cyan(rule.scope.padEnd(15))}${rule.id}${source}`);
   }
 }
 
@@ -70,6 +71,13 @@ async function listTools(): Promise<void> {
   if (!(await ensureConfig(cwd))) return;
 
   const config = await readConfig(cwd);
+  let activeScopeCount = 0;
+  try {
+    const rules = await readRules(cwd);
+    activeScopeCount = groupByScope(filterRules(rules)).size;
+  } catch {
+    activeScopeCount = 0;
+  }
 
   if (config.tools.length === 0) {
     ui.warn('No tools configured');
@@ -80,11 +88,19 @@ async function listTools(): Promise<void> {
   ui.newline();
   for (const tool of config.tools) {
     const bridge = BRIDGES.find((b) => b.id === tool);
-    const outputPath = bridge?.outputPaths[0];
-    if (outputPath) {
-      console.log(`    ${chalk.dim(ICONS.bullet)} ${chalk.cyan(tool.padEnd(12))}${chalk.dim(ICONS.arrow)} ${chalk.dim(outputPath)}`);
+    let outputLabel: string | undefined;
+    if (bridge) {
+      if (isDirectoryBridge(bridge)) {
+        outputLabel = `${bridge.outputDir}/${bridge.filePrefix}*${bridge.fileExtension} (${String(activeScopeCount)} file${activeScopeCount === 1 ? '' : 's'})`;
+      } else {
+        const paths = getBridgeOutputPaths(bridge);
+        outputLabel = paths[0];
+      }
+    }
+    if (outputLabel) {
+      console.log(`    ${pc.dim(ICONS.bullet)} ${pc.cyan(tool.padEnd(12))}${pc.dim(ICONS.arrow)} ${pc.dim(outputLabel)}`);
     } else {
-      console.log(`    ${chalk.dim(ICONS.bullet)} ${chalk.cyan(tool)}`);
+      console.log(`    ${pc.dim(ICONS.bullet)} ${pc.cyan(tool)}`);
     }
   }
 }
@@ -124,7 +140,7 @@ async function listAssets(typeFilter?: string): Promise<void> {
   ui.newline();
   for (const asset of filtered) {
     const outputHint = getAssetOutputHint(asset.type, asset.name);
-    console.log(`    ${chalk.dim(ICONS.bullet)} ${chalk.cyan(asset.type.padEnd(10))} ${chalk.white(asset.name.padEnd(20))} ${chalk.dim(`v${asset.version}`)}  ${chalk.dim(ICONS.arrow)} ${chalk.dim(outputHint)}`);
+    console.log(`    ${pc.dim(ICONS.bullet)} ${pc.cyan(asset.type.padEnd(10))} ${pc.white(asset.name.padEnd(20))} ${pc.dim(`v${asset.version}`)}  ${pc.dim(ICONS.arrow)} ${pc.dim(outputHint)}`);
   }
 }
 

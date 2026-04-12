@@ -39,7 +39,7 @@ describe('cache', () => {
 
   it('handles corrupted cache file gracefully', async () => {
     const { writeFile } = await import('node:fs/promises');
-    await writeFile(join(tempDir, '.dwf', '.cache', 'registry.json'), 'not json!!!', 'utf-8');
+    await writeFile(join(tempDir, '.dwf', '.cache', 'registry-store.json'), 'not json!!!', 'utf-8');
     const result = await getFromDisk<string>(tempDir, 'key');
     assert.equal(result, null);
   });

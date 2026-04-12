@@ -9,6 +9,7 @@ import { registerListCommand } from './commands/list.js';
 import { registerExplainCommand } from './commands/explain.js';
 import { registerWatchCommand } from './commands/watch.js';
 import { runMainMenu } from './commands/menu.js';
+import { renderBanner } from './utils/banner.js';
 
 const require = createRequire(import.meta.url);
 const pkg = require('../package.json') as { version: string };
@@ -19,6 +20,15 @@ program
   .name('devw')
   .description('Compile developer rules into editor-specific config files')
   .version(pkg.version);
+
+program.addHelpText('beforeAll', () => {
+  const banner = renderBanner();
+  if (banner.length === 0) {
+    return '';
+  }
+
+  return `${banner}\n`;
+});
 
 registerInitCommand(program);
 registerCompileCommand(program);

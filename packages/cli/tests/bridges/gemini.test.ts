@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { copilotBridge } from '../../src/bridges/copilot.js';
+import { geminiBridge } from '../../src/bridges/gemini.js';
 import { isMarkerBridge, isDirectoryBridge } from '../../src/bridges/types.js';
 import type { Rule, ProjectConfig } from '../../src/bridges/types.js';
 
@@ -18,7 +18,7 @@ function makeRule(overrides: Partial<Rule> = {}): Rule {
 const CONFIG: ProjectConfig = {
   version: '0.1',
   project: { name: 'test' },
-  tools: ['copilot'],
+  tools: ['gemini'],
   mode: 'copy',
   blocks: [],
   pulled: [],
@@ -26,21 +26,26 @@ const CONFIG: ProjectConfig = {
   global: true,
 };
 
-describe('copilotBridge', () => {
+describe('geminiBridge', () => {
   it('has correct id', () => {
-    assert.equal(copilotBridge.id, 'copilot');
+    assert.equal(geminiBridge.id, 'gemini');
   });
 
   it('has kind marker', () => {
-    assert.equal(copilotBridge.kind, 'marker');
+    assert.equal(geminiBridge.kind, 'marker');
   });
 
   it('has correct output path', () => {
-    assert.deepEqual(copilotBridge.outputPaths, ['.github/copilot-instructions.md']);
+    assert.deepEqual(geminiBridge.outputPaths, ['GEMINI.md']);
   });
 
   it('uses markers', () => {
-    assert.equal(copilotBridge.usesMarkers, true);
+    assert.equal(geminiBridge.usesMarkers, true);
+  });
+
+  it('is identified as MarkerBridge by type guard', () => {
+    assert.equal(isMarkerBridge(geminiBridge), true);
+    assert.equal(isDirectoryBridge(geminiBridge), false);
   });
 
   it('generates correct markdown output', () => {
@@ -49,8 +54,8 @@ describe('copilotBridge', () => {
       makeRule({ id: 'rule-b', scope: 'conventions', content: 'Use kebab-case.' }),
     ];
 
-    const output = copilotBridge.compile(rules, CONFIG);
-    const content = output.get('.github/copilot-instructions.md');
+    const output = geminiBridge.compile(rules, CONFIG);
+    const content = output.get('GEMINI.md');
 
     assert.ok(content);
     assert.ok(content.includes('# Project Rules'));
@@ -67,8 +72,8 @@ describe('copilotBridge', () => {
       makeRule({ id: 'rule-b', scope: 'conventions', content: 'Kebab case.' }),
     ];
 
-    const output = copilotBridge.compile(rules, CONFIG);
-    const content = output.get('.github/copilot-instructions.md') ?? '';
+    const output = geminiBridge.compile(rules, CONFIG);
+    const content = output.get('GEMINI.md') ?? '';
 
     const archIndex = content.indexOf('## Architecture');
     const convIndex = content.indexOf('## Conventions');
@@ -83,16 +88,11 @@ describe('copilotBridge', () => {
       makeRule({ id: 'rule-a', scope: 'team:payments', content: 'No raw SQL.' }),
     ];
 
-    const output = copilotBridge.compile(rules, CONFIG);
-    const content = output.get('.github/copilot-instructions.md') ?? '';
+    const output = geminiBridge.compile(rules, CONFIG);
+    const content = output.get('GEMINI.md') ?? '';
 
     assert.ok(content.includes('## team:payments'));
     assert.ok(!content.includes('## Team:payments'));
-  });
-
-  it('is identified as MarkerBridge by type guard', () => {
-    assert.equal(isMarkerBridge(copilotBridge), true);
-    assert.equal(isDirectoryBridge(copilotBridge), false);
   });
 
   it('filters out info and disabled rules', () => {
@@ -102,8 +102,8 @@ describe('copilotBridge', () => {
       makeRule({ id: 'rule-c', scope: 'architecture', enabled: false, content: 'Skip disabled.' }),
     ];
 
-    const output = copilotBridge.compile(rules, CONFIG);
-    const content = output.get('.github/copilot-instructions.md') ?? '';
+    const output = geminiBridge.compile(rules, CONFIG);
+    const content = output.get('GEMINI.md') ?? '';
 
     assert.ok(content.includes('Keep this.'));
     assert.ok(!content.includes('Skip info.'));

@@ -1,19 +1,10 @@
-import { select } from '@inquirer/prompts';
-import chalk from 'chalk';
 import type { Command } from 'commander';
 import { runAdd } from './add.js';
 import { runRemove } from './remove.js';
 import { runDoctor } from './doctor.js';
 import { runCompile } from './compile.js';
-
-const menuTheme = {
-  style: {
-    keysHelpTip: (keys: [string, string][]): string =>
-      [...keys, ['Ctrl+C', 'back']]
-        .map(([key, action]) => `${chalk.bold(key)} ${chalk.dim(action)}`)
-        .join(chalk.dim(' • ')),
-  },
-} as const;
+import { renderBanner } from '../utils/banner.js';
+import { selectPrompt, introPrompt, outroPrompt, isInteractiveSession } from '../utils/prompt.js';
 
 const MENU_CHOICES = {
   ADD: 'add',
@@ -26,57 +17,48 @@ const MENU_CHOICES = {
 type MenuChoice = (typeof MENU_CHOICES)[keyof typeof MENU_CHOICES];
 
 export async function runMainMenu(command: Command): Promise<void> {
-  if (!process.stdout.isTTY || !process.stdin.isTTY) {
+  if (!isInteractiveSession()) {
     command.help();
     return;
   }
 
+  const banner = renderBanner();
+  if (banner.length > 0) {
+    console.log(banner);
+  }
+  introPrompt('Welcome to dev-workflows');
+
   while (true) {
     let choice: MenuChoice;
-    try {
-      choice = await select<MenuChoice>({
-        message: 'What do you want to do?',
-        theme: menuTheme,
-        choices: [
-          { name: 'Add rules or assets', value: MENU_CHOICES.ADD },
-          { name: 'Compile for all editors', value: MENU_CHOICES.COMPILE },
-          { name: 'Check project status', value: MENU_CHOICES.DOCTOR },
-          { name: 'Remove something', value: MENU_CHOICES.REMOVE },
-          { name: 'Exit', value: MENU_CHOICES.EXIT },
-        ],
-      });
-    } catch (err) {
-      if (err instanceof Error && err.name === 'ExitPromptError') {
-        process.exit(0);
-      }
-      throw err;
-    }
+    choice = await selectPrompt<MenuChoice>({
+      message: 'What do you want to do?',
+      options: [
+        { label: 'Add rules or assets', value: MENU_CHOICES.ADD },
+        { label: 'Compile for all editors', value: MENU_CHOICES.COMPILE },
+        { label: 'Check project status', value: MENU_CHOICES.DOCTOR },
+        { label: 'Remove something', value: MENU_CHOICES.REMOVE },
+        { label: 'Exit', value: MENU_CHOICES.EXIT },
+      ],
+    });
 
     if (choice === MENU_CHOICES.EXIT) {
+      outroPrompt('See you next time.');
       process.exit(0);
     }
 
-    try {
-      switch (choice) {
-        case MENU_CHOICES.ADD:
-          await runAdd(undefined, {});
-          break;
-        case MENU_CHOICES.COMPILE:
-          await runCompile({ verbose: false, dryRun: false });
-          break;
-        case MENU_CHOICES.DOCTOR:
-          await runDoctor();
-          break;
-        case MENU_CHOICES.REMOVE:
-          await runRemove(undefined);
-          break;
-      }
-    } catch (err) {
-      if (err instanceof Error && err.name === 'ExitPromptError') {
-        // Ctrl+C inside a subcommand — return to main menu
-      } else {
-        throw err;
-      }
+    switch (choice) {
+      case MENU_CHOICES.ADD:
+        await runAdd(undefined, {});
+        break;
+      case MENU_CHOICES.COMPILE:
+        await runCompile({ verbose: false, dryRun: false });
+        break;
+      case MENU_CHOICES.DOCTOR:
+        await runDoctor();
+        break;
+      case MENU_CHOICES.REMOVE:
+        await runRemove(undefined);
+        break;
     }
   }
 }

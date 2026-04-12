@@ -1,0 +1,187 @@
+{
+  "version": 1,
+  "generated_at": "2026-04-12T15:46:19.045Z",
+  "rules": [
+    {
+      "path": "css/tailwind",
+      "name": "tailwind",
+      "description": "Utility-first Tailwind CSS conventions and design tokens",
+      "version": "0.1.0",
+      "scope": "conventions",
+      "tags": [
+        "tailwind",
+        "css",
+        "styling"
+      ],
+      "size_bytes": 874
+    },
+    {
+      "path": "frontend/accessibility",
+      "name": "accessibility",
+      "description": "Accessibility best practices for AI coding agents",
+      "version": "0.1.0",
+      "scope": "conventions",
+      "tags": [
+        "frontend",
+        "accessibility",
+        "a11y",
+        "html"
+      ],
+      "size_bytes": 2781
+    },
+    {
+      "path": "frontend/design-guidelines",
+      "name": "design-guidelines",
+      "description": "UI design principles for AI coding agents",
+      "version": "0.1.0",
+      "scope": "design",
+      "tags": [
+        "frontend",
+        "design",
+        "ui",
+        "ux"
+      ],
+      "size_bytes": 3476
+    },
+    {
+      "path": "frontend/performance",
+      "name": "performance",
+      "description": "Frontend performance optimization rules",
+      "version": "0.1.0",
+      "scope": "performance",
+      "tags": [
+        "frontend",
+        "performance",
+        "core-web-vitals"
+      ],
+      "size_bytes": 2558
+    },
+    {
+      "path": "javascript/nextjs",
+      "name": "nextjs",
+      "description": "Next.js App Router patterns and React Server Components",
+      "version": "0.1.0",
+      "scope": "architecture",
+      "tags": [
+        "nextjs",
+        "react",
+        "app-router",
+        "rsc"
+      ],
+      "size_bytes": 1250
+    },
+    {
+      "path": "javascript/react",
+      "name": "react",
+      "description": "React conventions and best practices for AI coding agents",
+      "version": "0.1.0",
+      "scope": "conventions",
+      "tags": [
+        "react",
+        "frontend",
+        "components",
+        "hooks"
+      ],
+      "size_bytes": 1314
+    },
+    {
+      "path": "security/auth-patterns",
+      "name": "auth-patterns",
+      "description": "Authentication and authorization best practices",
+      "version": "0.1.0",
+      "scope": "security",
+      "tags": [
+        "security",
+        "auth",
+        "authentication",
+        "authorization"
+      ],
+      "size_bytes": 2762
+    },
+    {
+      "path": "security/supabase-rls",
+      "name": "supabase-rls",
+      "description": "Supabase Row-Level Security enforcement and auth patterns",
+      "version": "0.1.0",
+      "scope": "security",
+      "tags": [
+        "supabase",
+        "rls",
+        "security",
+        "database"
+      ],
+      "size_bytes": 958
+    },
+    {
+      "path": "testing/vitest",
+      "name": "vitest",
+      "description": "Vitest testing patterns and best practices",
+      "version": "0.1.0",
+      "scope": "testing",
+      "tags": [
+        "vitest",
+        "testing",
+        "unit-tests"
+      ],
+      "size_bytes": 1174
+    },
+    {
+      "path": "typescript/strict",
+      "name": "strict",
+      "description": "Strict TypeScript conventions for professional codebases",
+      "version": "0.1.0",
+      "scope": "conventions",
+      "tags": [
+        "typescript",
+        "strict",
+        "types"
+      ],
+      "size_bytes": 1124
+    },
+    {
+      "path": "workflow/debugging",
+      "name": "debugging",
+      "description": "Systematic debugging methodology for AI coding agents",
+      "version": "0.1.0",
+      "scope": "workflow",
+      "tags": [
+        "workflow",
+        "debugging",
+        "methodology"
+      ],
+      "size_bytes": 2464
+    },
+    {
+      "path": "workflow/git-conventions",
+      "name": "git-conventions",
+      "description": "Git workflow and commit conventions",
+      "version": "0.1.0",
+      "scope": "workflow",
+      "tags": [
+        "git",
+        "workflow",
+        "conventions"
+      ],
+      "size_bytes": 2010
+    },
+    {
+      "path": "workflow/spec-driven",
+      "name": "spec-driven",
+      "description": "Spec-driven development workflow: spec, plan, build, ship",
+      "version": "0.1.0",
+      "scope": "workflow",
+      "tags": [
+        "workflow",
+        "spec-driven",
+        "methodology"
+      ],
+      "size_bytes": 1441
+    }
+  ],
+  "assets": {
+    "commands": [],
+    "templates": [],
+    "hooks": [],
+    "presets": []
+  }
+}

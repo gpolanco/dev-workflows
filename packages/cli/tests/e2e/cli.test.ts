@@ -78,7 +78,7 @@ describe('devw CLI e2e', () => {
     assert.ok(result.stderr.includes('already exists'));
   });
 
-  it('compile generates CLAUDE.md with markers when rules exist', async () => {
+  it('compile generates CLAUDE.md when rules exist', async () => {
     await run(['init', '--tools', 'claude', '--mode', 'copy', '-y'], tmpDir);
 
     // Write a manual rule so compile has something to output
@@ -99,13 +99,13 @@ rules:
     assert.equal(result.exitCode, 0);
     assert.ok(result.stdout.includes('Compiled'));
 
-    const claudeMd = await readFile(join(tmpDir, 'CLAUDE.md'), 'utf-8');
-    assert.ok(claudeMd.includes('<!-- BEGIN dev-workflows -->'));
-    assert.ok(claudeMd.includes('<!-- END dev-workflows -->'));
+    const claudeMd = await readFile(join(tmpDir, '.claude', 'rules', 'dwf-conventions.md'), 'utf-8');
+    assert.ok(claudeMd.includes('# Conventions'));
+    assert.ok(claudeMd.includes('Always test your code.'));
   });
 
-  it('compile preserves user content outside markers', async () => {
-    await run(['init', '--tools', 'claude', '--mode', 'copy', '-y'], tmpDir);
+  it('compile with copilot preserves user content outside markers', async () => {
+    await run(['init', '--tools', 'copilot', '--mode', 'copy', '-y'], tmpDir);
 
     const rulesPath = join(tmpDir, '.dwf', 'rules', 'conventions.yml');
     await writeFile(
@@ -121,14 +121,14 @@ rules:
 
     await run(['compile'], tmpDir);
 
-    const claudeMd = await readFile(join(tmpDir, 'CLAUDE.md'), 'utf-8');
-    const withUserContent = `# My Custom Rules\n\nDo not touch this.\n\n${claudeMd}\n# Footer\n\nAlso keep this.\n`;
-    await writeFile(join(tmpDir, 'CLAUDE.md'), withUserContent, 'utf-8');
+    const copilotMd = await readFile(join(tmpDir, '.github', 'copilot-instructions.md'), 'utf-8');
+    const withUserContent = `# My Custom Rules\n\nDo not touch this.\n\n${copilotMd}\n# Footer\n\nAlso keep this.\n`;
+    await writeFile(join(tmpDir, '.github', 'copilot-instructions.md'), withUserContent, 'utf-8');
 
     const result = await run(['compile'], tmpDir);
     assert.equal(result.exitCode, 0);
 
-    const updated = await readFile(join(tmpDir, 'CLAUDE.md'), 'utf-8');
+    const updated = await readFile(join(tmpDir, '.github', 'copilot-instructions.md'), 'utf-8');
     assert.ok(updated.includes('# My Custom Rules'));
     assert.ok(updated.includes('Do not touch this.'));
     assert.ok(updated.includes('# Footer'));
@@ -175,6 +175,7 @@ rules:
 
   it('doctor passes on valid project', async () => {
     await run(['init', '--tools', 'claude', '--mode', 'copy', '-y'], tmpDir);
+    await run(['compile'], tmpDir);
     const result = await run(['doctor'], tmpDir);
 
     assert.equal(result.exitCode, 0);
@@ -224,13 +225,13 @@ rules:
     assert.ok(result.stderr.includes('Invalid rule path'));
   });
 
-  it('remove without pulled rules shows warning', async () => {
+  it('remove without args in non-TTY shows usage error', async () => {
     await run(['init', '--tools', 'claude', '--mode', 'copy', '-y'], tmpDir);
-    // Non-TTY, no args, no pulled → should warn
+    // Non-TTY, no args → should error with usage hint
     const result = await run(['remove'], tmpDir);
 
-    assert.equal(result.exitCode, 0);
-    assert.ok(result.stdout.includes('Nothing installed to remove'));
+    assert.equal(result.exitCode, 1);
+    assert.ok(result.stderr.includes('No rule specified'));
   });
 
   it('remove with old block format exits with error', async () => {
@@ -255,5 +256,84 @@ rules:
 
     assert.equal(result.exitCode, 1);
     assert.ok(result.stderr.includes('not installed'));
+  });
+
+  it('compile generates multi-file output for directory bridges', async () => {
+    await run(['init', '--tools', 'claude', '--mode', 'copy', '-y'], tmpDir);
+
+    // Write two scope files
+    await writeFile(
+      join(tmpDir, '.dwf', 'rules', 'conventions.yml'),
+      `scope: conventions
+rules:
+  - id: named-exports
+    severity: error
+    content: Always use named exports.
+`,
+      'utf-8',
+    );
+    await writeFile(
+      join(tmpDir, '.dwf', 'rules', 'security.yml'),
+      `scope: security
+rules:
+  - id: no-eval
+    severity: error
+    content: Never use eval.
+`,
+      'utf-8',
+    );
+
+    const result = await run(['compile'], tmpDir);
+
+    assert.equal(result.exitCode, 0);
+
+    // Both scope files should be generated
+    const convFile = await readFile(join(tmpDir, '.claude', 'rules', 'dwf-conventions.md'), 'utf-8');
+    assert.ok(convFile.includes('named exports'));
+
+    const secFile = await readFile(join(tmpDir, '.claude', 'rules', 'dwf-security.md'), 'utf-8');
+    assert.ok(secFile.includes('eval'));
+  });
+
+  it('compile --dry-run lists files without writing', async () => {
+    await run(['init', '--tools', 'claude', '--mode', 'copy', '-y'], tmpDir);
+
+    await writeFile(
+      join(tmpDir, '.dwf', 'rules', 'conventions.yml'),
+      `scope: conventions
+rules:
+  - id: named-exports
+    severity: error
+    content: Always use named exports.
+`,
+      'utf-8',
+    );
+
+    const result = await run(['compile', '--dry-run'], tmpDir);
+
+    assert.equal(result.exitCode, 0);
+    assert.ok(result.stdout.includes('Dry run'));
+    assert.ok(result.stdout.includes('.claude/rules/dwf-conventions.md'));
+  });
+
+  it('explain shows multi-file output paths for directory bridges', async () => {
+    await run(['init', '--tools', 'claude', '--mode', 'copy', '-y'], tmpDir);
+
+    await writeFile(
+      join(tmpDir, '.dwf', 'rules', 'conventions.yml'),
+      `scope: conventions
+rules:
+  - id: named-exports
+    severity: error
+    content: Always use named exports.
+`,
+      'utf-8',
+    );
+
+    const result = await run(['explain'], tmpDir);
+
+    assert.equal(result.exitCode, 0);
+    assert.ok(result.stdout.includes('multi-file'));
+    assert.ok(result.stdout.includes('.claude/rules/dwf-'));
   });
 });

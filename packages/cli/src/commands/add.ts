@@ -1,15 +1,28 @@
 import { join } from 'node:path';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import type { Command } from 'commander';
-import chalk from 'chalk';
+import pc from 'picocolors';
 import { stringify, parse } from 'yaml';
-import { select, checkbox, confirm } from '@inquirer/prompts';
-import { fetchRawContent, fetchContent, listDirectory, listContentDirectory } from '../utils/github.js';
+import {
+  fetchRawContent,
+  fetchContent,
+  listContentDirectory,
+  fetchRegistry as fetchRegistryManifest,
+} from '../utils/github.js';
 import { convert } from '../core/converter.js';
 import { isAssetType, parseAssetFrontmatter } from '../core/assets.js';
 import { fileExists } from '../utils/fs.js';
 import { readConfig } from '../core/parser.js';
-import * as cache from '../utils/cache.js';
+import {
+  selectPrompt,
+  multiselectPrompt,
+  confirmPrompt,
+  introPrompt,
+  outroPrompt,
+  spinnerTask,
+  isInteractiveSession,
+} from '../utils/prompt.js';
+import { filterRegistryByTag, searchRegistry, type Registry, type RegistryRule } from '../utils/registry.js';
 import * as ui from '../utils/ui.js';
 import { ICONS } from '../utils/ui.js';
 import type { PulledEntry, AssetEntry, AssetType } from '../bridges/types.js';
@@ -24,6 +37,8 @@ export function pluralRules(count: number): string {
 
 export interface AddOptions {
   list?: boolean;
+  search?: string;
+  tag?: string;
   noCompile?: boolean;
   force?: boolean;
   dryRun?: boolean;
@@ -44,68 +59,129 @@ export function validateInput(input: string): { category: string; name: string }
 interface CachedRegistry {
   categories: Array<{
     name: string;
-    rules: Array<{ name: string; description: string }>;
+    rules: Array<{ name: string; description: string; version: string; path: string; tags: string[] }>;
   }>;
+  assets: Registry['assets'];
+}
+
+function toCategoryName(path: string): string {
+  const slashIdx = path.indexOf('/');
+  if (slashIdx <= 0) {
+    return path;
+  }
+  return path.slice(0, slashIdx);
+}
+
+function toRuleName(path: string): string {
+  const slashIdx = path.indexOf('/');
+  if (slashIdx < 0 || slashIdx === path.length - 1) {
+    return path;
+  }
+  return path.slice(slashIdx + 1);
+}
+
+function buildCachedRegistry(registry: Registry, rules: RegistryRule[]): CachedRegistry {
+  const categoryMap = new Map<string, CachedRegistry['categories'][number]>();
+
+  for (const rule of rules) {
+    const category = toCategoryName(rule.path);
+    const ruleEntry = {
+      name: toRuleName(rule.path),
+      description: rule.description,
+      version: rule.version,
+      path: rule.path,
+      tags: rule.tags,
+    };
+
+    const existingCategory = categoryMap.get(category);
+    if (existingCategory) {
+      existingCategory.rules.push(ruleEntry);
+      continue;
+    }
+
+    categoryMap.set(category, {
+      name: category,
+      rules: [ruleEntry],
+    });
+  }
+
+  const categories = [...categoryMap.values()].sort((a, b) => a.name.localeCompare(b.name));
+  for (const category of categories) {
+    category.rules.sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  return {
+    categories,
+    assets: registry.assets,
+  };
 }
 
 export async function fetchRegistry(cwd: string): Promise<CachedRegistry | null> {
-  const cached = await cache.getFromDisk<CachedRegistry>(cwd, 'registry');
-
-  if (cached) return cached;
-
   ui.info('Fetching available rules from GitHub...');
   ui.newline();
 
-  let topLevel;
   try {
-    topLevel = await listDirectory();
+    const manifest = await spinnerTask({
+      label: 'Fetching registry manifest',
+      task: async () => fetchRegistryManifest(cwd),
+    });
+
+    return buildCachedRegistry(manifest, manifest.rules);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     ui.error(`Could not fetch rule registry: ${msg}`);
     return null;
   }
-
-  const dirs = topLevel.filter((e) => e.type === 'dir');
-
-  const categoryResults = await Promise.all(
-    dirs.map(async (entry) => {
-      try {
-        const files = await listDirectory(entry.name);
-        const ruleFiles = files.filter((f) => f.type === 'file');
-
-        const rules = await Promise.all(
-          ruleFiles.map(async (file) => {
-            try {
-              const content = await fetchRawContent(`${entry.name}/${file.name}`);
-              const fmMatch = /^---\n([\s\S]*?)\n---/.exec(content);
-              if (fmMatch?.[1]) {
-                const fm = parse(fmMatch[1]) as Record<string, unknown>;
-                const description = typeof fm['description'] === 'string' ? fm['description'] : '';
-                return { name: file.name, description };
-              }
-              return { name: file.name, description: '' };
-            } catch {
-              return { name: file.name, description: '' };
-            }
-          }),
-        );
-
-        return rules.length > 0 ? { name: entry.name, rules } : null;
-      } catch {
-        return null;
-      }
-    }),
-  );
-
-  const categories = categoryResults.filter((c): c is NonNullable<typeof c> => c !== null);
-  const registry: CachedRegistry = { categories };
-  await cache.set(cwd, 'registry', registry);
-  return registry;
 }
 
-async function runList(categoryFilter: string | undefined): Promise<void> {
+function applyRuleFilters(
+  manifest: Registry,
+  searchTerm: string | undefined,
+  tag: string | undefined,
+): RegistryRule[] {
+  let filtered = manifest.rules;
+
+  if (tag && tag.trim().length > 0) {
+    const taggedRegistry: Registry = {
+      ...manifest,
+      rules: filtered,
+    };
+    filtered = filterRegistryByTag(taggedRegistry, tag);
+  }
+
+  if (searchTerm && searchTerm.trim().length > 0) {
+    const searchedRegistry: Registry = {
+      ...manifest,
+      rules: filtered,
+    };
+    filtered = searchRegistry(searchedRegistry, searchTerm);
+  }
+
+  return filtered;
+}
+
+async function runList(
+  categoryFilter: string | undefined,
+  searchTerm: string | undefined,
+  tag: string | undefined,
+): Promise<void> {
   const cwd = process.cwd();
-  const registry = await fetchRegistry(cwd);
+  let manifest: Registry;
+
+  try {
+    manifest = await spinnerTask({
+      label: 'Fetching registry manifest',
+      task: async () => fetchRegistryManifest(cwd),
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    ui.error(`Could not fetch rule registry: ${msg}`);
+    process.exitCode = 1;
+    return;
+  }
+
+  const filteredRules = applyRuleFilters(manifest, searchTerm, tag);
+  const registry = buildCachedRegistry(manifest, filteredRules);
 
   if (!registry) {
     process.exitCode = 1;
@@ -117,7 +193,9 @@ async function runList(categoryFilter: string | undefined): Promise<void> {
     : registry.categories;
 
   if (displayCategories.length === 0) {
-    if (categoryFilter) {
+    if (searchTerm || tag) {
+      ui.warn('No rules matched the applied filters');
+    } else if (categoryFilter) {
       ui.warn(`Category "${categoryFilter}" not found`);
     } else {
       ui.warn('No rules available');
@@ -129,45 +207,41 @@ async function runList(categoryFilter: string | undefined): Promise<void> {
   ui.newline();
 
   for (const category of displayCategories) {
-    console.log(`  ${chalk.cyan(`${category.name}/`)}`);
+    console.log(`  ${pc.cyan(`${category.name}/`)}`);
     for (const rule of category.rules) {
-      const desc = rule.description ? chalk.dim(`  ${rule.description}`) : '';
-      console.log(`    ${chalk.white(rule.name.padEnd(20))}${desc}`);
+      const desc = rule.description ? pc.dim(`  ${rule.description}`) : '';
+      console.log(`    ${pc.white(rule.name.padEnd(20))}${desc}`);
     }
     ui.newline();
   }
 
-  console.log(`  ${chalk.dim(`Add a rule:  devw add <category>/<rule>`)}`);
+  console.log(`  ${pc.dim(`Add a rule:  devw add <category>/<rule>`)}`);
 
   // Show available assets if not filtering by category
   if (!categoryFilter) {
-    const assetTypes = ['commands', 'templates', 'hooks', 'presets'] as const;
-    const assetResults = await Promise.allSettled(
-      assetTypes.map((dir) => listContentDirectory(dir)),
-    );
+    const assetEntries = [
+      { type: 'command', names: registry.assets.commands },
+      { type: 'template', names: registry.assets.templates },
+      { type: 'hook', names: registry.assets.hooks },
+      { type: 'preset', names: registry.assets.presets },
+    ];
 
-    const hasAnyAssets = assetResults.some(
-      (r) => r.status === 'fulfilled' && r.value.some((e) => e.type === 'file'),
-    );
+    const hasAnyAssets = assetEntries.some((entry) => entry.names.length > 0);
 
     if (hasAnyAssets) {
       ui.newline();
       ui.header('Available assets');
       ui.newline();
-      for (let i = 0; i < assetTypes.length; i++) {
-        const type = assetTypes[i]!;
-        const result = assetResults[i]!;
-        if (result.status !== 'fulfilled') continue;
-        const names = result.value.filter((e) => e.type === 'file').map((e) => e.name);
+      for (const entry of assetEntries) {
+        const names = entry.names;
         if (names.length === 0) continue;
-        const singular = type.replace(/s$/, '');
-        console.log(`  ${chalk.cyan(`${singular}/`)}`);
+        console.log(`  ${pc.cyan(`${entry.type}/`)}`);
         for (const name of names) {
-          console.log(`    ${chalk.white(name)}`);
+          console.log(`    ${pc.white(name)}`);
         }
         ui.newline();
       }
-      console.log(`  ${chalk.dim(`Add an asset: devw add command/<name>`)}`);
+      console.log(`  ${pc.dim(`Add an asset: devw add command/<name>`)}`);
     }
   }
 }
@@ -249,6 +323,54 @@ function getAssetContentPath(type: AssetType, name: string): string {
   return `${type}s/${name}.${ext}`;
 }
 
+function parseSemver(version: string): [number, number, number] | null {
+  const match = /^(\d+)\.(\d+)\.(\d+)(?:[-+].*)?$/.exec(version.trim());
+  if (!match) {
+    return null;
+  }
+
+  const major = Number.parseInt(match[1] ?? '', 10);
+  const minor = Number.parseInt(match[2] ?? '', 10);
+  const patch = Number.parseInt(match[3] ?? '', 10);
+
+  if (Number.isNaN(major) || Number.isNaN(minor) || Number.isNaN(patch)) {
+    return null;
+  }
+
+  return [major, minor, patch];
+}
+
+function compareSemver(a: string, b: string): number {
+  const parsedA = parseSemver(a);
+  const parsedB = parseSemver(b);
+
+  if (!parsedA || !parsedB) {
+    return a.localeCompare(b, undefined, { numeric: true });
+  }
+
+  const [majorA, minorA, patchA] = parsedA;
+  const [majorB, minorB, patchB] = parsedB;
+
+  if (majorA !== majorB) {
+    return majorA - majorB;
+  }
+
+  if (minorA !== minorB) {
+    return minorA - minorB;
+  }
+
+  if (patchA !== patchB) {
+    return patchA - patchB;
+  }
+
+  return 0;
+}
+
+interface RuleVersionCheck {
+  installedVersion?: string;
+  registryVersion?: string;
+}
+
 export async function downloadAndInstallAsset(
   cwd: string,
   type: AssetType,
@@ -265,7 +387,10 @@ export async function downloadAndInstallAsset(
 
   let content: string;
   try {
-    content = await fetchContent(getAssetContentPath(type, name));
+    content = await spinnerTask({
+      label: `Fetching ${source}`,
+      task: async () => fetchContent(getAssetContentPath(type, name)),
+    });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     ui.error(msg);
@@ -290,9 +415,9 @@ export async function downloadAndInstallAsset(
     if (!options.force) {
       ui.info(`${source} already exists locally`);
       try {
-        const shouldOverwrite = await confirm({
+        const shouldOverwrite = await confirmPrompt({
           message: 'Overwrite?',
-          default: true,
+          defaultValue: true,
         });
         if (!shouldOverwrite) {
           ui.error('Cancelled');
@@ -309,7 +434,7 @@ export async function downloadAndInstallAsset(
     ui.newline();
     ui.header('Dry run — would write:');
     ui.newline();
-    console.log(chalk.dim(`  .dwf/assets/${type}s/${fileName}`));
+    console.log(pc.dim(`  .dwf/assets/${type}s/${fileName}`));
     return false;
   }
 
@@ -333,6 +458,7 @@ async function downloadAndInstall(
   category: string,
   name: string,
   options: AddOptions,
+  versionCheck?: RuleVersionCheck,
 ): Promise<boolean> {
   const source = `${category}/${name}`;
   const fileName = `pulled-${category}-${name}.yml`;
@@ -342,7 +468,10 @@ async function downloadAndInstall(
 
   let markdown: string;
   try {
-    markdown = await fetchRawContent(source);
+    markdown = await spinnerTask({
+      label: `Fetching ${source}`,
+      task: async () => fetchRawContent(source),
+    });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     ui.error(msg);
@@ -361,6 +490,36 @@ async function downloadAndInstall(
   }
 
   if (await fileExists(filePath)) {
+    const installedVersion = versionCheck?.installedVersion;
+    const registryVersion = versionCheck?.registryVersion;
+
+    if (installedVersion && registryVersion) {
+      const comparison = compareSemver(registryVersion, installedVersion);
+
+      if (comparison === 0) {
+        ui.success(`Already up to date (${source} v${registryVersion})`);
+        return false;
+      }
+
+      if (comparison > 0 && !options.force) {
+        ui.newline();
+        ui.info(`${source} update available (v${installedVersion} ${ICONS.arrow} v${registryVersion})`);
+        try {
+          const shouldUpdate = await confirmPrompt({
+            message: 'Install update?',
+            defaultValue: true,
+          });
+          if (!shouldUpdate) {
+            ui.error('Cancelled');
+            return false;
+          }
+        } catch {
+          ui.error('Cancelled');
+          return false;
+        }
+      }
+    }
+
     try {
       const existingRaw = await readFile(filePath, 'utf-8');
       const existingDoc = parse(existingRaw) as Record<string, unknown>;
@@ -376,10 +535,10 @@ async function downloadAndInstall(
         ui.newline();
         ui.info(`${source} already exists locally (v${existingVersion} ${ICONS.arrow} v${result.version})`);
         try {
-          const shouldOverwrite = await confirm({
-            message: 'Overwrite with new version?',
-            default: true,
-          });
+           const shouldOverwrite = await confirmPrompt({
+             message: 'Overwrite with new version?',
+             defaultValue: true,
+           });
           if (!shouldOverwrite) {
             ui.error('Cancelled');
             return false;
@@ -401,7 +560,7 @@ async function downloadAndInstall(
     ui.newline();
     ui.header('Dry run — would write:');
     ui.newline();
-    console.log(chalk.dim(`  ${fileName}`));
+    console.log(pc.dim(`  ${fileName}`));
     ui.newline();
     console.log(yamlOutput);
     return false;
@@ -422,15 +581,16 @@ async function downloadAndInstall(
 }
 
 async function runInteractiveAsset(cwd: string, options: AddOptions): Promise<void> {
+  introPrompt('Add assets');
   let assetType: AssetType | 'preset';
   try {
-    assetType = await select<AssetType | 'preset'>({
+    assetType = await selectPrompt<AssetType | 'preset'>({
       message: 'Asset type',
-      choices: [
-        { name: 'command  — Slash commands for Claude Code', value: 'command' },
-        { name: 'template — Spec and document templates', value: 'template' },
-        { name: 'hook     — Editor hooks (auto-format, etc.)', value: 'hook' },
-        { name: 'preset   — Bundle of rules + assets', value: 'preset' },
+      options: [
+        { label: 'command  — Slash commands for Claude Code', value: 'command' },
+        { label: 'template — Spec and document templates', value: 'template' },
+        { label: 'hook     — Editor hooks (auto-format, etc.)', value: 'hook' },
+        { label: 'preset   — Bundle of rules + assets', value: 'preset' },
       ],
     });
   } catch {
@@ -458,9 +618,9 @@ async function runInteractiveAsset(cwd: string, options: AddOptions): Promise<vo
 
   let selected: string[];
   try {
-    selected = await checkbox<string>({
+    selected = await multiselectPrompt<string>({
       message: `Select ${assetType}s to install`,
-      choices: names.map((name) => ({ name, value: name })),
+      options: names.map((name) => ({ label: name, value: name })),
     });
   } catch {
     ui.error('Cancelled');
@@ -487,16 +647,19 @@ async function runInteractiveAsset(cwd: string, options: AddOptions): Promise<vo
     const { runCompileFromAdd } = await import('./compile.js');
     await runCompileFromAdd();
   }
+
+  outroPrompt('Asset flow completed');
 }
 
 async function runInteractive(cwd: string, options: AddOptions): Promise<void> {
+  introPrompt('Add rules or assets');
   let mode: 'rules' | 'assets';
   try {
-    mode = await select<'rules' | 'assets'>({
+    mode = await selectPrompt<'rules' | 'assets'>({
       message: 'What do you want to add?',
-      choices: [
-        { name: 'Rules    — Install rules from the registry', value: 'rules' },
-        { name: 'Assets   — Commands, templates, hooks, presets', value: 'assets' },
+      options: [
+        { label: 'Rules    — Install rules from the registry', value: 'rules' },
+        { label: 'Assets   — Commands, templates, hooks, presets', value: 'assets' },
       ],
     });
   } catch {
@@ -538,15 +701,15 @@ async function runInteractive(cwd: string, options: AddOptions): Promise<void> {
       );
       if (availableCategories.length === 0) break;
 
-      const selectedCategoryName = await select<string>({
+      const selectedCategoryName = await selectPrompt<string>({
         message: 'Choose a category',
-        choices: availableCategories.map((c) => {
+        options: availableCategories.map((c) => {
           const allInstalled = c.rules.every((r) =>
             installedPaths.has(`${c.name}/${r.name}`),
           );
           const label = `${c.name} (${pluralRules(c.rules.length)})`;
           return {
-            name: allInstalled ? `${label} ${chalk.dim('(all installed)')}` : label,
+            label: allInstalled ? `${label} ${pc.dim('(all installed)')}` : label,
             value: c.name,
           };
         }),
@@ -555,17 +718,17 @@ async function runInteractive(cwd: string, options: AddOptions): Promise<void> {
       const category = registry.categories.find((c) => c.name === selectedCategoryName);
       if (!category) break;
 
-      const selected = await checkbox<string>({
+      const selected = await multiselectPrompt<string>({
         message: 'Select rules to add',
-        choices: [
-          { name: '\u2190 Back to categories', value: BACK_VALUE },
+        options: [
+          { label: '\u2190 Back to categories', value: BACK_VALUE },
           ...category.rules.map((r) => {
             const path = `${category.name}/${r.name}`;
             const installed = installedPaths.has(path);
             const desc = r.description ? ` ${ICONS.dash} ${r.description}` : '';
-            const suffix = installed ? chalk.dim(' (already installed)') : '';
+            const suffix = installed ? pc.dim(' (already installed)') : '';
             return {
-              name: `${r.name}${desc}${suffix}`,
+              label: `${r.name}${desc}${suffix}`,
               value: r.name,
             };
           }),
@@ -595,9 +758,9 @@ async function runInteractive(cwd: string, options: AddOptions): Promise<void> {
       );
       if (remaining.length === 0) break;
 
-      const addMore = await confirm({
+      const addMore = await confirmPrompt({
         message: 'Add rules from another category?',
-        default: true,
+        defaultValue: true,
       });
       if (!addMore) break;
     }
@@ -611,15 +774,15 @@ async function runInteractive(cwd: string, options: AddOptions): Promise<void> {
   ui.newline();
   ui.header('Rules to install:');
   for (const rule of allSelected) {
-    const desc = rule.description ? chalk.dim(` ${ICONS.dash} ${rule.description}`) : '';
+    const desc = rule.description ? pc.dim(` ${ICONS.dash} ${rule.description}`) : '';
     console.log(`    ${rule.category}/${rule.name}${desc}`);
   }
   ui.newline();
 
   try {
-    const shouldProceed = await confirm({
+    const shouldProceed = await confirmPrompt({
       message: `Install ${pluralRules(allSelected.length)}?`,
-      default: true,
+      defaultValue: true,
     });
     if (!shouldProceed) {
       ui.error('Cancelled');
@@ -640,6 +803,8 @@ async function runInteractive(cwd: string, options: AddOptions): Promise<void> {
     const { runCompileFromAdd } = await import('./compile.js');
     await runCompileFromAdd();
   }
+
+  outroPrompt('Add flow completed');
 }
 
 interface PresetManifest {
@@ -717,9 +882,36 @@ export async function installPreset(
   return anyAdded;
 }
 
+async function resolveRuleVersionCheck(cwd: string, source: string): Promise<RuleVersionCheck | undefined> {
+  let installedVersion: string | undefined;
+  try {
+    const config = await readConfig(cwd);
+    installedVersion = config.pulled.find((entry) => entry.path === source)?.version;
+  } catch {
+    installedVersion = undefined;
+  }
+
+  let registryVersion: string | undefined;
+  try {
+    const registry = await fetchRegistryManifest(cwd);
+    registryVersion = registry.rules.find((rule) => rule.path === source)?.version;
+  } catch {
+    registryVersion = undefined;
+  }
+
+  if (!installedVersion && !registryVersion) {
+    return undefined;
+  }
+
+  return {
+    installedVersion,
+    registryVersion,
+  };
+}
+
 export async function runAdd(ruleArg: string | undefined, options: AddOptions): Promise<void> {
   if (options.list) {
-    await runList(ruleArg);
+    await runList(ruleArg, options.search, options.tag);
     return;
   }
 
@@ -732,7 +924,7 @@ export async function runAdd(ruleArg: string | undefined, options: AddOptions): 
   }
 
   if (!ruleArg) {
-    if (!process.stdout.isTTY || !process.stdin.isTTY) {
+    if (!isInteractiveSession()) {
       ui.error('No rule specified', 'Usage: devw add <category>/<rule>');
       process.exitCode = 1;
       return;
@@ -740,6 +932,10 @@ export async function runAdd(ruleArg: string | undefined, options: AddOptions): 
 
     await runInteractive(cwd, options);
     return;
+  }
+
+  if (isInteractiveSession()) {
+    introPrompt('Adding item');
   }
 
   if (!ruleArg.includes('/')) {
@@ -786,12 +982,16 @@ export async function runAdd(ruleArg: string | undefined, options: AddOptions): 
     return;
   }
 
-  const added = await downloadAndInstall(cwd, category, name, options);
+  const source = `${category}/${name}`;
+  const versionCheck = await resolveRuleVersionCheck(cwd, source);
+  const added = await downloadAndInstall(cwd, category, name, options, versionCheck);
 
   if (added && !options.noCompile) {
     const { runCompileFromAdd } = await import('./compile.js');
     await runCompileFromAdd();
   }
+
+  outroPrompt('Add command completed');
 }
 
 export function registerAddCommand(program: Command): void {
@@ -800,6 +1000,8 @@ export function registerAddCommand(program: Command): void {
     .argument('[rule]', 'Rule path: <category>/<rule>')
     .description('Add rules from the dev-workflows registry')
     .option('--list', 'List available rules')
+    .option('--search <term>', 'Filter listed rules by search terms')
+    .option('--tag <tag>', 'Filter listed rules by tag')
     .option('--no-compile', 'Skip auto-compile after adding')
     .option('--force', 'Overwrite without asking')
     .option('--dry-run', 'Show output without writing files')

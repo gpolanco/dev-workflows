@@ -1,3 +1,9 @@
+export interface ScopeMetadata {
+  globs?: string[];
+  paths?: string[];
+  trigger?: 'always' | 'glob' | 'manual';
+}
+
 export interface Rule {
   id: string;
   scope: string;
@@ -7,6 +13,7 @@ export interface Rule {
   enabled: boolean;
   sourceBlock?: string;
   source?: string;
+  metadata?: ScopeMetadata;
 }
 
 export interface PulledEntry {
@@ -26,6 +33,7 @@ export interface ProjectConfig {
   blocks: string[];
   pulled: PulledEntry[];
   assets: AssetEntry[];
+  global: boolean;
 }
 
 export const ASSET_TYPE = {
@@ -43,9 +51,38 @@ export interface AssetEntry {
   installed_at: string;
 }
 
-export interface Bridge {
+interface BaseBridge {
   id: string;
-  outputPaths: string[];
-  usesMarkers: boolean;
   compile(rules: Rule[], config: ProjectConfig): Map<string, string>;
+}
+
+export interface DirectoryBridge extends BaseBridge {
+  kind: 'directory';
+  outputDir: string;
+  filePrefix: string;
+  fileExtension: string;
+}
+
+export interface MarkerBridge extends BaseBridge {
+  kind: 'marker';
+  outputPaths: string[];
+  usesMarkers: true;
+}
+
+export type Bridge = DirectoryBridge | MarkerBridge;
+
+export function isDirectoryBridge(bridge: Bridge): bridge is DirectoryBridge {
+  return bridge.kind === 'directory';
+}
+
+export function isMarkerBridge(bridge: Bridge): bridge is MarkerBridge {
+  return bridge.kind === 'marker';
+}
+
+/** Get the known output paths for a bridge (for MarkerBridge returns outputPaths, for DirectoryBridge returns empty since paths are dynamic). */
+export function getBridgeOutputPaths(bridge: Bridge): string[] {
+  if (isMarkerBridge(bridge)) {
+    return bridge.outputPaths;
+  }
+  return [];
 }
