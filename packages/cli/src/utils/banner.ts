@@ -7,8 +7,8 @@ const BANNER_LINES = [
   "╚═════╝ ╚══════╝  ╚═══╝   ╚══╝╚══╝",
 ] as const;
 
-const GRADIENT_START = 45;
-const GRADIENT_END = 201;
+const GRADIENT_START = 252;
+const GRADIENT_END = 240;
 
 function colorizeLine(line: string, color: number): string {
   return `\u001b[38;5;${String(color)}m${line}\u001b[0m`;
