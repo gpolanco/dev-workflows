@@ -135,7 +135,7 @@ describe('devw explain', () => {
     const result = await run(['explain'], tmpDir);
 
     assert.equal(result.exitCode, 1);
-    assert.ok(result.stderr.includes('config.yml not found'));
+    assert.ok(result.stderr.includes('No devw configuration found'));
   });
 
   it('errors when --tool is not configured', async () => {

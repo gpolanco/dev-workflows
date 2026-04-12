@@ -1,5 +1,5 @@
 import { mkdir, writeFile, readFile, symlink, unlink } from 'node:fs/promises';
-import { join, dirname, basename } from 'node:path';
+import { join, dirname } from 'node:path';
 import { homedir } from 'node:os';
 import type { Command } from 'commander';
 import pc from 'picocolors';
@@ -19,6 +19,7 @@ import { cleanStaleFiles } from '../core/scope-filename.js';
 import { detectLegacyFiles, migrateLegacyFiles } from '../core/cleanup.js';
 import { buildCanonicalOutputs, writeCanonical } from '../core/canonical.js';
 import { fileExists } from '../utils/fs.js';
+import { resolveContext } from '../core/resolve-context.js';
 import * as ui from '../utils/ui.js';
 import { ICONS } from '../utils/ui.js';
 import { renderTable } from '../utils/table.js';
@@ -95,6 +96,7 @@ interface CompileContext {
   configRoot: string;
   outputRoot: string;
   globalMode: boolean;
+  dwfDir: string;
 }
 
 function toCompileSummaryRows(result: CompileResult): string[][] {
@@ -124,26 +126,17 @@ function toCompileSummaryRows(result: CompileResult): string[][] {
 }
 
 async function resolveCompileContext(cwd: string): Promise<CompileContext> {
-  const projectConfigPath = join(cwd, '.dwf', 'config.yml');
-  if (await fileExists(projectConfigPath)) {
-    return {
-      configRoot: cwd,
-      outputRoot: cwd,
-      globalMode: false,
-    };
+  const resolved = await resolveContext(cwd);
+  if (!resolved) {
+    throw new Error('No devw configuration found.\nRun "devw init" to set up a project or global configuration.');
   }
 
-  const inGlobalConfigDir = basename(cwd) === '.dwf';
-  const globalConfigPath = join(cwd, 'config.yml');
-  if (inGlobalConfigDir && await fileExists(globalConfigPath)) {
-    return {
-      configRoot: cwd,
-      outputRoot: homedir(),
-      globalMode: true,
-    };
-  }
-
-  throw new Error('.dwf/config.yml not found. Run devw init to initialize the project');
+  return {
+    configRoot: resolved.configRoot,
+    outputRoot: resolved.outputRoot,
+    globalMode: resolved.globalMode,
+    dwfDir: resolved.dwfDir,
+  };
 }
 
 export async function executePipeline(options: PipelineOptions): Promise<CompileResult> {
@@ -151,7 +144,7 @@ export async function executePipeline(options: PipelineOptions): Promise<Compile
   const startTime = performance.now();
   const context = await resolveCompileContext(cwd);
 
-  const config = context.globalMode ? await readConfigFromDwfDir(context.configRoot) : await readConfig(context.configRoot);
+  const config = context.globalMode ? await readConfigFromDwfDir(context.dwfDir) : await readConfig(context.configRoot);
   const projectRules = await readRules(context.configRoot);
   const globalRules = context.globalMode || config.global === false
     ? []
@@ -366,7 +359,7 @@ export async function runCompile(options: CompileOptions): Promise<void> {
     const context = await resolveCompileContext(cwd);
 
     if (options.verbose) {
-      const config = context.globalMode ? await readConfigFromDwfDir(context.configRoot) : await readConfig(context.configRoot);
+      const config = context.globalMode ? await readConfigFromDwfDir(context.dwfDir) : await readConfig(context.configRoot);
       const projectRules = await readRules(context.configRoot);
       const globalRules = context.globalMode || config.global === false
         ? []
