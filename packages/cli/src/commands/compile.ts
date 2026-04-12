@@ -404,6 +404,10 @@ export async function runCompile(options: CompileOptions): Promise<void> {
     const allPaths = [...writtenPaths, ...result.assetPaths];
 
     ui.newline();
+    if (result.activeRuleCount === 0) {
+      ui.warn('No rules found. Run "devw add" to install rules from the registry.');
+      return;
+    }
     ui.success(`Compiled ${String(result.activeRuleCount)} rules ${ICONS.arrow} ${String(allPaths.length)} file${allPaths.length !== 1 ? 's' : ''} ${ui.timing(result.elapsedMs)}`);
     ui.log(summaryTable);
     if (options.verbose && result.overriddenRuleIds.length > 0) {
