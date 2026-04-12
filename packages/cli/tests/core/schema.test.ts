@@ -1,6 +1,15 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { isValidScope, isBuiltinScope, BUILTIN_SCOPES, VALID_TOOL_IDS } from '../../src/core/schema.js';
+import {
+  isValidScope,
+  isBuiltinScope,
+  isValidTrigger,
+  BUILTIN_SCOPES,
+  VALID_TOOL_IDS,
+  VALID_TRIGGERS,
+  VALID_CONFIG_VERSIONS,
+  validateScopeMetadata,
+} from '../../src/core/schema.js';
 
 describe('isValidScope', () => {
   it('accepts built-in scopes', () => {
@@ -79,5 +88,106 @@ describe('BUILTIN_SCOPES', () => {
 describe('VALID_TOOL_IDS', () => {
   it('contains all 5 tool IDs', () => {
     assert.deepEqual([...VALID_TOOL_IDS], ['claude', 'cursor', 'gemini', 'windsurf', 'copilot']);
+  });
+});
+
+describe('VALID_CONFIG_VERSIONS', () => {
+  it('contains 0.1 and 0.2', () => {
+    assert.deepEqual([...VALID_CONFIG_VERSIONS], ['0.1', '0.2']);
+  });
+});
+
+describe('VALID_TRIGGERS', () => {
+  it('contains always, glob, and manual', () => {
+    assert.deepEqual([...VALID_TRIGGERS], ['always', 'glob', 'manual']);
+  });
+});
+
+describe('isValidTrigger', () => {
+  it('returns true for valid triggers', () => {
+    assert.equal(isValidTrigger('always'), true);
+    assert.equal(isValidTrigger('glob'), true);
+    assert.equal(isValidTrigger('manual'), true);
+  });
+
+  it('returns false for invalid triggers', () => {
+    assert.equal(isValidTrigger('invalid'), false);
+    assert.equal(isValidTrigger('auto'), false);
+    assert.equal(isValidTrigger(''), false);
+  });
+});
+
+describe('validateScopeMetadata', () => {
+  it('returns valid metadata with globs array', () => {
+    const result = validateScopeMetadata({ globs: ['**/*.ts', '**/*.tsx'] });
+    assert.equal(result.errors.length, 0);
+    assert.ok(result.metadata);
+    assert.deepEqual(result.metadata?.globs, ['**/*.ts', '**/*.tsx']);
+  });
+
+  it('returns valid metadata with paths array', () => {
+    const result = validateScopeMetadata({ paths: ['src/', 'lib/'] });
+    assert.equal(result.errors.length, 0);
+    assert.ok(result.metadata);
+    assert.deepEqual(result.metadata?.paths, ['src/', 'lib/']);
+  });
+
+  it('returns valid metadata with trigger value', () => {
+    const result = validateScopeMetadata({ trigger: 'always' });
+    assert.equal(result.errors.length, 0);
+    assert.ok(result.metadata);
+    assert.equal(result.metadata?.trigger, 'always');
+  });
+
+  it('returns undefined metadata for empty input', () => {
+    const result = validateScopeMetadata({});
+    assert.equal(result.errors.length, 0);
+    assert.equal(result.metadata, undefined);
+  });
+
+  it('rejects non-array globs', () => {
+    const result = validateScopeMetadata({ globs: '**/*.ts' });
+    assert.ok(result.errors.length > 0);
+    assert.ok(result.errors[0]?.field === 'globs');
+  });
+
+  it('rejects non-string items in globs array', () => {
+    const result = validateScopeMetadata({ globs: [123, true] });
+    assert.ok(result.errors.length > 0);
+    assert.ok(result.errors[0]?.field === 'globs');
+  });
+
+  it('rejects non-array paths', () => {
+    const result = validateScopeMetadata({ paths: 'src/' });
+    assert.ok(result.errors.length > 0);
+    assert.ok(result.errors[0]?.field === 'paths');
+  });
+
+  it('rejects invalid trigger value', () => {
+    const result = validateScopeMetadata({ trigger: 'invalid' });
+    assert.ok(result.errors.length > 0);
+    assert.ok(result.errors[0]?.field === 'trigger');
+    assert.ok(result.errors[0]?.message.includes('invalid'));
+  });
+
+  it('validates all fields together', () => {
+    const result = validateScopeMetadata({
+      globs: ['**/*.ts'],
+      paths: ['src/'],
+      trigger: 'glob',
+    });
+    assert.equal(result.errors.length, 0);
+    assert.ok(result.metadata);
+    assert.deepEqual(result.metadata?.globs, ['**/*.ts']);
+    assert.deepEqual(result.metadata?.paths, ['src/']);
+    assert.equal(result.metadata?.trigger, 'glob');
+  });
+
+  it('reports multiple errors at once', () => {
+    const result = validateScopeMetadata({
+      globs: 'not-an-array',
+      trigger: 'invalid',
+    });
+    assert.equal(result.errors.length, 2);
   });
 });

@@ -77,7 +77,7 @@ describe('devw explain', () => {
     assert.ok(result.stdout.includes('claude'));
     assert.ok(result.stdout.includes('.claude/rules/dwf-'));
     assert.ok(result.stdout.includes('Rules:'));
-    assert.ok(result.stdout.includes('architecture:'));
+    assert.ok(result.stdout.includes('multi-file'));
   });
 
   it('shows excluded rules with reasons', async () => {

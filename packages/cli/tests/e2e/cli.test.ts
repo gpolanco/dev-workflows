@@ -256,4 +256,83 @@ rules:
     assert.equal(result.exitCode, 1);
     assert.ok(result.stderr.includes('not installed'));
   });
+
+  it('compile generates multi-file output for directory bridges', async () => {
+    await run(['init', '--tools', 'claude', '--mode', 'copy', '-y'], tmpDir);
+
+    // Write two scope files
+    await writeFile(
+      join(tmpDir, '.dwf', 'rules', 'conventions.yml'),
+      `scope: conventions
+rules:
+  - id: named-exports
+    severity: error
+    content: Always use named exports.
+`,
+      'utf-8',
+    );
+    await writeFile(
+      join(tmpDir, '.dwf', 'rules', 'security.yml'),
+      `scope: security
+rules:
+  - id: no-eval
+    severity: error
+    content: Never use eval.
+`,
+      'utf-8',
+    );
+
+    const result = await run(['compile'], tmpDir);
+
+    assert.equal(result.exitCode, 0);
+
+    // Both scope files should be generated
+    const convFile = await readFile(join(tmpDir, '.claude', 'rules', 'dwf-conventions.md'), 'utf-8');
+    assert.ok(convFile.includes('named exports'));
+
+    const secFile = await readFile(join(tmpDir, '.claude', 'rules', 'dwf-security.md'), 'utf-8');
+    assert.ok(secFile.includes('eval'));
+  });
+
+  it('compile --dry-run lists files without writing', async () => {
+    await run(['init', '--tools', 'claude', '--mode', 'copy', '-y'], tmpDir);
+
+    await writeFile(
+      join(tmpDir, '.dwf', 'rules', 'conventions.yml'),
+      `scope: conventions
+rules:
+  - id: named-exports
+    severity: error
+    content: Always use named exports.
+`,
+      'utf-8',
+    );
+
+    const result = await run(['compile', '--dry-run'], tmpDir);
+
+    assert.equal(result.exitCode, 0);
+    assert.ok(result.stdout.includes('Dry run'));
+    assert.ok(result.stdout.includes('.claude/rules/dwf-conventions.md'));
+  });
+
+  it('explain shows multi-file output paths for directory bridges', async () => {
+    await run(['init', '--tools', 'claude', '--mode', 'copy', '-y'], tmpDir);
+
+    await writeFile(
+      join(tmpDir, '.dwf', 'rules', 'conventions.yml'),
+      `scope: conventions
+rules:
+  - id: named-exports
+    severity: error
+    content: Always use named exports.
+`,
+      'utf-8',
+    );
+
+    const result = await run(['explain'], tmpDir);
+
+    assert.equal(result.exitCode, 0);
+    assert.ok(result.stdout.includes('multi-file'));
+    assert.ok(result.stdout.includes('.claude/rules/dwf-'));
+  });
 });

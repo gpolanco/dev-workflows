@@ -239,7 +239,7 @@ describe('output format: explain', () => {
     const result = await run(['explain'], tmpDir);
 
     assert.ok(result.stdout.includes('markers (BEGIN/END)'), 'should show markers mode for copilot');
-    assert.ok(result.stdout.includes('full file'), 'should show full file mode for cursor');
+    assert.ok(result.stdout.includes('multi-file (one per scope)'), 'should show multi-file mode for cursor');
   });
 });
 
