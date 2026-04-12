@@ -225,13 +225,13 @@ rules:
     assert.ok(result.stderr.includes('Invalid rule path'));
   });
 
-  it('remove without pulled rules shows warning', async () => {
+  it('remove without args in non-TTY shows usage error', async () => {
     await run(['init', '--tools', 'claude', '--mode', 'copy', '-y'], tmpDir);
-    // Non-TTY, no args, no pulled → should warn
+    // Non-TTY, no args → should error with usage hint
     const result = await run(['remove'], tmpDir);
 
-    assert.equal(result.exitCode, 0);
-    assert.ok(result.stdout.includes('Nothing installed to remove'));
+    assert.equal(result.exitCode, 1);
+    assert.ok(result.stderr.includes('No rule specified'));
   });
 
   it('remove with old block format exits with error', async () => {

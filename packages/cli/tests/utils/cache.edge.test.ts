@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, rm, mkdir, writeFile, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { get, set, getFromDisk } from '../../src/utils/cache.js';
+import { get, set, getFromDisk, fetchWithETag } from '../../src/utils/cache.js';
 
 describe('cache edge cases', () => {
   let tempDir: string;
@@ -38,7 +38,7 @@ describe('cache edge cases', () => {
         },
       };
       await writeFile(
-        join(tempDir, '.dwf', '.cache', 'registry.json'),
+        join(tempDir, '.dwf', '.cache', 'registry-store.json'),
         JSON.stringify(store),
         'utf-8',
       );
@@ -51,7 +51,7 @@ describe('cache edge cases', () => {
   describe('malformed store', () => {
     it('readStore returns {} when cache file is a JSON array', async () => {
       await writeFile(
-        join(tempDir, '.dwf', '.cache', 'registry.json'),
+        join(tempDir, '.dwf', '.cache', 'registry-store.json'),
         JSON.stringify([1, 2, 3]),
         'utf-8',
       );
@@ -82,7 +82,7 @@ describe('cache edge cases', () => {
       const after = Date.now();
 
       const raw = await readFile(
-        join(tempDir, '.dwf', '.cache', 'registry.json'),
+        join(tempDir, '.dwf', '.cache', 'registry-store.json'),
         'utf-8',
       );
       const store = JSON.parse(raw) as Record<string, { timestamp: number }>;
@@ -97,6 +97,81 @@ describe('cache edge cases', () => {
     it('get() with empty store returns null', () => {
       const result = get<string>(tempDir, 'missing', {});
       assert.equal(result, null);
+    });
+  });
+
+  describe('fetchWithETag', () => {
+    const originalFetch = globalThis.fetch;
+
+    afterEach(() => {
+      globalThis.fetch = originalFetch;
+    });
+
+    it('writes cache and etag on 200 response', async () => {
+      globalThis.fetch = async () =>
+        new Response(JSON.stringify({ version: 1 }), {
+          status: 200,
+          headers: {
+            etag: 'W/"abc123"',
+            'content-type': 'application/json',
+          },
+        });
+
+      const cacheDir = join(tempDir, '.dwf', '.cache');
+      const result = await fetchWithETag<{ version: number }>('https://example.com/registry.json', cacheDir, 'registry');
+
+      assert.equal(result.fromCache, false);
+      assert.deepEqual(result.data, { version: 1 });
+
+      const dataRaw = await readFile(join(cacheDir, 'registry.json'), 'utf-8');
+      const etagRaw = await readFile(join(cacheDir, 'registry.etag'), 'utf-8');
+      assert.deepEqual(JSON.parse(dataRaw), { version: 1 });
+      assert.equal(etagRaw.trim(), 'W/"abc123"');
+    });
+
+    it('uses local cache when server returns 304', async () => {
+      const cacheDir = join(tempDir, '.dwf', '.cache');
+      await writeFile(join(cacheDir, 'registry.json'), JSON.stringify({ cached: true }), 'utf-8');
+      await writeFile(join(cacheDir, 'registry.etag'), 'W/"etag-a"\n', 'utf-8');
+
+      globalThis.fetch = async (_url, init) => {
+        const headers = (init?.headers ?? {}) as Record<string, string>;
+        assert.equal(headers['If-None-Match'], 'W/"etag-a"');
+        return new Response(null, { status: 304 });
+      };
+
+      const result = await fetchWithETag<{ cached: boolean }>('https://example.com/registry.json', cacheDir, 'registry');
+      assert.equal(result.fromCache, true);
+      assert.deepEqual(result.data, { cached: true });
+    });
+
+    it('falls back to cache when network fails', async () => {
+      const cacheDir = join(tempDir, '.dwf', '.cache');
+      await writeFile(join(cacheDir, 'registry.json'), JSON.stringify({ offline: true }), 'utf-8');
+
+      globalThis.fetch = async () => {
+        throw new Error('network down');
+      };
+
+      const result = await fetchWithETag<{ offline: boolean }>('https://example.com/registry.json', cacheDir, 'registry');
+      assert.equal(result.fromCache, true);
+      assert.deepEqual(result.data, { offline: true });
+    });
+
+    it('throws clear error when no cache and request fails', async () => {
+      const cacheDir = join(tempDir, '.dwf', '.cache');
+
+      globalThis.fetch = async () => {
+        throw new Error('network down');
+      };
+
+      await assert.rejects(
+        () => fetchWithETag('https://example.com/registry.json', cacheDir, 'registry'),
+        (error: Error) => {
+          assert.match(error.message, /Unable to fetch registry/);
+          return true;
+        },
+      );
     });
   });
 });

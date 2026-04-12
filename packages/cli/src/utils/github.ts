@@ -1,7 +1,12 @@
+import { join } from 'node:path';
+import { fetchWithETag } from './cache.js';
+import type { Registry, RegistryAssets, RegistryRule } from './registry.js';
+
 const BRANCH = 'main';
 const REPO = 'gpolanco/dev-workflows';
 const RAW_BASE = `https://raw.githubusercontent.com/${REPO}/${BRANCH}/content`;
 const API_BASE = `https://api.github.com/repos/${REPO}/contents/content`;
+const REGISTRY_URL = `${RAW_BASE}/registry.json`;
 
 export class GitHubError extends Error {
   constructor(
@@ -99,4 +104,109 @@ export async function listDirectory(path?: string): Promise<DirectoryEntry[]> {
     name: entry.name.replace(/\.md$/, ''),
     type: entry.type,
   }));
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === 'string');
+}
+
+function parseRegistryRule(value: unknown): RegistryRule | null {
+  if (!value || typeof value !== 'object') {
+    return null;
+  }
+
+  const record = value as Record<string, unknown>;
+  if (
+    typeof record['path'] !== 'string' ||
+    typeof record['name'] !== 'string' ||
+    typeof record['description'] !== 'string' ||
+    typeof record['version'] !== 'string' ||
+    typeof record['scope'] !== 'string' ||
+    !isStringArray(record['tags']) ||
+    typeof record['size_bytes'] !== 'number'
+  ) {
+    return null;
+  }
+
+  return {
+    path: record['path'],
+    name: record['name'],
+    description: record['description'],
+    version: record['version'],
+    scope: record['scope'],
+    tags: record['tags'],
+    size_bytes: record['size_bytes'],
+  };
+}
+
+function parseRegistryAssets(value: unknown): RegistryAssets | null {
+  if (!value || typeof value !== 'object') {
+    return null;
+  }
+
+  const record = value as Record<string, unknown>;
+  if (
+    !isStringArray(record['commands']) ||
+    !isStringArray(record['templates']) ||
+    !isStringArray(record['hooks']) ||
+    !isStringArray(record['presets'])
+  ) {
+    return null;
+  }
+
+  return {
+    commands: record['commands'],
+    templates: record['templates'],
+    hooks: record['hooks'],
+    presets: record['presets'],
+  };
+}
+
+function parseRegistry(value: unknown): Registry {
+  if (!value || typeof value !== 'object') {
+    throw new GitHubError('Invalid registry.json: expected an object', 0);
+  }
+
+  const record = value as Record<string, unknown>;
+  const rulesRaw = record['rules'];
+  if (!Array.isArray(rulesRaw)) {
+    throw new GitHubError('Invalid registry.json: missing rules array', 0);
+  }
+
+  const rules: RegistryRule[] = [];
+  for (const rule of rulesRaw) {
+    const parsed = parseRegistryRule(rule);
+    if (parsed === null) {
+      throw new GitHubError('Invalid registry.json: rule entry has invalid shape', 0);
+    }
+    rules.push(parsed);
+  }
+
+  const assets = parseRegistryAssets(record['assets']);
+  if (assets === null) {
+    throw new GitHubError('Invalid registry.json: invalid assets object', 0);
+  }
+
+  if (typeof record['version'] !== 'number' || typeof record['generated_at'] !== 'string') {
+    throw new GitHubError('Invalid registry.json: missing version or generated_at', 0);
+  }
+
+  return {
+    version: record['version'],
+    generated_at: record['generated_at'],
+    rules,
+    assets,
+  };
+}
+
+export async function fetchRegistry(cwd: string): Promise<Registry> {
+  const cacheDir = join(cwd, '.dwf', '.cache');
+
+  try {
+    const result = await fetchWithETag<unknown>(REGISTRY_URL, cacheDir, 'registry');
+    return parseRegistry(result.data);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new GitHubError(`Could not fetch registry manifest: ${message}`, 0);
+  }
 }
