@@ -132,10 +132,16 @@ describe('devw explain', () => {
   });
 
   it('errors when no config exists', async () => {
-    const result = await run(['explain'], tmpDir);
+    const originalHome = process.env['HOME'];
+    process.env['HOME'] = tmpDir;
+    try {
+      const result = await run(['explain'], tmpDir);
 
-    assert.equal(result.exitCode, 1);
-    assert.ok(result.stderr.includes('No devw configuration found'));
+      assert.equal(result.exitCode, 1);
+      assert.ok(result.stderr.includes('No devw configuration found'));
+    } finally {
+      process.env['HOME'] = originalHome;
+    }
   });
 
   it('errors when --tool is not configured', async () => {

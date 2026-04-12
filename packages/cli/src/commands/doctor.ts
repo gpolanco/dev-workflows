@@ -1,5 +1,5 @@
 import { lstat, readFile, readdir } from 'node:fs/promises';
-import { basename, join, relative } from 'node:path';
+import { join, relative } from 'node:path';
 import type { Command } from 'commander';
 import { parse } from 'yaml';
 import { readConfig, readRules } from '../core/parser.js';
@@ -14,7 +14,6 @@ import { getBridgeOutputPaths, isDirectoryBridge } from '../bridges/types.js';
 import { fileExists } from '../utils/fs.js';
 import { resolveContext } from '../core/resolve-context.js';
 import { isValidScope } from '../core/schema.js';
-import { buildCanonicalOutputs } from '../core/canonical.js';
 import { detectLegacyFiles } from '../core/cleanup.js';
 import * as ui from '../utils/ui.js';
 
@@ -268,124 +267,12 @@ export async function checkHashSync(cwd: string, rules: Rule[]): Promise<CheckRe
   };
 }
 
-function normalizeComparableContent(content: string): string {
-  const frontmatterPattern = /^---\r?\n[\s\S]*?\r?\n---\r?\n?/;
-  const withoutFrontmatter = content.replace(frontmatterPattern, '');
-  return withoutFrontmatter.replaceAll('\r\n', '\n').trimEnd();
-}
-
 function extractFrontmatter(content: string): string | null {
   const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/);
   if (!match) {
     return null;
   }
   return match[1] ?? null;
-}
-
-export async function checkCanonicalExists(cwd: string): Promise<CheckResult> {
-  const canonicalDir = join(cwd, '.agents', 'rules', 'devw');
-
-  let entries: string[];
-  try {
-    entries = await readdir(canonicalDir);
-  } catch {
-    return {
-      passed: false,
-      message: '.agents/rules/devw not found — run "devw compile"',
-    };
-  }
-
-  const canonicalFiles = entries.filter((entry) => entry.startsWith('dwf-') && entry.endsWith('.md'));
-  if (canonicalFiles.length === 0) {
-    return {
-      passed: false,
-      message: '.agents/rules/devw has no canonical files — run "devw compile"',
-    };
-  }
-
-  return {
-    passed: true,
-    message: `Canonical files exist (${String(canonicalFiles.length)} file${canonicalFiles.length === 1 ? '' : 's'})`,
-  };
-}
-
-export async function checkCanonicalSync(cwd: string, rules: Rule[], config: ProjectConfig): Promise<CheckResult> {
-  const directoryBridges = getConfiguredDirectoryBridges(config);
-
-  if (directoryBridges.length === 0) {
-    return {
-      passed: true,
-      message: 'Canonical sync skipped (no directory tools configured)',
-      skipped: true,
-    };
-  }
-
-  const canonicalOutputs = buildCanonicalOutputs(rules);
-  if (canonicalOutputs.size === 0) {
-    return {
-      passed: true,
-      message: 'Canonical sync skipped (no active scope outputs)',
-      skipped: true,
-    };
-  }
-
-  const mismatches: string[] = [];
-  let compared = 0;
-
-  for (const bridge of directoryBridges) {
-    const expectedNativeFiles = new Set<string>();
-
-    for (const [canonicalPath, canonicalContent] of canonicalOutputs) {
-      const canonicalFilename = basename(canonicalPath);
-      const scopeName = canonicalFilename.slice('dwf-'.length, canonicalFilename.length - '.md'.length);
-      const nativeFilename = `${bridge.filePrefix}${scopeName}${bridge.fileExtension}`;
-      expectedNativeFiles.add(nativeFilename);
-
-      const nativePath = join(cwd, bridge.outputDir, nativeFilename);
-      if (!(await fileExists(nativePath))) {
-        mismatches.push(`${bridge.id}: missing ${nativeFilename}`);
-        continue;
-      }
-
-      const nativeRaw = await readFile(nativePath, 'utf-8');
-      const normalizedNative = normalizeComparableContent(nativeRaw);
-      const normalizedCanonical = normalizeComparableContent(canonicalContent);
-
-      compared += 1;
-      if (normalizedNative !== normalizedCanonical) {
-        mismatches.push(`${bridge.id}: modified ${nativeFilename}`);
-      }
-    }
-
-    const bridgeDir = join(cwd, bridge.outputDir);
-    let entries: string[] = [];
-    try {
-      entries = await readdir(bridgeDir);
-    } catch {
-      entries = [];
-    }
-
-    for (const entry of entries) {
-      if (!entry.startsWith(bridge.filePrefix) || !entry.endsWith(bridge.fileExtension)) {
-        continue;
-      }
-      if (!expectedNativeFiles.has(entry)) {
-        mismatches.push(`${bridge.id}: unexpected ${entry}`);
-      }
-    }
-  }
-
-  if (mismatches.length > 0) {
-    return {
-      passed: false,
-      message: `Canonical/native mismatch: ${mismatches.join(', ')}`,
-    };
-  }
-
-  return {
-    passed: true,
-    message: `Canonical and native files are in sync (${String(compared)} files compared)`,
-  };
 }
 
 export async function checkLegacyMigration(cwd: string): Promise<CheckResult> {
@@ -570,17 +457,7 @@ export async function runDoctor(): Promise<void> {
   const hashResult = await checkHashSync(effectiveCwd, rules);
   results.push(hashResult);
 
-  // Check 11: Canonical output exists (skip if no rules)
-  if (rules.length > 0) {
-    const canonicalExistsResult = await checkCanonicalExists(effectiveCwd);
-    results.push(canonicalExistsResult);
-
-    // Check 12: Canonical and native outputs are synchronized
-    const canonicalSyncResult = await checkCanonicalSync(effectiveCwd, rules, config);
-    results.push(canonicalSyncResult);
-  }
-
-  // Check 13: Legacy migration has no pending files
+  // Check 11: Legacy migration has no pending files
   const legacyResult = await checkLegacyMigration(effectiveCwd);
   results.push(legacyResult);
 

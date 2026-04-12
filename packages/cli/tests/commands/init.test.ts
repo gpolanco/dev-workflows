@@ -59,13 +59,12 @@ describe('runInit', () => {
     assert.ok(!(await fileExists(join(fakeHome, '.dwf', 'config.yml'))));
   });
 
-  it('initializes global mode with --global and creates canonical directory', async () => {
+  it('initializes global mode with --global', async () => {
     await runInit({ global: true, tools: 'claude', mode: 'copy', yes: true });
 
     const globalConfigPath = join(fakeHome, '.dwf', 'config.yml');
     assert.ok(await fileExists(globalConfigPath));
     assert.ok(await fileExists(join(fakeHome, '.dwf', 'rules', 'conventions.yml')));
-    assert.ok(await fileExists(join(fakeHome, '.agents', 'rules', 'devw')));
     assert.ok(!(await fileExists(join(projectDir, '.dwf', 'config.yml'))));
 
     const config = await readFile(globalConfigPath, 'utf-8');

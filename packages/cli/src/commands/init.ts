@@ -3,7 +3,6 @@ import { join, basename } from 'node:path';
 import { homedir } from 'node:os';
 import type { Command } from 'commander';
 import { stringify } from 'yaml';
-import pc from 'picocolors';
 import { detectTools, SUPPORTED_TOOLS } from '../utils/detect-tools.js';
 import * as ui from '../utils/ui.js';
 import type { ToolId } from '../utils/detect-tools.js';
@@ -11,8 +10,8 @@ import { fileExists } from '../utils/fs.js';
 import {
   selectPrompt,
   multiselectPrompt,
+  confirmPrompt,
   introPrompt,
-  notePrompt,
   outroPrompt,
   spinnerTask,
   isInteractiveSession,
@@ -165,11 +164,17 @@ export async function runInit(options: InitOptions): Promise<void> {
 
   if (await fileExists(dwfDir)) {
     const locationHint = scope === 'global'
-      ? '~/.dwf/ already exists in your home directory'
-      : '.dwf/ already exists in this directory';
-    ui.error(locationHint, 'Remove it first or run from a different directory');
-    process.exitCode = 1;
-    return;
+      ? '~/.dwf/ already exists.'
+      : '.dwf/ already exists in this directory.';
+    ui.warn(locationHint);
+    const overwrite = await confirmPrompt({
+      message: 'Overwrite config? (rules will be preserved)',
+      defaultValue: false,
+    });
+    if (!overwrite) {
+      outroPrompt('Init cancelled.');
+      return;
+    }
   }
 
   const projectName = scope === 'global' ? 'global' : basename(cwd);
@@ -210,41 +215,15 @@ export async function runInit(options: InitOptions): Promise<void> {
     },
   });
 
-  // Ensure canonical global output dir exists for global mode.
-  if (scope === 'global') {
-    await spinnerTask({
-      label: 'Preparing canonical global output',
-      task: async () => {
-        await mkdir(join(rootDir, '.agents', 'rules', 'devw'), { recursive: true });
-      },
-    });
-  } else {
+  if (scope !== 'global') {
     await appendToGitignore(cwd);
   }
 
   // Success summary
+  const dwfPath = scope === 'global' ? '~/.dwf/' : '.dwf/';
   ui.newline();
-  ui.header('dev-workflows');
-  ui.newline();
-  ui.success(`Initialized ${scope === 'global' ? '~/.dwf/' : '.dwf/'} successfully`);
-  ui.newline();
-  ui.keyValue('Project:', pc.bold(projectName));
-  ui.keyValue('Scope:', scope);
-  ui.keyValue('Tools:', pc.cyan(tools.join(', ')));
-  ui.keyValue('Mode:', mode);
-  ui.newline();
-  ui.header("What's next");
-  ui.newline();
-  console.log(`    1. Browse available rules         ${pc.cyan('devw add --list')}`);
-  console.log(`    2. Add a rule                     ${pc.cyan('devw add <category>/<rule>')}`);
-  console.log(`    3. Or write your own rules in     ${pc.cyan(scope === 'global' ? '~/.dwf/rules/' : '.dwf/rules/')}`);
-  console.log(`    4. When ready, compile            ${pc.cyan('devw compile')}`);
-
-  notePrompt(
-    `Project: ${projectName}\nScope: ${scope}\nTools: ${tools.join(', ')}\nMode: ${mode}`,
-    'Initialized',
-  );
-  outroPrompt(`Ready: ${scope === 'global' ? '~/.dwf/' : '.dwf/'}`);
+  ui.success(`Initialized ${dwfPath} — ${tools.join(', ')} (${mode} mode)`);
+  outroPrompt('Run "devw add" to browse and install rules.');
 
   if (options.preset) {
     ui.newline();
