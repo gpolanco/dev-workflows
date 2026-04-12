@@ -33,7 +33,7 @@ export interface ProjectConfig {
   blocks: string[];
   pulled: PulledEntry[];
   assets: AssetEntry[];
-  global?: boolean;
+  global: boolean;
 }
 
 export const ASSET_TYPE = {
