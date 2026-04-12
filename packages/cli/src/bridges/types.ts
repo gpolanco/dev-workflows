@@ -1,3 +1,9 @@
+export interface ScopeMetadata {
+  globs?: string[];
+  paths?: string[];
+  trigger?: 'always' | 'glob' | 'manual';
+}
+
 export interface Rule {
   id: string;
   scope: string;
@@ -7,6 +13,7 @@ export interface Rule {
   enabled: boolean;
   sourceBlock?: string;
   source?: string;
+  metadata?: ScopeMetadata;
 }
 
 export interface PulledEntry {
@@ -26,6 +33,7 @@ export interface ProjectConfig {
   blocks: string[];
   pulled: PulledEntry[];
   assets: AssetEntry[];
+  global?: boolean;
 }
 
 export const ASSET_TYPE = {
