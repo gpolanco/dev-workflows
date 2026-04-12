@@ -159,7 +159,7 @@ describe('output format: doctor', () => {
     await writeFile(join(tmpDir, '.dwf', 'config.yml'), CONFIG_TEMPLATE(['claude']));
     await writeFile(join(tmpDir, '.dwf', 'rules', 'conventions.yml'), RULES_CONVENTIONS);
 
-    // Compile first so canonical checks pass; symlink check should still be skipped in copy mode
+    // Compile first so hash checks pass; symlink check should still be skipped in copy mode
     await run(['compile'], tmpDir);
 
     const result = await run(['doctor'], tmpDir);

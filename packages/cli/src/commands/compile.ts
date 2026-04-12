@@ -16,8 +16,7 @@ import { windsurfBridge } from '../bridges/windsurf.js';
 import { copilotBridge } from '../bridges/copilot.js';
 import { mergeMarkedContent, removeMarkedBlock } from '../core/markers.js';
 import { cleanStaleFiles } from '../core/scope-filename.js';
-import { detectLegacyFiles, migrateLegacyFiles } from '../core/cleanup.js';
-import { buildCanonicalOutputs, writeCanonical } from '../core/canonical.js';
+import { detectLegacyFiles, migrateLegacyFiles, detectCanonicalDir, removeCanonicalDir } from '../core/cleanup.js';
 import { fileExists } from '../utils/fs.js';
 import { resolveContext } from '../core/resolve-context.js';
 import * as ui from '../utils/ui.js';
@@ -53,8 +52,6 @@ export interface CompileResult {
   globalRuleCount: number;
   projectRuleCount: number;
   overriddenRuleIds: string[];
-  canonicalFileCount: number;
-  canonicalError?: string;
   assetPaths: string[];
   elapsedMs: number;
   staleResults: StaleFileResult[];
@@ -167,6 +164,15 @@ export async function executePipeline(options: PipelineOptions): Promise<Compile
     if (legacyFiles.length > 0) {
       const actions = await migrateLegacyFiles(context.outputRoot, legacyFiles);
       migration.actions = actions;
+    }
+
+    // Clean up old canonical directory if it exists
+    const canonicalDir = await detectCanonicalDir(context.outputRoot);
+    if (canonicalDir) {
+      const removed = await removeCanonicalDir(context.outputRoot);
+      if (removed) {
+        migration.actions.push('Removed legacy .agents/rules/devw/ canonical directory');
+      }
     }
   }
 
@@ -298,35 +304,6 @@ export async function executePipeline(options: PipelineOptions): Promise<Compile
     }
   }
 
-  // Canonical output intentionally always runs, even when --tool filters bridges.
-  // This keeps `.agents/rules/devw` as the source-of-truth for doctor checks and distribution.
-  const canonicalOutputs = buildCanonicalOutputs(rules);
-  let canonicalPaths: string[] = [];
-  let canonicalError: string | undefined;
-  if (write) {
-    try {
-      canonicalPaths = await writeCanonical(context.outputRoot, canonicalOutputs);
-      for (const relativePath of canonicalPaths) {
-        results.push({ bridgeId: 'canonical', outputPath: relativePath, success: true });
-      }
-    } catch (err) {
-      canonicalError = err instanceof Error ? err.message : String(err);
-      const errorPaths = [...canonicalOutputs.keys()];
-      if (errorPaths.length > 0) {
-        for (const relativePath of errorPaths) {
-          results.push({ bridgeId: 'canonical', outputPath: relativePath, success: false, error: canonicalError });
-        }
-      } else {
-        results.push({ bridgeId: 'canonical', outputPath: '.agents/rules/devw', success: false, error: canonicalError });
-      }
-    }
-  } else {
-    for (const [relativePath, content] of canonicalOutputs) {
-      canonicalPaths.push(relativePath);
-      results.push({ bridgeId: 'canonical', outputPath: relativePath, success: true, content });
-    }
-  }
-
   let assetPaths: string[] = [];
   if (write) {
     const hash = computeRulesHash(activeRules);
@@ -343,8 +320,6 @@ export async function executePipeline(options: PipelineOptions): Promise<Compile
     globalRuleCount: globalRules.length,
     projectRuleCount: projectRules.length,
     overriddenRuleIds,
-    canonicalFileCount: canonicalPaths.length,
-    canonicalError,
     assetPaths,
     elapsedMs,
     staleResults,
@@ -403,21 +378,12 @@ export async function runCompile(options: CompileOptions): Promise<void> {
       const fileCount = result.results.filter((r) => r.success).length;
       ui.newline();
       ui.info(
-        `Would generate ${String(fileCount)} file${fileCount !== 1 ? 's' : ''} (${String(result.canonicalFileCount)} canonical) from ${String(result.activeRuleCount)} rules`,
+        `Would generate ${String(fileCount)} file${fileCount !== 1 ? 's' : ''} from ${String(result.activeRuleCount)} rules`,
       );
       return;
     }
 
     const result = await executePipeline({ cwd, tool: options.tool });
-
-    if (options.tool) {
-      ui.info('Note: canonical output is always refreshed in .agents/rules/devw');
-    }
-
-    if (result.canonicalError) {
-      ui.warn(`Canonical write failed: ${result.canonicalError}`);
-      ui.warn('Tool-specific outputs were still written');
-    }
 
     const summaryTable = renderTable(
       ['bridge', 'generated', 'failed'],
@@ -439,7 +405,6 @@ export async function runCompile(options: CompileOptions): Promise<void> {
 
     ui.newline();
     ui.success(`Compiled ${String(result.activeRuleCount)} rules ${ICONS.arrow} ${String(allPaths.length)} file${allPaths.length !== 1 ? 's' : ''} ${ui.timing(result.elapsedMs)}`);
-    ui.info(`Canonical files: ${String(result.canonicalFileCount)}`);
     ui.log(summaryTable);
     if (options.verbose && result.overriddenRuleIds.length > 0) {
       ui.info(`Project overrides (${String(result.overriddenRuleIds.length)}): ${result.overriddenRuleIds.join(', ')}`);
