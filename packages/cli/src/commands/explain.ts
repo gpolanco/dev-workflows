@@ -30,7 +30,7 @@ function getModeLabel(bridge: Bridge): string {
   if (isMarkerBridge(bridge)) {
     return 'markers (BEGIN/END)';
   }
-  return 'full file';
+  return 'multi-file (one per scope)';
 }
 
 function getExcludedRules(rules: Rule[]): Array<{ id: string; reason: string }> {
@@ -80,22 +80,50 @@ async function runExplain(options: ExplainOptions): Promise<void> {
 
   for (const toolId of toolIds) {
     const bridge = getBridge(toolId);
-    if (!bridge) continue;
-
-    const bridgePaths = getBridgeOutputPaths(bridge);
-    const outputPath = bridgePaths[0] ?? (isDirectoryBridge(bridge) ? `${bridge.outputDir}/${bridge.filePrefix}*${bridge.fileExtension}` : toolId);
+    if (!bridge) {
+      continue;
+    }
 
     console.log(`  ${formatSeparator(toolId)}`);
     ui.newline();
-    ui.keyValue('Output:', outputPath);
-    ui.keyValue('Mode:', getModeLabel(bridge));
 
-    const included = filterRules(rules);
-    const grouped = groupByScope(included);
+    if (isDirectoryBridge(bridge)) {
+      // DirectoryBridge: show output directory and file listing
+      const outputPattern = `${bridge.outputDir}/${bridge.filePrefix}*${bridge.fileExtension}`;
+      ui.keyValue('Output:', outputPattern);
+      ui.keyValue('Mode:', getModeLabel(bridge));
 
-    ui.keyValue('Rules:', `${String(included.length)} included`);
-    for (const [scope, scopeRules] of grouped) {
-      console.log(`    ${' '.repeat(10)}${scope}: ${String(scopeRules.length)}`);
+      const included = filterRules(rules);
+      const grouped = groupByScope(included);
+
+      ui.keyValue('Rules:', `${String(included.length)} included`);
+
+      // Show files that would be generated (one per scope)
+      ui.newline();
+      ui.keyValue('Files:', `${String(grouped.size)} scope${grouped.size !== 1 ? 's' : ''}`);
+      const outputs = bridge.compile(rules, config);
+      for (const [filePath] of outputs) {
+        console.log(`    ${' '.repeat(10)}${filePath}`);
+      }
+
+      // Show scope breakdown
+      for (const [scope, scopeRules] of grouped) {
+        console.log(`    ${' '.repeat(10)}  ${scope}: ${String(scopeRules.length)} rule${scopeRules.length !== 1 ? 's' : ''}`);
+      }
+    } else {
+      // MarkerBridge: show single output file
+      const bridgePaths = getBridgeOutputPaths(bridge);
+      const outputPath = bridgePaths[0] ?? toolId;
+      ui.keyValue('Output:', outputPath);
+      ui.keyValue('Mode:', getModeLabel(bridge));
+
+      const included = filterRules(rules);
+      const grouped = groupByScope(included);
+
+      ui.keyValue('Rules:', `${String(included.length)} included`);
+      for (const [scope, scopeRules] of grouped) {
+        console.log(`    ${' '.repeat(10)}${scope}: ${String(scopeRules.length)}`);
+      }
     }
 
     const excluded = getExcludedRules(rules);
@@ -110,15 +138,16 @@ async function runExplain(options: ExplainOptions): Promise<void> {
 
     if (bridge.id === 'windsurf') {
       const outputs = bridge.compile(rules, config);
-      let content = '';
+      let maxPerFile = 0;
       for (const [, val] of outputs) {
-        content += val;
+        if (val.length > maxPerFile) {
+          maxPerFile = val.length;
+        }
       }
-      const charCount = content.length;
-      const formatted = `${String(charCount).replace(/\B(?=(\d{3})+(?!\d))/g, ',')} / ${String(WINDSURF_CHAR_LIMIT).replace(/\B(?=(\d{3})+(?!\d))/g, ',')} chars`;
+      const formatted = `${String(maxPerFile).replace(/\B(?=(\d{3})+(?!\d))/g, ',')} / ${String(WINDSURF_CHAR_LIMIT).replace(/\B(?=(\d{3})+(?!\d))/g, ',')} chars (per file)`;
       ui.newline();
-      if (charCount > WINDSURF_CHAR_LIMIT) {
-        ui.warn(`Output size: ${formatted} (Windsurf limit)`);
+      if (maxPerFile > WINDSURF_CHAR_LIMIT) {
+        ui.warn(`Max file size: ${formatted} (Windsurf limit)`);
       } else {
         ui.keyValue('Size:', `${formatted} (Windsurf limit)`);
       }
