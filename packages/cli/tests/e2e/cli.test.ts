@@ -175,6 +175,7 @@ rules:
 
   it('doctor passes on valid project', async () => {
     await run(['init', '--tools', 'claude', '--mode', 'copy', '-y'], tmpDir);
+    await run(['compile'], tmpDir);
     const result = await run(['doctor'], tmpDir);
 
     assert.equal(result.exitCode, 0);

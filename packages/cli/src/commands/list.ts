@@ -10,6 +10,7 @@ import { windsurfBridge } from '../bridges/windsurf.js';
 import { copilotBridge } from '../bridges/copilot.js';
 import type { Bridge } from '../bridges/types.js';
 import { ASSET_TYPE, isDirectoryBridge, getBridgeOutputPaths } from '../bridges/types.js';
+import { filterRules, groupByScope } from '../core/helpers.js';
 import * as ui from '../utils/ui.js';
 import { ICONS } from '../utils/ui.js';
 
@@ -70,6 +71,13 @@ async function listTools(): Promise<void> {
   if (!(await ensureConfig(cwd))) return;
 
   const config = await readConfig(cwd);
+  let activeScopeCount = 0;
+  try {
+    const rules = await readRules(cwd);
+    activeScopeCount = groupByScope(filterRules(rules)).size;
+  } catch {
+    activeScopeCount = 0;
+  }
 
   if (config.tools.length === 0) {
     ui.warn('No tools configured');
@@ -83,7 +91,7 @@ async function listTools(): Promise<void> {
     let outputLabel: string | undefined;
     if (bridge) {
       if (isDirectoryBridge(bridge)) {
-        outputLabel = `${bridge.outputDir}/${bridge.filePrefix}*${bridge.fileExtension}`;
+        outputLabel = `${bridge.outputDir}/${bridge.filePrefix}*${bridge.fileExtension} (${String(activeScopeCount)} file${activeScopeCount === 1 ? '' : 's'})`;
       } else {
         const paths = getBridgeOutputPaths(bridge);
         outputLabel = paths[0];

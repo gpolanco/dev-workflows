@@ -137,6 +137,9 @@ describe('output format: doctor', () => {
     await writeFile(join(tmpDir, '.dwf', 'config.yml'), CONFIG_TEMPLATE(['claude']));
     await writeFile(join(tmpDir, '.dwf', 'rules', 'conventions.yml'), RULES_CONVENTIONS);
 
+    // Compile first so canonical checks pass; symlink check should still be skipped in copy mode
+    await run(['compile'], tmpDir);
+
     const result = await run(['doctor'], tmpDir);
 
     assert.equal(result.exitCode, 0);
@@ -192,6 +195,18 @@ describe('output format: list tools', () => {
     assert.ok(result.stdout.includes('\u203A'), 'should have bullet prefix');
     assert.ok(result.stdout.includes('\u2192'), 'should have arrow');
     assert.ok(result.stdout.includes('.claude/rules/dwf-'), 'should show output directory pattern');
+    assert.ok(result.stdout.includes('(0 files)'), 'should show per-tool multi-file count');
+  });
+
+  it('uses singular grammar for one active scope file', async () => {
+    await mkdir(join(tmpDir, '.dwf', 'rules'), { recursive: true });
+    await writeFile(join(tmpDir, '.dwf', 'config.yml'), CONFIG_TEMPLATE(['claude']));
+    await writeFile(join(tmpDir, '.dwf', 'rules', 'conventions.yml'), RULES_CONVENTIONS);
+
+    const result = await run(['list', 'tools'], tmpDir);
+
+    assert.equal(result.exitCode, 0);
+    assert.ok(result.stdout.includes('(1 file)'));
   });
 });
 
