@@ -10,6 +10,7 @@ import { fileExists } from '../utils/fs.js';
 import {
   selectPrompt,
   multiselectPrompt,
+  confirmPrompt,
   introPrompt,
   outroPrompt,
   spinnerTask,
@@ -163,11 +164,17 @@ export async function runInit(options: InitOptions): Promise<void> {
 
   if (await fileExists(dwfDir)) {
     const locationHint = scope === 'global'
-      ? '~/.dwf/ already exists in your home directory'
-      : '.dwf/ already exists in this directory';
-    ui.error(locationHint, 'Remove it first or run from a different directory');
-    process.exitCode = 1;
-    return;
+      ? '~/.dwf/ already exists.'
+      : '.dwf/ already exists in this directory.';
+    ui.warn(locationHint);
+    const overwrite = await confirmPrompt({
+      message: 'Overwrite config? (rules will be preserved)',
+      defaultValue: false,
+    });
+    if (!overwrite) {
+      outroPrompt('Init cancelled.');
+      return;
+    }
   }
 
   const projectName = scope === 'global' ? 'global' : basename(cwd);
