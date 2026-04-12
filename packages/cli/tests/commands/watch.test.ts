@@ -145,8 +145,8 @@ describe('devw watch', () => {
     } catch (err: unknown) {
       const e = err as { stdout: string; stderr: string; code: number };
       assert.ok(
-        (e.stderr ?? '').includes('.dwf/ not found') || (e.stdout ?? '').includes('.dwf/ not found'),
-        `Expected ".dwf/ not found" in output. stderr: ${e.stderr ?? ''}, stdout: ${e.stdout ?? ''}`
+        (e.stderr ?? '').includes('No devw configuration found') || (e.stdout ?? '').includes('No devw configuration found'),
+        `Expected "No devw configuration found" in output. stderr: ${e.stderr ?? ''}, stdout: ${e.stdout ?? ''}`
       );
       assert.equal(e.code, 1);
     }

@@ -1,10 +1,9 @@
-import { join } from 'node:path';
 import type { Command } from 'commander';
 import pc from 'picocolors';
 import chokidar from 'chokidar';
 import { executePipeline } from './compile.js';
 import type { CompileResult } from './compile.js';
-import { fileExists } from '../utils/fs.js';
+import { resolveContext } from '../core/resolve-context.js';
 import * as ui from '../utils/ui.js';
 import { ICONS } from '../utils/ui.js';
 
@@ -35,13 +34,19 @@ function printWaiting(withHint = false): void {
 }
 
 async function runWatch(options: WatchOptions): Promise<void> {
-  const cwd = process.cwd();
-  const dwfDir = join(cwd, '.dwf');
+  const resolved = await resolveContext(process.cwd());
 
-  if (!(await fileExists(join(dwfDir, 'config.yml')))) {
-    ui.error('.dwf/ not found', 'Run devw init to initialize the project');
+  if (!resolved) {
+    ui.error('No devw configuration found.', 'Run "devw init" to set up a project or global configuration.');
     process.exitCode = 1;
     return;
+  }
+
+  const cwd = resolved.configRoot;
+  const dwfDir = resolved.dwfDir;
+
+  if (resolved.globalMode) {
+    ui.info('Watching global config (~/.dwf)');
   }
 
   const watcher = chokidar.watch(['**/*.yml', '**/*.yaml', 'assets/**/*.md', 'assets/**/*.json'], {

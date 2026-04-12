@@ -1,4 +1,3 @@
-import { join } from 'node:path';
 import type { Command } from 'commander';
 import pc from 'picocolors';
 import { readConfig, readRules } from '../core/parser.js';
@@ -10,7 +9,7 @@ import { geminiBridge } from '../bridges/gemini.js';
 import { windsurfBridge } from '../bridges/windsurf.js';
 import { copilotBridge } from '../bridges/copilot.js';
 import { filterRules, groupByScope } from '../core/helpers.js';
-import { fileExists } from '../utils/fs.js';
+import { resolveContext } from '../core/resolve-context.js';
 import * as ui from '../utils/ui.js';
 import { ICONS } from '../utils/ui.js';
 
@@ -57,14 +56,15 @@ function formatSeparator(toolId: string): string {
 }
 
 async function runExplain(options: ExplainOptions): Promise<void> {
-  const cwd = process.cwd();
+  const resolved = await resolveContext(process.cwd());
 
-  if (!(await fileExists(join(cwd, '.dwf', 'config.yml')))) {
-    ui.error('.dwf/config.yml not found', 'Run devw init to initialize the project');
+  if (!resolved) {
+    ui.error('No devw configuration found.', 'Run "devw init" to set up a project or global configuration.');
     process.exitCode = 1;
     return;
   }
 
+  const cwd = resolved.configRoot;
   const config = await readConfig(cwd);
   const rules = await readRules(cwd);
 

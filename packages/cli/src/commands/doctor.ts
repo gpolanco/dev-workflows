@@ -12,6 +12,7 @@ import { copilotBridge } from '../bridges/copilot.js';
 import type { Bridge, DirectoryBridge, ProjectConfig, PulledEntry, AssetEntry, Rule } from '../bridges/types.js';
 import { getBridgeOutputPaths, isDirectoryBridge } from '../bridges/types.js';
 import { fileExists } from '../utils/fs.js';
+import { resolveContext } from '../core/resolve-context.js';
 import { isValidScope } from '../core/schema.js';
 import { buildCanonicalOutputs } from '../core/canonical.js';
 import { detectLegacyFiles } from '../core/cleanup.js';
@@ -479,14 +480,32 @@ export async function runDoctor(): Promise<void> {
   const results: CheckResult[] = [];
   let hasFailed = false;
 
+  // Resolve context: local project or global ~/.dwf
+  const resolved = await resolveContext(cwd);
+
+  if (!resolved) {
+    ui.error('No devw configuration found.', 'Run "devw init" to set up a project or global configuration.');
+    process.exitCode = 1;
+    return;
+  }
+
+  const effectiveCwd = resolved.configRoot;
+
+  if (resolved.globalMode) {
+    ui.info('Running in global mode (~/.dwf)');
+    ui.newline();
+  }
+
   // Check 1: .dwf/config.yml exists
-  const configExistsResult = await checkConfigExists(cwd);
+  const configExistsResult = await checkConfigExists(effectiveCwd);
   results.push(configExistsResult);
 
   if (!configExistsResult.passed) {
     for (const r of results) {
       ui.check(r.passed, r.message, r.skipped);
-      if (!r.passed) hasFailed = true;
+      if (!r.passed) {
+        hasFailed = true;
+      }
     }
     printSummary(results, startTime);
     process.exitCode = 1;
@@ -494,29 +513,31 @@ export async function runDoctor(): Promise<void> {
   }
 
   // Check 2: config.yml is valid
-  const configValidResult = await checkConfigValid(cwd);
+  const configValidResult = await checkConfigValid(effectiveCwd);
   results.push(configValidResult);
 
   // Check 3: Rule files are valid YAML
-  const rulesValidResult = await checkRulesValid(cwd);
+  const rulesValidResult = await checkRulesValid(effectiveCwd);
   results.push(rulesValidResult);
 
   if (!configValidResult.passed) {
     for (const r of results) {
       ui.check(r.passed, r.message, r.skipped);
-      if (!r.passed) hasFailed = true;
+      if (!r.passed) {
+        hasFailed = true;
+      }
     }
     printSummary(results, startTime);
     process.exitCode = 1;
     return;
   }
 
-  const config = await readConfig(cwd);
+  const config = await readConfig(effectiveCwd);
 
   // Load rules for remaining checks
   let rules: Rule[] = [];
   try {
-    rules = await readRules(cwd);
+    rules = await readRules(effectiveCwd);
   } catch {
     // readRules may fail if rules dir is missing; that's ok
   }
@@ -534,43 +555,45 @@ export async function runDoctor(): Promise<void> {
   results.push(bridgeResult);
 
   // Check 7: Symlinks valid (conditional on mode)
-  const symlinkResult = await checkSymlinks(cwd, config);
+  const symlinkResult = await checkSymlinks(effectiveCwd, config);
   results.push(symlinkResult);
 
   // Check 8: Pulled files exist
-  const pulledResult = await checkPulledFilesExist(cwd, config.pulled);
+  const pulledResult = await checkPulledFilesExist(effectiveCwd, config.pulled);
   results.push(pulledResult);
 
   // Check 9: Asset files exist
-  const assetResult = await checkAssetFilesExist(cwd, config.assets);
+  const assetResult = await checkAssetFilesExist(effectiveCwd, config.assets);
   results.push(assetResult);
 
   // Check 10: Hash sync (conditional on compiled files existing)
-  const hashResult = await checkHashSync(cwd, rules);
+  const hashResult = await checkHashSync(effectiveCwd, rules);
   results.push(hashResult);
 
   // Check 11: Canonical output exists (skip if no rules)
   if (rules.length > 0) {
-    const canonicalExistsResult = await checkCanonicalExists(cwd);
+    const canonicalExistsResult = await checkCanonicalExists(effectiveCwd);
     results.push(canonicalExistsResult);
 
     // Check 12: Canonical and native outputs are synchronized
-    const canonicalSyncResult = await checkCanonicalSync(cwd, rules, config);
+    const canonicalSyncResult = await checkCanonicalSync(effectiveCwd, rules, config);
     results.push(canonicalSyncResult);
   }
 
   // Check 13: Legacy migration has no pending files
-  const legacyResult = await checkLegacyMigration(cwd);
+  const legacyResult = await checkLegacyMigration(effectiveCwd);
   results.push(legacyResult);
 
   // Check 14: Native files have valid frontmatter for their editor
-  const frontmatterResult = await checkNativeFrontmatter(cwd, config);
+  const frontmatterResult = await checkNativeFrontmatter(effectiveCwd, config);
   results.push(frontmatterResult);
 
   // Output
   for (const r of results) {
     ui.check(r.passed, r.message, r.skipped);
-    if (!r.passed) hasFailed = true;
+    if (!r.passed) {
+      hasFailed = true;
+    }
   }
 
   printSummary(results, startTime);

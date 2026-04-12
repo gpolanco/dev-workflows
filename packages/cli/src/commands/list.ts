@@ -1,8 +1,7 @@
-import { join } from 'node:path';
 import type { Command } from 'commander';
 import pc from 'picocolors';
 import { readConfig, readRules } from '../core/parser.js';
-import { fileExists } from '../utils/fs.js';
+import { resolveContext } from '../core/resolve-context.js';
 import { claudeBridge } from '../bridges/claude.js';
 import { cursorBridge } from '../bridges/cursor.js';
 import { geminiBridge } from '../bridges/gemini.js';
@@ -16,18 +15,21 @@ import { ICONS } from '../utils/ui.js';
 
 const BRIDGES: Bridge[] = [claudeBridge, cursorBridge, geminiBridge, windsurfBridge, copilotBridge];
 
-async function ensureConfig(cwd: string): Promise<boolean> {
-  if (!(await fileExists(join(cwd, '.dwf', 'config.yml')))) {
-    ui.error('.dwf/config.yml not found', 'Run devw init to initialize the project');
+async function ensureConfig(): Promise<string | null> {
+  const resolved = await resolveContext(process.cwd());
+  if (!resolved) {
+    ui.error('No devw configuration found.', 'Run "devw init" to set up a project or global configuration.');
     process.exitCode = 1;
-    return false;
+    return null;
   }
-  return true;
+  return resolved.configRoot;
 }
 
 async function listRules(): Promise<void> {
-  const cwd = process.cwd();
-  if (!(await ensureConfig(cwd))) return;
+  const cwd = await ensureConfig();
+  if (!cwd) {
+    return;
+  }
 
   let rules;
   try {
@@ -67,8 +69,10 @@ async function listBlocks(): Promise<void> {
 }
 
 async function listTools(): Promise<void> {
-  const cwd = process.cwd();
-  if (!(await ensureConfig(cwd))) return;
+  const cwd = await ensureConfig();
+  if (!cwd) {
+    return;
+  }
 
   const config = await readConfig(cwd);
   let activeScopeCount = 0;
@@ -119,8 +123,10 @@ function getAssetOutputHint(type: string, name: string): string {
 }
 
 async function listAssets(typeFilter?: string): Promise<void> {
-  const cwd = process.cwd();
-  if (!(await ensureConfig(cwd))) return;
+  const cwd = await ensureConfig();
+  if (!cwd) {
+    return;
+  }
 
   const config = await readConfig(cwd);
 

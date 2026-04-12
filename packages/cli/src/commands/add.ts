@@ -13,6 +13,7 @@ import { convert } from '../core/converter.js';
 import { isAssetType, parseAssetFrontmatter } from '../core/assets.js';
 import { fileExists } from '../utils/fs.js';
 import { readConfig } from '../core/parser.js';
+import { resolveContext } from '../core/resolve-context.js';
 import {
   selectPrompt,
   multiselectPrompt,
@@ -915,12 +916,18 @@ export async function runAdd(ruleArg: string | undefined, options: AddOptions): 
     return;
   }
 
-  const cwd = process.cwd();
+  const resolved = await resolveContext(process.cwd());
 
-  if (!(await fileExists(join(cwd, '.dwf', 'config.yml')))) {
-    ui.error('.dwf/config.yml not found', 'Run devw init to initialize the project');
+  if (!resolved) {
+    ui.error('No devw configuration found.', 'Run "devw init" to set up a project or global configuration.');
     process.exitCode = 1;
     return;
+  }
+
+  const cwd = resolved.configRoot;
+
+  if (resolved.globalMode) {
+    ui.info('Adding to global config (~/.dwf)');
   }
 
   if (!ruleArg) {

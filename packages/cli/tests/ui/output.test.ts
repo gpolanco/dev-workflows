@@ -296,7 +296,7 @@ describe('output format: error messages', () => {
 
     assert.equal(result.exitCode, 1);
     assert.ok(result.stderr.includes('\u2717'), 'should have error icon');
-    assert.ok(result.stderr.includes('config.yml not found'), 'should show error message');
+    assert.ok(result.stderr.includes('No devw configuration found'), 'should show error message');
     assert.ok(result.stderr.includes('devw init'), 'should show hint');
   });
 

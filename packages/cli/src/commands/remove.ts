@@ -4,6 +4,7 @@ import type { Command } from 'commander';
 import { parse, stringify } from 'yaml';
 import { readConfig } from '../core/parser.js';
 import { fileExists } from '../utils/fs.js';
+import { resolveContext } from '../core/resolve-context.js';
 import { isAssetType, removeAsset } from '../core/assets.js';
 import { validateInput } from './add.js';
 import { multiselectPrompt, confirmPrompt, introPrompt, outroPrompt, isInteractiveSession } from '../utils/prompt.js';
@@ -52,16 +53,22 @@ async function removeRule(cwd: string, path: string): Promise<boolean> {
 }
 
 export async function runRemove(ruleArg: string | undefined): Promise<void> {
-  const cwd = process.cwd();
-
   if (isInteractiveSession()) {
     introPrompt('Remove rules or assets');
   }
 
-  if (!(await fileExists(join(cwd, '.dwf', 'config.yml')))) {
-    ui.error('.dwf/config.yml not found', 'Run devw init to initialize the project');
+  const resolved = await resolveContext(process.cwd());
+
+  if (!resolved) {
+    ui.error('No devw configuration found.', 'Run "devw init" to set up a project or global configuration.');
     process.exitCode = 1;
     return;
+  }
+
+  const cwd = resolved.configRoot;
+
+  if (resolved.globalMode) {
+    ui.info('Removing from global config (~/.dwf)');
   }
 
   const config = await readConfig(cwd);
