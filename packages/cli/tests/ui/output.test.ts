@@ -19,11 +19,11 @@ interface RunResult {
   exitCode: number;
 }
 
-async function run(args: string[], cwd: string): Promise<RunResult> {
+async function run(args: string[], cwd: string, extraEnv?: Record<string, string>): Promise<RunResult> {
   try {
     const { stdout, stderr } = await execFile(NODE, [DEVW, ...args], {
       cwd,
-      env: { ...process.env, NO_COLOR: '1', FORCE_COLOR: '0' },
+      env: { ...process.env, NO_COLOR: '1', FORCE_COLOR: '0', ...extraEnv },
     });
     return { stdout, stderr, exitCode: 0 };
   } catch (err: unknown) {
@@ -92,6 +92,8 @@ describe('output format: compile', () => {
     assert.ok(result.stdout.includes('\u2192'), 'should have arrow');
     assert.ok(result.stdout.includes('file'), 'should mention files');
     assert.ok(/\(\d+ms\)/.test(result.stdout), 'should have timing');
+    assert.ok(result.stdout.includes('bridge'), 'should include summary table headers');
+    assert.ok(result.stdout.includes('generated'), 'should include generated column');
   });
 
   it('shows file list with bullet prefix', async () => {
@@ -103,6 +105,26 @@ describe('output format: compile', () => {
 
     assert.ok(result.stdout.includes('\u203A'), 'should have bullet prefix');
     assert.ok(result.stdout.includes('.claude/rules/dwf-conventions.md'), 'should list .claude/rules/dwf-conventions.md');
+  });
+});
+
+describe('output format: help', () => {
+  let tmpDir: string;
+
+  beforeEach(async () => {
+    tmpDir = await mkdtemp(join(tmpdir(), 'devw-output-'));
+  });
+
+  afterEach(async () => {
+    await rm(tmpDir, { recursive: true, force: true });
+  });
+
+  it('does not print the banner in non-TTY output', async () => {
+    const result = await run(['--help'], tmpDir);
+
+    assert.equal(result.exitCode, 0);
+    assert.ok(result.stdout.includes('Usage: devw'), 'should print standard help text');
+    assert.equal(result.stdout.includes('____             __      __'), false);
   });
 });
 
@@ -283,5 +305,15 @@ describe('output format: error messages', () => {
 
     assert.equal(result.exitCode, 1);
     assert.ok(result.stderr.includes('\u2717'), 'should have error icon');
+  });
+
+  it('remove without args in non-interactive mode shows usage hint', async () => {
+    await mkdir(join(tmpDir, '.dwf', 'rules'), { recursive: true });
+    await writeFile(join(tmpDir, '.dwf', 'config.yml'), CONFIG_TEMPLATE(['claude']));
+
+    const result = await run(['remove'], tmpDir, { CI: 'true' });
+
+    assert.equal(result.exitCode, 1);
+    assert.ok(result.stderr.includes('Usage: devw remove <category>/<rule>'));
   });
 });

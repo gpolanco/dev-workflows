@@ -2,7 +2,7 @@ import { mkdir, writeFile, readFile, symlink, unlink } from 'node:fs/promises';
 import { join, dirname, basename } from 'node:path';
 import { homedir } from 'node:os';
 import type { Command } from 'commander';
-import chalk from 'chalk';
+import pc from 'picocolors';
 import { readConfig, readConfigFromDwfDir, readRules } from '../core/parser.js';
 import { mergeRules } from '../core/merge.js';
 import { computeRulesHash, writeHash } from '../core/hash.js';
@@ -21,6 +21,7 @@ import { buildCanonicalOutputs, writeCanonical } from '../core/canonical.js';
 import { fileExists } from '../utils/fs.js';
 import * as ui from '../utils/ui.js';
 import { ICONS } from '../utils/ui.js';
+import { renderTable } from '../utils/table.js';
 
 export interface CompileOptions {
   tool?: string;
@@ -94,6 +95,32 @@ interface CompileContext {
   configRoot: string;
   outputRoot: string;
   globalMode: boolean;
+}
+
+function toCompileSummaryRows(result: CompileResult): string[][] {
+  const counts = new Map<string, { success: number; failed: number }>();
+
+  for (const output of result.results) {
+    const current = counts.get(output.bridgeId) ?? { success: 0, failed: 0 };
+    if (output.success) {
+      current.success += 1;
+    } else {
+      current.failed += 1;
+    }
+    counts.set(output.bridgeId, current);
+  }
+
+  const rows: string[][] = [];
+  for (const [bridgeId, count] of counts.entries()) {
+    rows.push([
+      bridgeId,
+      String(count.success),
+      String(count.failed),
+    ]);
+  }
+
+  rows.sort((a, b) => a[0]!.localeCompare(b[0]!));
+  return rows;
 }
 
 async function resolveCompileContext(cwd: string): Promise<CompileContext> {
@@ -347,7 +374,7 @@ export async function runCompile(options: CompileOptions): Promise<void> {
       const mergedRules = mergeRules(globalRules, projectRules);
       const overriddenRuleIds = getOverriddenRuleIds(globalRules, projectRules);
 
-      ui.keyValue('Project:', chalk.bold(config.project.name));
+      ui.keyValue('Project:', pc.bold(config.project.name));
       ui.keyValue('Scope:', context.globalMode ? 'global (~/.dwf)' : 'project (.dwf)');
       ui.keyValue('Mode:', config.mode);
       ui.keyValue('Project rules:', String(projectRules.length));
@@ -361,7 +388,7 @@ export async function runCompile(options: CompileOptions): Promise<void> {
         ui.keyValue('Project overrides:', String(overriddenRuleIds.length));
       }
       const toolIds = options.tool ? [options.tool] : config.tools;
-      ui.keyValue('Tools:', chalk.cyan(toolIds.join(', ')));
+      ui.keyValue('Tools:', pc.cyan(toolIds.join(', ')));
       ui.newline();
     }
 
@@ -374,7 +401,7 @@ export async function runCompile(options: CompileOptions): Promise<void> {
 
       for (const br of result.results) {
         if (br.content !== undefined) {
-          console.log(chalk.cyan(`--- ${br.outputPath} ---`));
+          console.log(pc.cyan(`--- ${br.outputPath} ---`));
           console.log(br.content);
         }
       }
@@ -399,6 +426,12 @@ export async function runCompile(options: CompileOptions): Promise<void> {
       ui.warn('Tool-specific outputs were still written');
     }
 
+    const summaryTable = renderTable(
+      ['bridge', 'generated', 'failed'],
+      toCompileSummaryRows(result),
+      [10, 9, 6],
+    );
+
     // Show migration messages if any
     if (result.migration.actions.length > 0) {
       ui.newline();
@@ -414,6 +447,7 @@ export async function runCompile(options: CompileOptions): Promise<void> {
     ui.newline();
     ui.success(`Compiled ${String(result.activeRuleCount)} rules ${ICONS.arrow} ${String(allPaths.length)} file${allPaths.length !== 1 ? 's' : ''} ${ui.timing(result.elapsedMs)}`);
     ui.info(`Canonical files: ${String(result.canonicalFileCount)}`);
+    ui.log(summaryTable);
     if (options.verbose && result.overriddenRuleIds.length > 0) {
       ui.info(`Project overrides (${String(result.overriddenRuleIds.length)}): ${result.overriddenRuleIds.join(', ')}`);
     }
@@ -424,7 +458,7 @@ export async function runCompile(options: CompileOptions): Promise<void> {
 
       if (result.staleResults.length > 0) {
         ui.newline();
-        console.log(`  ${chalk.dim('Stale files removed:')}`);
+        console.log(`  ${pc.dim('Stale files removed:')}`);
         for (const stale of result.staleResults) {
           for (const deleted of stale.deleted) {
             ui.info(`  ${stale.bridgeId}: ${deleted}`);
@@ -434,7 +468,7 @@ export async function runCompile(options: CompileOptions): Promise<void> {
 
       if (result.assetPaths.length > 0) {
         ui.newline();
-        console.log(`  ${chalk.dim('Assets deployed:')}`);
+        console.log(`  ${pc.dim('Assets deployed:')}`);
         ui.list(result.assetPaths);
       }
     } else {

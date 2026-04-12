@@ -3,12 +3,20 @@ import { join, basename } from 'node:path';
 import { homedir } from 'node:os';
 import type { Command } from 'commander';
 import { stringify } from 'yaml';
-import chalk from 'chalk';
-import { checkbox, select } from '@inquirer/prompts';
+import pc from 'picocolors';
 import { detectTools, SUPPORTED_TOOLS } from '../utils/detect-tools.js';
 import * as ui from '../utils/ui.js';
 import type { ToolId } from '../utils/detect-tools.js';
 import { fileExists } from '../utils/fs.js';
+import {
+  selectPrompt,
+  multiselectPrompt,
+  introPrompt,
+  notePrompt,
+  outroPrompt,
+  spinnerTask,
+  isInteractiveSession,
+} from '../utils/prompt.js';
 
 export interface InitOptions {
   tools?: string;
@@ -56,13 +64,14 @@ async function resolveTools(options: InitOptions, cwd: string): Promise<ToolId[]
   }
 
   for (;;) {
-    const selected = await checkbox<ToolId>({
+    const selected = await multiselectPrompt<ToolId>({
       message: 'Which tools to configure?',
-      choices: SUPPORTED_TOOLS.map((id) => ({
-        name: id,
+      options: SUPPORTED_TOOLS.map((id) => ({
+        label: id,
         value: id,
-        checked: detectedIds.includes(id),
+        hint: detectedIds.includes(id) ? 'detected' : undefined,
       })),
+      initialValues: detectedIds,
     });
 
     if (selected.length > 0) {
@@ -85,11 +94,11 @@ async function resolveMode(options: InitOptions): Promise<'copy' | 'link'> {
     return 'copy';
   }
 
-  const mode = await select<'copy' | 'link'>({
+  const mode = await selectPrompt<'copy' | 'link'>({
     message: 'Output mode',
-    choices: [
-      { name: 'copy', value: 'copy' as const, description: 'Embed rules directly in tool config files' },
-      { name: 'link', value: 'link' as const, description: 'Symlink tool config files to .dwf/ output' },
+    options: [
+      { label: 'copy', value: 'copy' as const, hint: 'Embed rules directly in tool config files' },
+      { label: 'link', value: 'link' as const, hint: 'Symlink tool config files to .dwf/ output' },
     ],
   });
 
@@ -121,17 +130,20 @@ async function resolveInitScope(options: InitOptions): Promise<InitScope> {
     return 'project';
   }
 
-  return select<InitScope>({
+  return selectPrompt<InitScope>({
     message: 'Where do you want to set up devw?',
-    choices: [
-      { name: 'This project (.dwf/)', value: 'project' as const },
-      { name: 'Global (~/.dwf/)', value: 'global' as const },
+    options: [
+      { label: 'This project (.dwf/)', value: 'project' as const },
+      { label: 'Global (~/.dwf/)', value: 'global' as const },
     ],
   });
 }
 
 export async function runInit(options: InitOptions): Promise<void> {
   const cwd = process.cwd();
+  if (isInteractiveSession() && !options.yes) {
+    introPrompt('Initialize dev-workflows');
+  }
 
   let scope: InitScope;
   let tools: ToolId[];
@@ -162,10 +174,14 @@ export async function runInit(options: InitOptions): Promise<void> {
 
   const projectName = scope === 'global' ? 'global' : basename(cwd);
 
-  // Create .dwf/rules/ and .dwf/assets/
   const rulesDir = join(dwfDir, 'rules');
-  await mkdir(rulesDir, { recursive: true });
-  await mkdir(join(dwfDir, 'assets'), { recursive: true });
+  await spinnerTask({
+    label: 'Creating workspace folders',
+    task: async () => {
+      await mkdir(rulesDir, { recursive: true });
+      await mkdir(join(dwfDir, 'assets'), { recursive: true });
+    },
+  });
 
   // Write config.yml
   const config = {
@@ -177,18 +193,32 @@ export async function runInit(options: InitOptions): Promise<void> {
     blocks: [] as string[],
   };
   const configContent = `# Dev Workflows configuration\n${stringify(config)}`;
-  await writeFile(join(dwfDir, 'config.yml'), configContent, 'utf-8');
+  await spinnerTask({
+    label: 'Writing config.yml',
+    task: async () => {
+      await writeFile(join(dwfDir, 'config.yml'), configContent, 'utf-8');
+    },
+  });
 
   // Write empty rule files
-  for (const scope of BUILTIN_SCOPES) {
-    await writeFile(join(rulesDir, `${scope}.yml`), buildRuleFileContent(scope), 'utf-8');
-  }
+  await spinnerTask({
+    label: 'Scaffolding rule files',
+    task: async () => {
+      for (const scope of BUILTIN_SCOPES) {
+        await writeFile(join(rulesDir, `${scope}.yml`), buildRuleFileContent(scope), 'utf-8');
+      }
+    },
+  });
 
   // Ensure canonical global output dir exists for global mode.
   if (scope === 'global') {
-    await mkdir(join(rootDir, '.agents', 'rules', 'devw'), { recursive: true });
+    await spinnerTask({
+      label: 'Preparing canonical global output',
+      task: async () => {
+        await mkdir(join(rootDir, '.agents', 'rules', 'devw'), { recursive: true });
+      },
+    });
   } else {
-    // Append .dwf/.cache/ to .gitignore for project mode.
     await appendToGitignore(cwd);
   }
 
@@ -198,17 +228,23 @@ export async function runInit(options: InitOptions): Promise<void> {
   ui.newline();
   ui.success(`Initialized ${scope === 'global' ? '~/.dwf/' : '.dwf/'} successfully`);
   ui.newline();
-  ui.keyValue('Project:', chalk.bold(projectName));
+  ui.keyValue('Project:', pc.bold(projectName));
   ui.keyValue('Scope:', scope);
-  ui.keyValue('Tools:', chalk.cyan(tools.join(', ')));
+  ui.keyValue('Tools:', pc.cyan(tools.join(', ')));
   ui.keyValue('Mode:', mode);
   ui.newline();
   ui.header("What's next");
   ui.newline();
-  console.log(`    1. Browse available rules         ${chalk.cyan('devw add --list')}`);
-  console.log(`    2. Add a rule                     ${chalk.cyan('devw add <category>/<rule>')}`);
-  console.log(`    3. Or write your own rules in     ${chalk.cyan(scope === 'global' ? '~/.dwf/rules/' : '.dwf/rules/')}`);
-  console.log(`    4. When ready, compile            ${chalk.cyan('devw compile')}`);
+  console.log(`    1. Browse available rules         ${pc.cyan('devw add --list')}`);
+  console.log(`    2. Add a rule                     ${pc.cyan('devw add <category>/<rule>')}`);
+  console.log(`    3. Or write your own rules in     ${pc.cyan(scope === 'global' ? '~/.dwf/rules/' : '.dwf/rules/')}`);
+  console.log(`    4. When ready, compile            ${pc.cyan('devw compile')}`);
+
+  notePrompt(
+    `Project: ${projectName}\nScope: ${scope}\nTools: ${tools.join(', ')}\nMode: ${mode}`,
+    'Initialized',
+  );
+  outroPrompt(`Ready: ${scope === 'global' ? '~/.dwf/' : '.dwf/'}`);
 
   if (options.preset) {
     ui.newline();

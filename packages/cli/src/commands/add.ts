@@ -1,14 +1,22 @@
 import { join } from 'node:path';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import type { Command } from 'commander';
-import chalk from 'chalk';
+import pc from 'picocolors';
 import { stringify, parse } from 'yaml';
-import { select, checkbox, confirm } from '@inquirer/prompts';
 import { fetchRawContent, fetchContent, listDirectory, listContentDirectory } from '../utils/github.js';
 import { convert } from '../core/converter.js';
 import { isAssetType, parseAssetFrontmatter } from '../core/assets.js';
 import { fileExists } from '../utils/fs.js';
 import { readConfig } from '../core/parser.js';
+import {
+  selectPrompt,
+  multiselectPrompt,
+  confirmPrompt,
+  introPrompt,
+  outroPrompt,
+  spinnerTask,
+  isInteractiveSession,
+} from '../utils/prompt.js';
 import * as cache from '../utils/cache.js';
 import * as ui from '../utils/ui.js';
 import { ICONS } from '../utils/ui.js';
@@ -58,7 +66,10 @@ export async function fetchRegistry(cwd: string): Promise<CachedRegistry | null>
 
   let topLevel;
   try {
-    topLevel = await listDirectory();
+    topLevel = await spinnerTask({
+      label: 'Fetching rule categories',
+      task: async () => listDirectory(),
+    });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     ui.error(`Could not fetch rule registry: ${msg}`);
@@ -129,15 +140,15 @@ async function runList(categoryFilter: string | undefined): Promise<void> {
   ui.newline();
 
   for (const category of displayCategories) {
-    console.log(`  ${chalk.cyan(`${category.name}/`)}`);
+    console.log(`  ${pc.cyan(`${category.name}/`)}`);
     for (const rule of category.rules) {
-      const desc = rule.description ? chalk.dim(`  ${rule.description}`) : '';
-      console.log(`    ${chalk.white(rule.name.padEnd(20))}${desc}`);
+      const desc = rule.description ? pc.dim(`  ${rule.description}`) : '';
+      console.log(`    ${pc.white(rule.name.padEnd(20))}${desc}`);
     }
     ui.newline();
   }
 
-  console.log(`  ${chalk.dim(`Add a rule:  devw add <category>/<rule>`)}`);
+  console.log(`  ${pc.dim(`Add a rule:  devw add <category>/<rule>`)}`);
 
   // Show available assets if not filtering by category
   if (!categoryFilter) {
@@ -161,13 +172,13 @@ async function runList(categoryFilter: string | undefined): Promise<void> {
         const names = result.value.filter((e) => e.type === 'file').map((e) => e.name);
         if (names.length === 0) continue;
         const singular = type.replace(/s$/, '');
-        console.log(`  ${chalk.cyan(`${singular}/`)}`);
+        console.log(`  ${pc.cyan(`${singular}/`)}`);
         for (const name of names) {
-          console.log(`    ${chalk.white(name)}`);
+          console.log(`    ${pc.white(name)}`);
         }
         ui.newline();
       }
-      console.log(`  ${chalk.dim(`Add an asset: devw add command/<name>`)}`);
+      console.log(`  ${pc.dim(`Add an asset: devw add command/<name>`)}`);
     }
   }
 }
@@ -265,7 +276,10 @@ export async function downloadAndInstallAsset(
 
   let content: string;
   try {
-    content = await fetchContent(getAssetContentPath(type, name));
+    content = await spinnerTask({
+      label: `Fetching ${source}`,
+      task: async () => fetchContent(getAssetContentPath(type, name)),
+    });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     ui.error(msg);
@@ -290,9 +304,9 @@ export async function downloadAndInstallAsset(
     if (!options.force) {
       ui.info(`${source} already exists locally`);
       try {
-        const shouldOverwrite = await confirm({
+        const shouldOverwrite = await confirmPrompt({
           message: 'Overwrite?',
-          default: true,
+          defaultValue: true,
         });
         if (!shouldOverwrite) {
           ui.error('Cancelled');
@@ -309,7 +323,7 @@ export async function downloadAndInstallAsset(
     ui.newline();
     ui.header('Dry run — would write:');
     ui.newline();
-    console.log(chalk.dim(`  .dwf/assets/${type}s/${fileName}`));
+    console.log(pc.dim(`  .dwf/assets/${type}s/${fileName}`));
     return false;
   }
 
@@ -342,7 +356,10 @@ async function downloadAndInstall(
 
   let markdown: string;
   try {
-    markdown = await fetchRawContent(source);
+    markdown = await spinnerTask({
+      label: `Fetching ${source}`,
+      task: async () => fetchRawContent(source),
+    });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     ui.error(msg);
@@ -376,10 +393,10 @@ async function downloadAndInstall(
         ui.newline();
         ui.info(`${source} already exists locally (v${existingVersion} ${ICONS.arrow} v${result.version})`);
         try {
-          const shouldOverwrite = await confirm({
-            message: 'Overwrite with new version?',
-            default: true,
-          });
+           const shouldOverwrite = await confirmPrompt({
+             message: 'Overwrite with new version?',
+             defaultValue: true,
+           });
           if (!shouldOverwrite) {
             ui.error('Cancelled');
             return false;
@@ -401,7 +418,7 @@ async function downloadAndInstall(
     ui.newline();
     ui.header('Dry run — would write:');
     ui.newline();
-    console.log(chalk.dim(`  ${fileName}`));
+    console.log(pc.dim(`  ${fileName}`));
     ui.newline();
     console.log(yamlOutput);
     return false;
@@ -422,15 +439,16 @@ async function downloadAndInstall(
 }
 
 async function runInteractiveAsset(cwd: string, options: AddOptions): Promise<void> {
+  introPrompt('Add assets');
   let assetType: AssetType | 'preset';
   try {
-    assetType = await select<AssetType | 'preset'>({
+    assetType = await selectPrompt<AssetType | 'preset'>({
       message: 'Asset type',
-      choices: [
-        { name: 'command  — Slash commands for Claude Code', value: 'command' },
-        { name: 'template — Spec and document templates', value: 'template' },
-        { name: 'hook     — Editor hooks (auto-format, etc.)', value: 'hook' },
-        { name: 'preset   — Bundle of rules + assets', value: 'preset' },
+      options: [
+        { label: 'command  — Slash commands for Claude Code', value: 'command' },
+        { label: 'template — Spec and document templates', value: 'template' },
+        { label: 'hook     — Editor hooks (auto-format, etc.)', value: 'hook' },
+        { label: 'preset   — Bundle of rules + assets', value: 'preset' },
       ],
     });
   } catch {
@@ -458,9 +476,9 @@ async function runInteractiveAsset(cwd: string, options: AddOptions): Promise<vo
 
   let selected: string[];
   try {
-    selected = await checkbox<string>({
+    selected = await multiselectPrompt<string>({
       message: `Select ${assetType}s to install`,
-      choices: names.map((name) => ({ name, value: name })),
+      options: names.map((name) => ({ label: name, value: name })),
     });
   } catch {
     ui.error('Cancelled');
@@ -487,16 +505,19 @@ async function runInteractiveAsset(cwd: string, options: AddOptions): Promise<vo
     const { runCompileFromAdd } = await import('./compile.js');
     await runCompileFromAdd();
   }
+
+  outroPrompt('Asset flow completed');
 }
 
 async function runInteractive(cwd: string, options: AddOptions): Promise<void> {
+  introPrompt('Add rules or assets');
   let mode: 'rules' | 'assets';
   try {
-    mode = await select<'rules' | 'assets'>({
+    mode = await selectPrompt<'rules' | 'assets'>({
       message: 'What do you want to add?',
-      choices: [
-        { name: 'Rules    — Install rules from the registry', value: 'rules' },
-        { name: 'Assets   — Commands, templates, hooks, presets', value: 'assets' },
+      options: [
+        { label: 'Rules    — Install rules from the registry', value: 'rules' },
+        { label: 'Assets   — Commands, templates, hooks, presets', value: 'assets' },
       ],
     });
   } catch {
@@ -538,15 +559,15 @@ async function runInteractive(cwd: string, options: AddOptions): Promise<void> {
       );
       if (availableCategories.length === 0) break;
 
-      const selectedCategoryName = await select<string>({
+      const selectedCategoryName = await selectPrompt<string>({
         message: 'Choose a category',
-        choices: availableCategories.map((c) => {
+        options: availableCategories.map((c) => {
           const allInstalled = c.rules.every((r) =>
             installedPaths.has(`${c.name}/${r.name}`),
           );
           const label = `${c.name} (${pluralRules(c.rules.length)})`;
           return {
-            name: allInstalled ? `${label} ${chalk.dim('(all installed)')}` : label,
+            label: allInstalled ? `${label} ${pc.dim('(all installed)')}` : label,
             value: c.name,
           };
         }),
@@ -555,17 +576,17 @@ async function runInteractive(cwd: string, options: AddOptions): Promise<void> {
       const category = registry.categories.find((c) => c.name === selectedCategoryName);
       if (!category) break;
 
-      const selected = await checkbox<string>({
+      const selected = await multiselectPrompt<string>({
         message: 'Select rules to add',
-        choices: [
-          { name: '\u2190 Back to categories', value: BACK_VALUE },
+        options: [
+          { label: '\u2190 Back to categories', value: BACK_VALUE },
           ...category.rules.map((r) => {
             const path = `${category.name}/${r.name}`;
             const installed = installedPaths.has(path);
             const desc = r.description ? ` ${ICONS.dash} ${r.description}` : '';
-            const suffix = installed ? chalk.dim(' (already installed)') : '';
+            const suffix = installed ? pc.dim(' (already installed)') : '';
             return {
-              name: `${r.name}${desc}${suffix}`,
+              label: `${r.name}${desc}${suffix}`,
               value: r.name,
             };
           }),
@@ -595,9 +616,9 @@ async function runInteractive(cwd: string, options: AddOptions): Promise<void> {
       );
       if (remaining.length === 0) break;
 
-      const addMore = await confirm({
+      const addMore = await confirmPrompt({
         message: 'Add rules from another category?',
-        default: true,
+        defaultValue: true,
       });
       if (!addMore) break;
     }
@@ -611,15 +632,15 @@ async function runInteractive(cwd: string, options: AddOptions): Promise<void> {
   ui.newline();
   ui.header('Rules to install:');
   for (const rule of allSelected) {
-    const desc = rule.description ? chalk.dim(` ${ICONS.dash} ${rule.description}`) : '';
+    const desc = rule.description ? pc.dim(` ${ICONS.dash} ${rule.description}`) : '';
     console.log(`    ${rule.category}/${rule.name}${desc}`);
   }
   ui.newline();
 
   try {
-    const shouldProceed = await confirm({
+    const shouldProceed = await confirmPrompt({
       message: `Install ${pluralRules(allSelected.length)}?`,
-      default: true,
+      defaultValue: true,
     });
     if (!shouldProceed) {
       ui.error('Cancelled');
@@ -640,6 +661,8 @@ async function runInteractive(cwd: string, options: AddOptions): Promise<void> {
     const { runCompileFromAdd } = await import('./compile.js');
     await runCompileFromAdd();
   }
+
+  outroPrompt('Add flow completed');
 }
 
 interface PresetManifest {
@@ -732,7 +755,7 @@ export async function runAdd(ruleArg: string | undefined, options: AddOptions): 
   }
 
   if (!ruleArg) {
-    if (!process.stdout.isTTY || !process.stdin.isTTY) {
+    if (!isInteractiveSession()) {
       ui.error('No rule specified', 'Usage: devw add <category>/<rule>');
       process.exitCode = 1;
       return;
@@ -740,6 +763,10 @@ export async function runAdd(ruleArg: string | undefined, options: AddOptions): 
 
     await runInteractive(cwd, options);
     return;
+  }
+
+  if (isInteractiveSession()) {
+    introPrompt('Adding item');
   }
 
   if (!ruleArg.includes('/')) {
@@ -792,6 +819,8 @@ export async function runAdd(ruleArg: string | undefined, options: AddOptions): 
     const { runCompileFromAdd } = await import('./compile.js');
     await runCompileFromAdd();
   }
+
+  outroPrompt('Add command completed');
 }
 
 export function registerAddCommand(program: Command): void {

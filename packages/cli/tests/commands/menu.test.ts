@@ -15,10 +15,12 @@ function makeMockCommand(): { helpCalled: boolean; help: () => void } {
 describe('runMainMenu — TTY guard', () => {
   let originalStdoutIsTTY: boolean | undefined;
   let originalStdinIsTTY: boolean | undefined;
+  let originalCI: string | undefined;
 
   beforeEach(() => {
     originalStdoutIsTTY = process.stdout.isTTY;
     originalStdinIsTTY = process.stdin.isTTY;
+    originalCI = process.env['CI'];
   });
 
   afterEach(() => {
@@ -33,6 +35,12 @@ describe('runMainMenu — TTY guard', () => {
       writable: true,
       configurable: true,
     });
+
+    if (originalCI === undefined) {
+      delete process.env['CI'];
+    } else {
+      process.env['CI'] = originalCI;
+    }
   });
 
   it('calls command.help() when stdout is not a TTY', async () => {
@@ -65,6 +73,25 @@ describe('runMainMenu — TTY guard', () => {
       writable: true,
       configurable: true,
     });
+
+    const mockCommand = makeMockCommand();
+    await runMainMenu(mockCommand as unknown as import('commander').Command);
+
+    assert.equal(mockCommand.helpCalled, true);
+  });
+
+  it('calls command.help() when CI mode is enabled', async () => {
+    Object.defineProperty(process.stdout, 'isTTY', {
+      value: true,
+      writable: true,
+      configurable: true,
+    });
+    Object.defineProperty(process.stdin, 'isTTY', {
+      value: true,
+      writable: true,
+      configurable: true,
+    });
+    process.env['CI'] = 'true';
 
     const mockCommand = makeMockCommand();
     await runMainMenu(mockCommand as unknown as import('commander').Command);

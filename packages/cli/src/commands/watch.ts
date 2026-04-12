@@ -1,6 +1,6 @@
 import { join } from 'node:path';
 import type { Command } from 'commander';
-import chalk from 'chalk';
+import pc from 'picocolors';
 import chokidar from 'chokidar';
 import { executePipeline } from './compile.js';
 import type { CompileResult } from './compile.js';
@@ -102,7 +102,7 @@ async function runWatch(options: WatchOptions): Promise<void> {
   });
 
   ui.newline();
-  ui.header(chalk.green('Watching .dwf/ for changes...'));
+  ui.header(pc.green('Watching .dwf/ for changes...'));
   ui.info('Running initial compile...');
   ui.newline();
 

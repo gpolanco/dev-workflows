@@ -1,6 +1,6 @@
 import { join } from 'node:path';
 import type { Command } from 'commander';
-import chalk from 'chalk';
+import pc from 'picocolors';
 import { readConfig, readRules } from '../core/parser.js';
 import type { Bridge, Rule } from '../bridges/types.js';
 import { isMarkerBridge, isDirectoryBridge, getBridgeOutputPaths } from '../bridges/types.js';
@@ -53,7 +53,7 @@ function formatSeparator(toolId: string): string {
   const prefix = `${ICONS.separator}${ICONS.separator}`;
   const remaining = lineWidth - prefix.length - label.length;
   const suffix = ICONS.separator.repeat(Math.max(0, remaining));
-  return chalk.dim(`${prefix}${label}${suffix}`);
+  return pc.dim(`${prefix}${label}${suffix}`);
 }
 
 async function runExplain(options: ExplainOptions): Promise<void> {
