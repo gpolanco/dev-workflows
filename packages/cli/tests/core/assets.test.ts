@@ -24,6 +24,7 @@ const CONFIG: ProjectConfig = {
   blocks: [],
   pulled: [],
   assets: [],
+  global: true,
 };
 
 let tmpDir: string;

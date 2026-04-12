@@ -22,6 +22,7 @@ const CONFIG: ProjectConfig = {
   blocks: [],
   pulled: [],
   assets: [],
+  global: true,
 };
 
 describe('cursorBridge', () => {
