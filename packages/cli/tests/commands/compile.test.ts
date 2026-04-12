@@ -136,13 +136,19 @@ describe('executePipeline', () => {
   });
 
   it('throws on missing config', async () => {
-    await assert.rejects(
-      () => executePipeline({ cwd: tmpDir }),
-      (err: Error) => {
-        assert.ok(err.message.length > 0);
-        return true;
-      },
-    );
+    const originalHome = process.env['HOME'];
+    process.env['HOME'] = tmpDir;
+    try {
+      await assert.rejects(
+        () => executePipeline({ cwd: tmpDir }),
+        (err: Error) => {
+          assert.ok(err.message.length > 0);
+          return true;
+        },
+      );
+    } finally {
+      process.env['HOME'] = originalHome;
+    }
   });
 
   it('throws on invalid YAML syntax', async () => {
