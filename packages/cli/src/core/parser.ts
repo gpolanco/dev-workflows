@@ -25,7 +25,11 @@ interface RawRuleFile {
 }
 
 export async function readConfig(cwd: string): Promise<ProjectConfig> {
-  const configPath = join(cwd, '.dwf', 'config.yml');
+  return readConfigFromDwfDir(join(cwd, '.dwf'));
+}
+
+export async function readConfigFromDwfDir(dwfDir: string): Promise<ProjectConfig> {
+  const configPath = join(dwfDir, 'config.yml');
   const raw = await readFile(configPath, 'utf-8');
   const parsed: unknown = parse(raw);
 
@@ -168,8 +172,12 @@ function extractScopeMetadata(doc: RawRuleFile, file: string): ScopeMetadata | u
   return metadata;
 }
 
-export async function readRules(cwd: string): Promise<Rule[]> {
-  const rulesDir = join(cwd, '.dwf', 'rules');
+export async function readRules(cwd: string, rulesPath?: string): Promise<Rule[]> {
+  const rulesDir = resolveRulesDir(cwd, rulesPath);
+  if (!rulesDir) {
+    return [];
+  }
+
   let entries: string[];
   try {
     entries = await readdir(rulesDir);
@@ -214,4 +222,20 @@ export async function readRules(cwd: string): Promise<Rule[]> {
   }
 
   return allRules;
+}
+
+function resolveRulesDir(cwd: string, rulesPath?: string): string {
+  if (rulesPath) {
+    return rulesPath;
+  }
+
+  const lastSegment = cwd.split(/[\\/]/).at(-1);
+  if (lastSegment === '.dwf') {
+    return join(cwd, 'rules');
+  }
+  if (lastSegment === 'rules') {
+    return cwd;
+  }
+
+  return join(cwd, '.dwf', 'rules');
 }

@@ -596,3 +596,113 @@ describe('executePipeline dry-run', () => {
     assert.ok(!(await fileExists(join(tmpDir, '.github', 'copilot-instructions.md'))));
   });
 });
+
+describe('executePipeline global scope integration', () => {
+  let tmpDir: string;
+  let previousHome: string | undefined;
+
+  beforeEach(async () => {
+    tmpDir = await mkdtemp(join(tmpdir(), 'devw-compile-global-'));
+    previousHome = process.env['HOME'];
+  });
+
+  afterEach(async () => {
+    if (previousHome === undefined) {
+      delete process.env['HOME'];
+    } else {
+      process.env['HOME'] = previousHome;
+    }
+    await rm(tmpDir, { recursive: true, force: true });
+  });
+
+  it('ignores global rules when project config has global: false', async () => {
+    const fakeHome = join(tmpDir, 'home');
+    process.env['HOME'] = fakeHome;
+
+    const projectDir = join(tmpDir, 'project');
+    await setupProject(
+      projectDir,
+      `version: "0.2"
+project:
+  name: "test-project"
+tools:
+  - claude
+mode: copy
+global: false
+blocks: []
+`,
+      {
+        'conventions.yml': `scope: conventions
+rules:
+  - id: project-rule
+    severity: error
+    content: Project rule content.
+`,
+      },
+    );
+
+    await mkdir(join(fakeHome, '.dwf', 'rules'), { recursive: true });
+    await writeFile(
+      join(fakeHome, '.dwf', 'rules', 'conventions.yml'),
+      `scope: conventions
+rules:
+  - id: global-rule
+    severity: error
+    content: Global rule content.
+`,
+      'utf-8',
+    );
+
+    const result = await executePipeline({ cwd: projectDir, tool: 'claude' });
+
+    assert.equal(result.globalRuleCount, 0);
+    assert.equal(result.projectRuleCount, 1);
+    assert.equal(result.activeRuleCount, 1);
+
+    const compiled = await readFile(join(projectDir, '.claude', 'rules', 'dwf-conventions.md'), 'utf-8');
+    assert.ok(compiled.includes('Project rule content.'));
+    assert.ok(!compiled.includes('Global rule content.'));
+  });
+
+  it('writes native and canonical outputs to home directories in global mode', async () => {
+    const fakeHome = join(tmpDir, 'home');
+    process.env['HOME'] = fakeHome;
+
+    const globalDwfDir = join(fakeHome, '.dwf');
+    await mkdir(join(globalDwfDir, 'rules'), { recursive: true });
+    await writeFile(
+      join(globalDwfDir, 'config.yml'),
+      `version: "0.2"
+project:
+  name: "global"
+tools:
+  - claude
+mode: copy
+global: true
+blocks: []
+`,
+      'utf-8',
+    );
+    await writeFile(
+      join(globalDwfDir, 'rules', 'conventions.yml'),
+      `scope: conventions
+rules:
+  - id: global-rule
+    severity: error
+    content: Home-level global rule.
+`,
+      'utf-8',
+    );
+
+    await mkdir(join(fakeHome, '.claude', 'rules'), { recursive: true });
+    await writeFile(join(fakeHome, '.claude', 'rules', 'dwf-testing.md'), 'stale', 'utf-8');
+
+    const result = await executePipeline({ cwd: globalDwfDir, tool: 'claude' });
+
+    assert.ok(await fileExists(join(fakeHome, '.claude', 'rules', 'dwf-conventions.md')));
+    assert.ok(await fileExists(join(fakeHome, '.agents', 'rules', 'devw', 'dwf-conventions.md')));
+    assert.ok(!(await fileExists(join(globalDwfDir, '.claude', 'rules', 'dwf-conventions.md'))));
+    assert.ok(!(await fileExists(join(fakeHome, '.claude', 'rules', 'dwf-testing.md'))));
+    assert.ok(result.staleResults.some((entry) => entry.bridgeId === 'claude'));
+  });
+});

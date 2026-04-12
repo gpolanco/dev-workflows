@@ -1,11 +1,13 @@
 import { mkdir, writeFile, readFile, symlink, unlink } from 'node:fs/promises';
-import { join, dirname } from 'node:path';
+import { join, dirname, basename } from 'node:path';
+import { homedir } from 'node:os';
 import type { Command } from 'commander';
 import chalk from 'chalk';
-import { readConfig, readRules } from '../core/parser.js';
+import { readConfig, readConfigFromDwfDir, readRules } from '../core/parser.js';
+import { mergeRules } from '../core/merge.js';
 import { computeRulesHash, writeHash } from '../core/hash.js';
 import { deployAssets } from '../core/assets.js';
-import type { Bridge, DirectoryBridge } from '../bridges/types.js';
+import type { Bridge, DirectoryBridge, Rule } from '../bridges/types.js';
 import { isDirectoryBridge, getBridgeOutputPaths } from '../bridges/types.js';
 import { claudeBridge } from '../bridges/claude.js';
 import { cursorBridge } from '../bridges/cursor.js';
@@ -46,6 +48,9 @@ export interface MigrationResult {
 export interface CompileResult {
   results: BridgeResult[];
   activeRuleCount: number;
+  globalRuleCount: number;
+  projectRuleCount: number;
+  overriddenRuleIds: string[];
   canonicalFileCount: number;
   canonicalError?: string;
   assetPaths: string[];
@@ -72,7 +77,7 @@ function extractFilenameFromPath(relativePath: string): string {
 }
 
 async function handleDirectoryBridgeCleanup(
-  cwd: string,
+  outputRoot: string,
   bridge: DirectoryBridge,
   writtenFilenames: Set<string>,
   write: boolean,
@@ -81,16 +86,51 @@ async function handleDirectoryBridgeCleanup(
     return [];
   }
 
-  const outputDir = join(cwd, bridge.outputDir);
+  const outputDir = join(outputRoot, bridge.outputDir);
   return cleanStaleFiles(outputDir, bridge.filePrefix, bridge.fileExtension, writtenFilenames);
+}
+
+interface CompileContext {
+  configRoot: string;
+  outputRoot: string;
+  globalMode: boolean;
+}
+
+async function resolveCompileContext(cwd: string): Promise<CompileContext> {
+  const projectConfigPath = join(cwd, '.dwf', 'config.yml');
+  if (await fileExists(projectConfigPath)) {
+    return {
+      configRoot: cwd,
+      outputRoot: cwd,
+      globalMode: false,
+    };
+  }
+
+  const inGlobalConfigDir = basename(cwd) === '.dwf';
+  const globalConfigPath = join(cwd, 'config.yml');
+  if (inGlobalConfigDir && await fileExists(globalConfigPath)) {
+    return {
+      configRoot: cwd,
+      outputRoot: homedir(),
+      globalMode: true,
+    };
+  }
+
+  throw new Error('.dwf/config.yml not found. Run devw init to initialize the project');
 }
 
 export async function executePipeline(options: PipelineOptions): Promise<CompileResult> {
   const { cwd, tool, write = true } = options;
   const startTime = performance.now();
+  const context = await resolveCompileContext(cwd);
 
-  const config = await readConfig(cwd);
-  const rules = await readRules(cwd);
+  const config = context.globalMode ? await readConfigFromDwfDir(context.configRoot) : await readConfig(context.configRoot);
+  const projectRules = await readRules(context.configRoot);
+  const globalRules = context.globalMode || config.global === false
+    ? []
+    : await readRules(context.configRoot, join(homedir(), '.dwf', 'rules'));
+  const rules = mergeRules(globalRules, projectRules);
+  const overriddenRuleIds = getOverriddenRuleIds(globalRules, projectRules);
 
   let toolIds = config.tools;
   if (tool) {
@@ -103,9 +143,9 @@ export async function executePipeline(options: PipelineOptions): Promise<Compile
   // Legacy migration — run ONCE before writing new files
   const migration: MigrationResult = { actions: [] };
   if (write) {
-    const legacyFiles = await detectLegacyFiles(cwd);
+    const legacyFiles = await detectLegacyFiles(context.outputRoot);
     if (legacyFiles.length > 0) {
-      const actions = await migrateLegacyFiles(cwd, legacyFiles);
+      const actions = await migrateLegacyFiles(context.outputRoot, legacyFiles);
       migration.actions = actions;
     }
   }
@@ -125,7 +165,7 @@ export async function executePipeline(options: PipelineOptions): Promise<Compile
         // DirectoryBridge flow: multi-file output with stale cleanup
         if (activeRules.length === 0 && write) {
           // No active rules → clean all dwf- files from the output dir
-          const deleted = await handleDirectoryBridgeCleanup(cwd, bridge, new Set(), write);
+          const deleted = await handleDirectoryBridgeCleanup(context.outputRoot, bridge, new Set(), write);
           if (deleted.length > 0) {
             staleResults.push({ bridgeId: bridge.id, deleted });
           }
@@ -143,11 +183,11 @@ export async function executePipeline(options: PipelineOptions): Promise<Compile
             continue;
           }
 
-          const absolutePath = join(cwd, relativePath);
+          const absolutePath = join(context.outputRoot, relativePath);
           await mkdir(dirname(absolutePath), { recursive: true });
 
           if (config.mode === 'link') {
-            const cachePath = join(cwd, '.dwf', '.cache', relativePath);
+            const cachePath = join(context.outputRoot, '.dwf', '.cache', relativePath);
             await mkdir(dirname(cachePath), { recursive: true });
             await writeFile(cachePath, content, 'utf-8');
 
@@ -163,7 +203,7 @@ export async function executePipeline(options: PipelineOptions): Promise<Compile
         }
 
         // Stale file cleanup for DirectoryBridge
-        const deleted = await handleDirectoryBridgeCleanup(cwd, bridge, writtenFilenames, write);
+        const deleted = await handleDirectoryBridgeCleanup(context.outputRoot, bridge, writtenFilenames, write);
         if (deleted.length > 0) {
           staleResults.push({ bridgeId: bridge.id, deleted });
         }
@@ -171,7 +211,7 @@ export async function executePipeline(options: PipelineOptions): Promise<Compile
         // MarkerBridge flow: merge content between markers in target file
         if (activeRules.length === 0 && write) {
           for (const relativePath of getBridgeOutputPaths(bridge)) {
-            const absolutePath = join(cwd, relativePath);
+            const absolutePath = join(context.outputRoot, relativePath);
             if (!(await fileExists(absolutePath))) {
               continue;
             }
@@ -192,7 +232,7 @@ export async function executePipeline(options: PipelineOptions): Promise<Compile
 
         for (const [relativePath, rawContent] of outputs) {
           let content = rawContent;
-          const absoluteCheck = join(cwd, relativePath);
+          const absoluteCheck = join(context.outputRoot, relativePath);
           let existing: string | null = null;
           try {
             existing = await readFile(absoluteCheck, 'utf-8');
@@ -206,11 +246,11 @@ export async function executePipeline(options: PipelineOptions): Promise<Compile
             continue;
           }
 
-          const absolutePath = join(cwd, relativePath);
+          const absolutePath = join(context.outputRoot, relativePath);
           await mkdir(dirname(absolutePath), { recursive: true });
 
           if (config.mode === 'link') {
-            const cachePath = join(cwd, '.dwf', '.cache', relativePath);
+            const cachePath = join(context.outputRoot, '.dwf', '.cache', relativePath);
             await mkdir(dirname(cachePath), { recursive: true });
             await writeFile(cachePath, content, 'utf-8');
 
@@ -245,7 +285,7 @@ export async function executePipeline(options: PipelineOptions): Promise<Compile
   let canonicalError: string | undefined;
   if (write) {
     try {
-      canonicalPaths = await writeCanonical(cwd, canonicalOutputs);
+      canonicalPaths = await writeCanonical(context.outputRoot, canonicalOutputs);
       for (const relativePath of canonicalPaths) {
         results.push({ bridgeId: 'canonical', outputPath: relativePath, success: true });
       }
@@ -270,9 +310,9 @@ export async function executePipeline(options: PipelineOptions): Promise<Compile
   let assetPaths: string[] = [];
   if (write) {
     const hash = computeRulesHash(activeRules);
-    await writeHash(cwd, hash);
+    await writeHash(context.outputRoot, hash);
 
-    const assetResult = await deployAssets(cwd, config);
+    const assetResult = await deployAssets(context.outputRoot, config);
     assetPaths = assetResult.deployed;
   }
 
@@ -280,6 +320,9 @@ export async function executePipeline(options: PipelineOptions): Promise<Compile
   return {
     results,
     activeRuleCount: activeRules.length,
+    globalRuleCount: globalRules.length,
+    projectRuleCount: projectRules.length,
+    overriddenRuleIds,
     canonicalFileCount: canonicalPaths.length,
     canonicalError,
     assetPaths,
@@ -292,19 +335,31 @@ export async function executePipeline(options: PipelineOptions): Promise<Compile
 export async function runCompile(options: CompileOptions): Promise<void> {
   const cwd = process.cwd();
 
-  if (!(await fileExists(join(cwd, '.dwf', 'config.yml')))) {
-    ui.error('.dwf/config.yml not found', 'Run devw init to initialize the project');
-    process.exitCode = 1;
-    return;
-  }
-
   try {
+    const context = await resolveCompileContext(cwd);
+
     if (options.verbose) {
-      const config = await readConfig(cwd);
-      const rules = await readRules(cwd);
+      const config = context.globalMode ? await readConfigFromDwfDir(context.configRoot) : await readConfig(context.configRoot);
+      const projectRules = await readRules(context.configRoot);
+      const globalRules = context.globalMode || config.global === false
+        ? []
+        : await readRules(context.configRoot, join(homedir(), '.dwf', 'rules'));
+      const mergedRules = mergeRules(globalRules, projectRules);
+      const overriddenRuleIds = getOverriddenRuleIds(globalRules, projectRules);
+
       ui.keyValue('Project:', chalk.bold(config.project.name));
+      ui.keyValue('Scope:', context.globalMode ? 'global (~/.dwf)' : 'project (.dwf)');
       ui.keyValue('Mode:', config.mode);
-      ui.keyValue('Rules:', String(rules.length));
+      ui.keyValue('Project rules:', String(projectRules.length));
+      if (config.global === false) {
+        ui.keyValue('Global rules:', 'disabled by config');
+      } else {
+        ui.keyValue('Global rules:', String(globalRules.length));
+      }
+      ui.keyValue('Merged rules:', String(mergedRules.length));
+      if (overriddenRuleIds.length > 0) {
+        ui.keyValue('Project overrides:', String(overriddenRuleIds.length));
+      }
       const toolIds = options.tool ? [options.tool] : config.tools;
       ui.keyValue('Tools:', chalk.cyan(toolIds.join(', ')));
       ui.newline();
@@ -359,6 +414,9 @@ export async function runCompile(options: CompileOptions): Promise<void> {
     ui.newline();
     ui.success(`Compiled ${String(result.activeRuleCount)} rules ${ICONS.arrow} ${String(allPaths.length)} file${allPaths.length !== 1 ? 's' : ''} ${ui.timing(result.elapsedMs)}`);
     ui.info(`Canonical files: ${String(result.canonicalFileCount)}`);
+    if (options.verbose && result.overriddenRuleIds.length > 0) {
+      ui.info(`Project overrides (${String(result.overriddenRuleIds.length)}): ${result.overriddenRuleIds.join(', ')}`);
+    }
     ui.newline();
 
     if (options.verbose) {
@@ -391,6 +449,22 @@ export async function runCompile(options: CompileOptions): Promise<void> {
 
 export async function runCompileFromAdd(): Promise<void> {
   await runCompile({});
+}
+
+function getOverriddenRuleIds(globalRules: Rule[], projectRules: Rule[]): string[] {
+  const globalIds = new Set<string>(globalRules.map((rule) => rule.id));
+  const orderedOverrides: string[] = [];
+  const seen = new Set<string>();
+
+  for (const rule of projectRules) {
+    if (!globalIds.has(rule.id) || seen.has(rule.id)) {
+      continue;
+    }
+    seen.add(rule.id);
+    orderedOverrides.push(rule.id);
+  }
+
+  return orderedOverrides;
 }
 
 export function registerCompileCommand(program: Command): void {

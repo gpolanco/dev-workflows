@@ -1,5 +1,6 @@
 import { mkdir, writeFile, readFile, appendFile } from 'node:fs/promises';
 import { join, basename } from 'node:path';
+import { homedir } from 'node:os';
 import type { Command } from 'commander';
 import { stringify } from 'yaml';
 import chalk from 'chalk';
@@ -12,6 +13,7 @@ import { fileExists } from '../utils/fs.js';
 export interface InitOptions {
   tools?: string;
   mode?: 'copy' | 'link';
+  global?: boolean;
   yes?: boolean;
   preset?: string;
 }
@@ -108,20 +110,36 @@ async function appendToGitignore(cwd: string): Promise<void> {
   }
 }
 
-async function runInit(options: InitOptions): Promise<void> {
-  const cwd = process.cwd();
-  const dwfDir = join(cwd, '.dwf');
+type InitScope = 'project' | 'global';
 
-  if (await fileExists(dwfDir)) {
-    ui.error('.dwf/ already exists in this directory', 'Remove it first or run from a different directory');
-    process.exitCode = 1;
-    return;
+async function resolveInitScope(options: InitOptions): Promise<InitScope> {
+  if (options.global) {
+    return 'global';
   }
 
+  if (options.yes) {
+    return 'project';
+  }
+
+  return select<InitScope>({
+    message: 'Where do you want to set up devw?',
+    choices: [
+      { name: 'This project (.dwf/)', value: 'project' as const },
+      { name: 'Global (~/.dwf/)', value: 'global' as const },
+    ],
+  });
+}
+
+export async function runInit(options: InitOptions): Promise<void> {
+  const cwd = process.cwd();
+
+  let scope: InitScope;
   let tools: ToolId[];
   let mode: 'copy' | 'link';
   try {
-    tools = await resolveTools(options, cwd);
+    scope = await resolveInitScope(options);
+    const toolDetectRoot = scope === 'global' ? homedir() : cwd;
+    tools = await resolveTools(options, toolDetectRoot);
     mode = await resolveMode(options);
   } catch (err) {
     if (err instanceof Error && err.name === 'ExitPromptError') return;
@@ -129,7 +147,20 @@ async function runInit(options: InitOptions): Promise<void> {
     process.exitCode = 1;
     return;
   }
-  const projectName = basename(cwd);
+
+  const rootDir = scope === 'global' ? homedir() : cwd;
+  const dwfDir = join(rootDir, '.dwf');
+
+  if (await fileExists(dwfDir)) {
+    const locationHint = scope === 'global'
+      ? '~/.dwf/ already exists in your home directory'
+      : '.dwf/ already exists in this directory';
+    ui.error(locationHint, 'Remove it first or run from a different directory');
+    process.exitCode = 1;
+    return;
+  }
+
+  const projectName = scope === 'global' ? 'global' : basename(cwd);
 
   // Create .dwf/rules/ and .dwf/assets/
   const rulesDir = join(dwfDir, 'rules');
@@ -138,10 +169,11 @@ async function runInit(options: InitOptions): Promise<void> {
 
   // Write config.yml
   const config = {
-    version: '0.1',
+    version: '0.2',
     project: { name: projectName },
     tools,
     mode,
+    global: true,
     blocks: [] as string[],
   };
   const configContent = `# Dev Workflows configuration\n${stringify(config)}`;
@@ -152,16 +184,22 @@ async function runInit(options: InitOptions): Promise<void> {
     await writeFile(join(rulesDir, `${scope}.yml`), buildRuleFileContent(scope), 'utf-8');
   }
 
-  // Append .dwf/.cache/ to .gitignore
-  await appendToGitignore(cwd);
+  // Ensure canonical global output dir exists for global mode.
+  if (scope === 'global') {
+    await mkdir(join(rootDir, '.agents', 'rules', 'devw'), { recursive: true });
+  } else {
+    // Append .dwf/.cache/ to .gitignore for project mode.
+    await appendToGitignore(cwd);
+  }
 
   // Success summary
   ui.newline();
   ui.header('dev-workflows');
   ui.newline();
-  ui.success('Initialized .dwf/ successfully');
+  ui.success(`Initialized ${scope === 'global' ? '~/.dwf/' : '.dwf/'} successfully`);
   ui.newline();
   ui.keyValue('Project:', chalk.bold(projectName));
+  ui.keyValue('Scope:', scope);
   ui.keyValue('Tools:', chalk.cyan(tools.join(', ')));
   ui.keyValue('Mode:', mode);
   ui.newline();
@@ -169,7 +207,7 @@ async function runInit(options: InitOptions): Promise<void> {
   ui.newline();
   console.log(`    1. Browse available rules         ${chalk.cyan('devw add --list')}`);
   console.log(`    2. Add a rule                     ${chalk.cyan('devw add <category>/<rule>')}`);
-  console.log(`    3. Or write your own rules in     ${chalk.cyan('.dwf/rules/')}`);
+  console.log(`    3. Or write your own rules in     ${chalk.cyan(scope === 'global' ? '~/.dwf/rules/' : '.dwf/rules/')}`);
   console.log(`    4. When ready, compile            ${chalk.cyan('devw compile')}`);
 
   if (options.preset) {
@@ -187,9 +225,10 @@ async function runInit(options: InitOptions): Promise<void> {
 export function registerInitCommand(program: Command): void {
   program
     .command('init')
-    .description('Initialize .dwf/ in the current project')
+    .description('Initialize .dwf/ in this project or globally')
     .option('--tools <tools>', 'Comma-separated list of tools (claude,cursor,gemini)')
     .option('--mode <mode>', 'Output mode: copy or link')
+    .option('--global', 'Initialize global config in ~/.dwf/')
     .option('--preset <preset>', 'Install a preset after initialization (e.g., spec-driven)')
     .option('-y, --yes', 'Accept all defaults')
     .action((options: InitOptions) => runInit(options));
