@@ -167,12 +167,18 @@ export async function runInit(options: InitOptions): Promise<void> {
       ? '~/.dwf/ already exists.'
       : '.dwf/ already exists in this directory.';
     ui.warn(locationHint);
-    const overwrite = await confirmPrompt({
-      message: 'Overwrite config? (rules will be preserved)',
-      defaultValue: false,
-    });
+
+    const overwrite = options.yes
+      ? false
+      : await confirmPrompt({
+          message: 'Overwrite config? (rules will be preserved)',
+          defaultValue: false,
+        });
+
     if (!overwrite) {
-      outroPrompt('Init cancelled.');
+      if (isInteractiveSession() && !options.yes) {
+        outroPrompt('Init cancelled.');
+      }
       return;
     }
   }
