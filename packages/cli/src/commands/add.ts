@@ -20,6 +20,7 @@ import {
   confirmPrompt,
   introPrompt,
   outroPrompt,
+  notePrompt,
   spinnerTask,
   isInteractiveSession,
 } from '../utils/prompt.js';
@@ -370,6 +371,7 @@ function compareSemver(a: string, b: string): number {
 interface RuleVersionCheck {
   installedVersion?: string;
   registryVersion?: string;
+  registryRule?: RegistryRule;
 }
 
 export async function downloadAndInstallAsset(
@@ -464,8 +466,6 @@ async function downloadAndInstall(
   const source = `${category}/${name}`;
   const fileName = `pulled-${category}-${name}.yml`;
   const filePath = join(cwd, '.dwf', 'rules', fileName);
-
-  ui.info(`Downloading ${source}...`);
 
   let markdown: string;
   try {
@@ -772,13 +772,13 @@ async function runInteractive(cwd: string, options: AddOptions): Promise<void> {
 
   if (allSelected.length === 0) return;
 
-  ui.newline();
-  ui.header('Rules to install:');
-  for (const rule of allSelected) {
-    const desc = rule.description ? pc.dim(` ${ICONS.dash} ${rule.description}`) : '';
-    console.log(`    ${rule.category}/${rule.name}${desc}`);
-  }
-  ui.newline();
+  const summaryLines = allSelected
+    .map((r) => {
+      const desc = r.description ? ` ${ICONS.dash} ${r.description}` : '';
+      return `${r.category}/${r.name}${desc}`;
+    })
+    .join('\n');
+  notePrompt(summaryLines, 'Rules to install');
 
   try {
     const shouldProceed = await confirmPrompt({
@@ -893,9 +893,12 @@ async function resolveRuleVersionCheck(cwd: string, source: string): Promise<Rul
   }
 
   let registryVersion: string | undefined;
+  let registryRule: RegistryRule | undefined;
   try {
     const registry = await fetchRegistryManifest(cwd);
-    registryVersion = registry.rules.find((rule) => rule.path === source)?.version;
+    const found = registry.rules.find((rule) => rule.path === source);
+    registryVersion = found?.version;
+    registryRule = found ?? undefined;
   } catch {
     registryVersion = undefined;
   }
@@ -907,6 +910,7 @@ async function resolveRuleVersionCheck(cwd: string, source: string): Promise<Rul
   return {
     installedVersion,
     registryVersion,
+    registryRule,
   };
 }
 
@@ -991,6 +995,33 @@ export async function runAdd(ruleArg: string | undefined, options: AddOptions): 
 
   const source = `${category}/${name}`;
   const versionCheck = await resolveRuleVersionCheck(cwd, source);
+
+  // Preview card in interactive mode (without --force or --dry-run)
+  if (isInteractiveSession() && !options.force && !options.dryRun) {
+    const fileName = `pulled-${category}-${name}.yml`;
+    const ruleInfo = versionCheck?.registryRule;
+
+    const noteLines = [
+      ruleInfo?.description ?? source,
+      '',
+      `scope    ${ruleInfo?.scope ?? category}`,
+      `version  ${versionCheck?.registryVersion ?? 'unknown'}`,
+      `file     .dwf/rules/${fileName}`,
+    ].join('\n');
+
+    notePrompt(noteLines, source);
+
+    try {
+      const confirmed = await confirmPrompt({ message: 'Install?', defaultValue: true });
+      if (!confirmed) {
+        outroPrompt('Cancelled.');
+        return;
+      }
+    } catch {
+      return;
+    }
+  }
+
   const added = await downloadAndInstall(cwd, category, name, options, versionCheck);
 
   if (added && !options.noCompile) {
