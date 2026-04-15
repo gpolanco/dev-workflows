@@ -55,7 +55,7 @@ function formatSeparator(toolId: string): string {
   return pc.dim(`${prefix}${label}${suffix}`);
 }
 
-async function runExplain(options: ExplainOptions): Promise<void> {
+export async function runExplain(options: ExplainOptions): Promise<void> {
   const resolved = await resolveContext(process.cwd());
 
   if (!resolved) {

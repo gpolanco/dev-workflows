@@ -17,6 +17,7 @@ import { resolveContext } from '../core/resolve-context.js';
 import {
   selectPrompt,
   multiselectPrompt,
+  multiselectPromptOrBack,
   confirmPrompt,
   introPrompt,
   outroPrompt,
@@ -719,32 +720,28 @@ async function runInteractive(cwd: string, options: AddOptions): Promise<void> {
       const category = registry.categories.find((c) => c.name === selectedCategoryName);
       if (!category) break;
 
-      const selected = await multiselectPrompt<string>({
-        message: 'Select rules to add',
-        options: [
-          { label: '\u2190 Back to categories', value: BACK_VALUE },
-          ...category.rules.map((r) => {
-            const path = `${category.name}/${r.name}`;
-            const installed = installedPaths.has(path);
-            const desc = r.description ? ` ${ICONS.dash} ${r.description}` : '';
-            const suffix = installed ? pc.dim(' (already installed)') : '';
-            return {
-              label: `${r.name}${desc}${suffix}`,
-              value: r.name,
-            };
-          }),
-        ],
+      const selected = await multiselectPromptOrBack<string>({
+        message: `Select rules to add  ${pc.dim('(Esc ← back)')}`,
+        options: category.rules.map((r) => {
+          const path = `${category.name}/${r.name}`;
+          const installed = installedPaths.has(path);
+          const desc = r.description ? ` ${ICONS.dash} ${r.description}` : '';
+          const suffix = installed ? pc.dim(' (already installed)') : '';
+          return {
+            label: `${r.name}${desc}${suffix}`,
+            value: r.name,
+          };
+        }),
       });
 
-      const realRules = selected.filter((v) => v !== BACK_VALUE);
+      if (selected === null) continue;
 
-      if (realRules.length === 0) {
-        if (selected.includes(BACK_VALUE)) continue;
+      if (selected.length === 0) {
         ui.warn('No rules selected');
         continue;
       }
 
-      for (const ruleName of realRules) {
+      for (const ruleName of selected) {
         const ruleInfo = category.rules.find((r) => r.name === ruleName);
         allSelected.push({
           category: category.name,
@@ -772,13 +769,15 @@ async function runInteractive(cwd: string, options: AddOptions): Promise<void> {
 
   if (allSelected.length === 0) return;
 
+  const dest = '.dwf/rules/';
+  const maxLen = Math.max(...allSelected.map((r) => `${r.category}/${r.name}`.length));
   const summaryLines = allSelected
     .map((r) => {
-      const desc = r.description ? ` ${ICONS.dash} ${r.description}` : '';
-      return `${r.category}/${r.name}${desc}`;
+      const rulePath = `${r.category}/${r.name}`;
+      return `${rulePath.padEnd(maxLen)}  ${ICONS.arrow} ${dest}`;
     })
     .join('\n');
-  notePrompt(summaryLines, 'Rules to install');
+  notePrompt(summaryLines, `Installing ${pluralRules(allSelected.length)}`);
 
   try {
     const shouldProceed = await confirmPrompt({
@@ -998,18 +997,10 @@ export async function runAdd(ruleArg: string | undefined, options: AddOptions): 
 
   // Preview card in interactive mode (without --force or --dry-run)
   if (isInteractiveSession() && !options.force && !options.dryRun) {
-    const fileName = `pulled-${category}-${name}.yml`;
-    const ruleInfo = versionCheck?.registryRule;
+    const dest = '.dwf/rules/';
+    const noteLines = `${source.padEnd(source.length)}  ${ICONS.arrow} ${dest}`;
 
-    const noteLines = [
-      ruleInfo?.description ?? source,
-      '',
-      `scope    ${ruleInfo?.scope ?? category}`,
-      `version  ${versionCheck?.registryVersion ?? 'unknown'}`,
-      `file     .dwf/rules/${fileName}`,
-    ].join('\n');
-
-    notePrompt(noteLines, source);
+    notePrompt(noteLines, `Installing 1 rule`);
 
     try {
       const confirmed = await confirmPrompt({ message: 'Install?', defaultValue: true });

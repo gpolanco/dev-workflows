@@ -33,7 +33,7 @@ function printWaiting(withHint = false): void {
   }
 }
 
-async function runWatch(options: WatchOptions): Promise<void> {
+export async function runWatch(options: WatchOptions): Promise<void> {
   const resolved = await resolveContext(process.cwd());
 
   if (!resolved) {
@@ -59,67 +59,70 @@ async function runWatch(options: WatchOptions): Promise<void> {
     watcher.on('ready', () => resolve());
   });
 
-  let debounceTimer: ReturnType<typeof setTimeout> | undefined;
-  let lastChangedPath = '';
+  await new Promise<void>((resolve) => {
+    let debounceTimer: ReturnType<typeof setTimeout> | undefined;
+    let lastChangedPath = '';
 
-  const runCompileOnChange = async (): Promise<void> => {
-    ui.newline();
-    ui.header(`${ICONS.reload} Change detected: .dwf/${lastChangedPath}`);
-    ui.info('Compiling...');
-    ui.newline();
+    const runCompileOnChange = async (): Promise<void> => {
+      ui.newline();
+      ui.header(`${ICONS.reload} Change detected: .dwf/${lastChangedPath}`);
+      ui.info('Compiling...');
+      ui.newline();
 
-    try {
-      const result = await executePipeline({ cwd, tool: options.tool });
-      printCompileResult(result);
+      try {
+        const result = await executePipeline({ cwd, tool: options.tool });
+        printCompileResult(result);
 
-      const hasFailures = result.results.some((r) => !r.success);
-      if (hasFailures) {
-        ui.newline();
-        ui.info('Watch mode continues running.');
+        const hasFailures = result.results.some((r) => !r.success);
+        if (hasFailures) {
+          ui.newline();
+          ui.info('Watch mode continues running.');
+        }
+
+        printWaiting();
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        ui.error(message);
+        ui.info('Watch mode is still running. Fix the error and save again.');
+      }
+    };
+
+    watcher.on('all', (_event: string, filePath: string) => {
+      lastChangedPath = filePath;
+
+      if (debounceTimer !== undefined) {
+        clearTimeout(debounceTimer);
       }
 
-      printWaiting();
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      ui.error(message);
-      ui.info('Watch mode is still running. Fix the error and save again.');
-    }
-  };
+      debounceTimer = setTimeout(() => {
+        void runCompileOnChange();
+      }, DEBOUNCE_MS);
+    });
 
-  watcher.on('all', (_event: string, filePath: string) => {
-    lastChangedPath = filePath;
+    process.on('SIGINT', () => {
+      if (debounceTimer !== undefined) {
+        clearTimeout(debounceTimer);
+      }
+      void watcher.close();
+      resolve();
+    });
 
-    if (debounceTimer !== undefined) {
-      clearTimeout(debounceTimer);
-    }
+    ui.newline();
+    ui.header(pc.green('Watching .dwf/ for changes...'));
+    ui.info('Running initial compile...');
+    ui.newline();
 
-    debounceTimer = setTimeout(() => {
-      void runCompileOnChange();
-    }, DEBOUNCE_MS);
+    executePipeline({ cwd, tool: options.tool })
+      .then((result) => {
+        printCompileResult(result);
+        printWaiting(true);
+      })
+      .catch((err: unknown) => {
+        const message = err instanceof Error ? err.message : String(err);
+        ui.error(message);
+        ui.info('Watch mode is still running. Fix the error and save again.');
+      });
   });
-
-  process.on('SIGINT', () => {
-    if (debounceTimer !== undefined) {
-      clearTimeout(debounceTimer);
-    }
-    void watcher.close();
-    process.exit(0);
-  });
-
-  ui.newline();
-  ui.header(pc.green('Watching .dwf/ for changes...'));
-  ui.info('Running initial compile...');
-  ui.newline();
-
-  try {
-    const result = await executePipeline({ cwd, tool: options.tool });
-    printCompileResult(result);
-    printWaiting(true);
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    ui.error(message);
-    ui.info('Watch mode is still running. Fix the error and save again.');
-  }
 }
 
 export function registerWatchCommand(program: Command): void {
