@@ -112,6 +112,25 @@ export async function multiselectPrompt<T>(
   return handleCancel(value);
 }
 
+export async function multiselectPromptOrBack<T>(
+  options: MultiselectPromptOptions<T>,
+): Promise<T[] | null> {
+  ensureInteractive();
+
+  const value = await p.multiselect<T>({
+    message: options.message,
+    required: options.required,
+    initialValues: options.initialValues ? [...options.initialValues] : undefined,
+    options: options.options.map((option) => toClackOption(option)),
+  });
+
+  if (p.isCancel(value)) {
+    return null;
+  }
+
+  return value as T[];
+}
+
 export async function confirmPrompt(options: ConfirmPromptOptions): Promise<boolean> {
   ensureInteractive();
 

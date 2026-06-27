@@ -13,6 +13,7 @@ import {
   confirmPrompt,
   introPrompt,
   outroPrompt,
+  notePrompt,
   spinnerTask,
   isInteractiveSession,
 } from '../utils/prompt.js';
@@ -161,34 +162,40 @@ export async function runInit(options: InitOptions): Promise<void> {
 
   const rootDir = scope === 'global' ? homedir() : cwd;
   const dwfDir = join(rootDir, '.dwf');
+  const dwfPath = scope === 'global' ? '~/.dwf/' : '.dwf/';
+  const alreadyExists = await fileExists(dwfDir);
 
-  if (await fileExists(dwfDir)) {
-    const locationHint = scope === 'global'
-      ? '~/.dwf/ already exists.'
-      : '.dwf/ already exists in this directory.';
-    ui.warn(locationHint);
-    const overwrite = await confirmPrompt({
-      message: 'Overwrite config? (rules will be preserved)',
-      defaultValue: false,
+  if (isInteractiveSession() && !options.yes) {
+    const willCreate = ['config.yml', ...BUILTIN_SCOPES.map((s) => `rules/${s}.yml`)];
+    const noteLines = [
+      `Location:  ${dwfPath}`,
+      `Tools:     ${tools.join(', ')}`,
+      `Mode:      ${mode}`,
+      `Will create: ${willCreate.join(', ')}`,
+      ...(alreadyExists ? ['⚠ Already exists — config will be overwritten, rules preserved'] : []),
+    ].join('\n');
+
+    notePrompt(noteLines, 'Summary');
+
+    const confirmed = await confirmPrompt({
+      message: alreadyExists ? 'Overwrite and initialize?' : 'Initialize?',
+      defaultValue: true,
     });
-    if (!overwrite) {
+    if (!confirmed) {
       outroPrompt('Init cancelled.');
       return;
     }
   }
 
-  const projectName = scope === 'global' ? 'global' : basename(cwd);
+  // For -y + alreadyExists: show warn so the existing e2e test keeps passing
+  if (options.yes && alreadyExists) {
+    const locationHint = scope === 'global' ? '~/.dwf/ already exists.' : '.dwf/ already exists in this directory.';
+    ui.warn(locationHint);
+  }
 
   const rulesDir = join(dwfDir, 'rules');
-  await spinnerTask({
-    label: 'Creating workspace folders',
-    task: async () => {
-      await mkdir(rulesDir, { recursive: true });
-      await mkdir(join(dwfDir, 'assets'), { recursive: true });
-    },
-  });
+  const projectName = scope === 'global' ? 'global' : basename(cwd);
 
-  // Write config.yml
   const config = {
     version: '0.2',
     project: { name: projectName },
@@ -198,19 +205,15 @@ export async function runInit(options: InitOptions): Promise<void> {
     blocks: [] as string[],
   };
   const configContent = `# Dev Workflows configuration\n${stringify(config)}`;
-  await spinnerTask({
-    label: 'Writing config.yml',
-    task: async () => {
-      await writeFile(join(dwfDir, 'config.yml'), configContent, 'utf-8');
-    },
-  });
 
-  // Write empty rule files
   await spinnerTask({
-    label: 'Scaffolding rule files',
+    label: 'Setting up .dwf/ workspace…',
     task: async () => {
-      for (const scope of BUILTIN_SCOPES) {
-        await writeFile(join(rulesDir, `${scope}.yml`), buildRuleFileContent(scope), 'utf-8');
+      await mkdir(rulesDir, { recursive: true });
+      await mkdir(join(dwfDir, 'assets'), { recursive: true });
+      await writeFile(join(dwfDir, 'config.yml'), configContent, 'utf-8');
+      for (const s of BUILTIN_SCOPES) {
+        await writeFile(join(rulesDir, `${s}.yml`), buildRuleFileContent(s), 'utf-8');
       }
     },
   });
@@ -220,7 +223,6 @@ export async function runInit(options: InitOptions): Promise<void> {
   }
 
   // Success summary
-  const dwfPath = scope === 'global' ? '~/.dwf/' : '.dwf/';
   ui.newline();
   ui.success(`Initialized ${dwfPath} — ${tools.join(', ')} (${mode} mode)`);
   outroPrompt('Run "devw add" to browse and install rules.');

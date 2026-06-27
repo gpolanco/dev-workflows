@@ -150,7 +150,7 @@ async function listAssets(typeFilter?: string): Promise<void> {
   }
 }
 
-async function runList(subcommand: string | undefined): Promise<void> {
+export async function runList(subcommand: string | undefined): Promise<void> {
   if (!subcommand) {
     ui.error('Specify what to list', 'Usage: devw list <rules|tools|assets|commands|templates|hooks>');
     process.exitCode = 1;

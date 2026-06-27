@@ -1,16 +1,16 @@
-import { describe, it, beforeEach, afterEach } from 'node:test';
-import assert from 'node:assert/strict';
-import { execFile as execFileCb } from 'node:child_process';
-import { promisify } from 'node:util';
-import { mkdtemp, rm, readFile, writeFile } from 'node:fs/promises';
-import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { tmpdir } from 'node:os';
+import { describe, it, beforeEach, afterEach } from "node:test";
+import assert from "node:assert/strict";
+import { execFile as execFileCb } from "node:child_process";
+import { promisify } from "node:util";
+import { mkdtemp, rm, readFile, writeFile } from "node:fs/promises";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+import { tmpdir } from "node:os";
 
 const execFile = promisify(execFileCb);
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const DEVW = join(__dirname, '..', '..', '..', 'bin', 'devw.js');
+const DEVW = join(__dirname, "..", "..", "..", "bin", "devw.js");
 const NODE = process.execPath;
 
 interface RunResult {
@@ -23,66 +23,83 @@ async function run(args: string[], cwd: string): Promise<RunResult> {
   try {
     const { stdout, stderr } = await execFile(NODE, [DEVW, ...args], {
       cwd,
-      env: { ...process.env, NO_COLOR: '1', FORCE_COLOR: '0' },
+      env: { ...process.env, NO_COLOR: "1", FORCE_COLOR: "0" },
     });
     return { stdout, stderr, exitCode: 0 };
   } catch (err: unknown) {
     const e = err as { stdout: string; stderr: string; code: number };
-    return { stdout: e.stdout ?? '', stderr: e.stderr ?? '', exitCode: e.code ?? 1 };
+    return {
+      stdout: e.stdout ?? "",
+      stderr: e.stderr ?? "",
+      exitCode: e.code ?? 1,
+    };
   }
 }
 
-describe('devw CLI e2e', () => {
+describe("devw CLI e2e", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await mkdtemp(join(tmpdir(), 'devw-e2e-'));
-    await execFile('git', ['init'], { cwd: tmpDir });
+    tmpDir = await mkdtemp(join(tmpdir(), "devw-e2e-"));
+    await execFile("git", ["init"], { cwd: tmpDir });
   });
 
   afterEach(async () => {
     await rm(tmpDir, { recursive: true, force: true });
   });
 
-  it('init creates config and rule files', async () => {
-    const result = await run(['init', '--tools', 'claude', '--mode', 'copy', '-y'], tmpDir);
+  it("init creates config and rule files", async () => {
+    const result = await run(
+      ["init", "--tools", "claude", "--mode", "copy", "-y"],
+      tmpDir
+    );
 
     assert.equal(result.exitCode, 0);
-    assert.ok(result.stdout.includes('Initialized'));
+    assert.ok(result.stdout.includes("Initialized"));
 
-    const config = await readFile(join(tmpDir, '.dwf', 'config.yml'), 'utf-8');
-    assert.ok(config.includes('claude'));
-    assert.ok(config.includes('copy'));
+    const config = await readFile(join(tmpDir, ".dwf", "config.yml"), "utf-8");
+    assert.ok(config.includes("claude"));
+    assert.ok(config.includes("copy"));
   });
 
-  it('init rejects invalid mode with clear error', async () => {
-    const result = await run(['init', '--tools', 'claude', '--mode', 'symlinks', '-y'], tmpDir);
+  it("init rejects invalid mode with clear error", async () => {
+    const result = await run(
+      ["init", "--tools", "claude", "--mode", "symlinks", "-y"],
+      tmpDir
+    );
 
     assert.equal(result.exitCode, 1);
-    assert.ok(result.stderr.includes('Unknown mode'));
-    assert.ok(result.stderr.includes('copy, link'));
+    assert.ok(result.stderr.includes("Unknown mode"));
+    assert.ok(result.stderr.includes("copy, link"));
   });
 
-  it('init rejects invalid tool with clear error', async () => {
-    const result = await run(['init', '--tools', 'noexiste', '--mode', 'copy', '-y'], tmpDir);
+  it("init rejects invalid tool with clear error", async () => {
+    const result = await run(
+      ["init", "--tools", "noexiste", "--mode", "copy", "-y"],
+      tmpDir
+    );
 
     assert.equal(result.exitCode, 1);
-    assert.ok(result.stderr.includes('Unknown tool'));
+    assert.ok(result.stderr.includes("Unknown tool"));
   });
 
-  it('init fails when .dwf/ already exists', async () => {
-    await run(['init', '--tools', 'claude', '--mode', 'copy', '-y'], tmpDir);
-    const result = await run(['init', '--tools', 'claude', '--mode', 'copy', '-y'], tmpDir);
+  it("init with -y exits cleanly when .dwf/ already exists", async () => {
+    await run(["init", "--tools", "claude", "--mode", "copy", "-y"], tmpDir);
+    const result = await run(
+      ["init", "--tools", "claude", "--mode", "copy", "-y"],
+      tmpDir
+    );
 
-    assert.equal(result.exitCode, 1);
-    assert.ok(result.stderr.includes('already exists'));
+    assert.equal(result.exitCode, 0);
+    const combined = result.stdout + result.stderr;
+    assert.ok(combined.includes("already exists"));
   });
 
-  it('compile generates CLAUDE.md when rules exist', async () => {
-    await run(['init', '--tools', 'claude', '--mode', 'copy', '-y'], tmpDir);
+  it("compile generates CLAUDE.md when rules exist", async () => {
+    await run(["init", "--tools", "claude", "--mode", "copy", "-y"], tmpDir);
 
     // Write a manual rule so compile has something to output
-    const rulesPath = join(tmpDir, '.dwf', 'rules', 'conventions.yml');
+    const rulesPath = join(tmpDir, ".dwf", "rules", "conventions.yml");
     await writeFile(
       rulesPath,
       `scope: conventions
@@ -91,23 +108,26 @@ rules:
     severity: error
     content: Always test your code.
 `,
-      'utf-8',
+      "utf-8"
     );
 
-    const result = await run(['compile'], tmpDir);
+    const result = await run(["compile"], tmpDir);
 
     assert.equal(result.exitCode, 0);
-    assert.ok(result.stdout.includes('Compiled'));
+    assert.ok(result.stdout.includes("Compiled"));
 
-    const claudeMd = await readFile(join(tmpDir, '.claude', 'rules', 'dwf-conventions.md'), 'utf-8');
-    assert.ok(claudeMd.includes('# Conventions'));
-    assert.ok(claudeMd.includes('Always test your code.'));
+    const claudeMd = await readFile(
+      join(tmpDir, ".claude", "rules", "dwf-conventions.md"),
+      "utf-8"
+    );
+    assert.ok(claudeMd.includes("# Conventions"));
+    assert.ok(claudeMd.includes("Always test your code."));
   });
 
-  it('compile with copilot preserves user content outside markers', async () => {
-    await run(['init', '--tools', 'copilot', '--mode', 'copy', '-y'], tmpDir);
+  it("compile with copilot preserves user content outside markers", async () => {
+    await run(["init", "--tools", "copilot", "--mode", "copy", "-y"], tmpDir);
 
-    const rulesPath = join(tmpDir, '.dwf', 'rules', 'conventions.yml');
+    const rulesPath = join(tmpDir, ".dwf", "rules", "conventions.yml");
     await writeFile(
       rulesPath,
       `scope: conventions
@@ -116,30 +136,40 @@ rules:
     severity: error
     content: Always test your code.
 `,
-      'utf-8',
+      "utf-8"
     );
 
-    await run(['compile'], tmpDir);
+    await run(["compile"], tmpDir);
 
-    const copilotMd = await readFile(join(tmpDir, '.github', 'copilot-instructions.md'), 'utf-8');
+    const copilotMd = await readFile(
+      join(tmpDir, ".github", "copilot-instructions.md"),
+      "utf-8"
+    );
     const withUserContent = `# My Custom Rules\n\nDo not touch this.\n\n${copilotMd}\n# Footer\n\nAlso keep this.\n`;
-    await writeFile(join(tmpDir, '.github', 'copilot-instructions.md'), withUserContent, 'utf-8');
+    await writeFile(
+      join(tmpDir, ".github", "copilot-instructions.md"),
+      withUserContent,
+      "utf-8"
+    );
 
-    const result = await run(['compile'], tmpDir);
+    const result = await run(["compile"], tmpDir);
     assert.equal(result.exitCode, 0);
 
-    const updated = await readFile(join(tmpDir, '.github', 'copilot-instructions.md'), 'utf-8');
-    assert.ok(updated.includes('# My Custom Rules'));
-    assert.ok(updated.includes('Do not touch this.'));
-    assert.ok(updated.includes('# Footer'));
-    assert.ok(updated.includes('Also keep this.'));
-    assert.ok(updated.includes('<!-- BEGIN dev-workflows -->'));
+    const updated = await readFile(
+      join(tmpDir, ".github", "copilot-instructions.md"),
+      "utf-8"
+    );
+    assert.ok(updated.includes("# My Custom Rules"));
+    assert.ok(updated.includes("Do not touch this."));
+    assert.ok(updated.includes("# Footer"));
+    assert.ok(updated.includes("Also keep this."));
+    assert.ok(updated.includes("<!-- BEGIN dev-workflows -->"));
   });
 
-  it('list rules shows rules from rule files', async () => {
-    await run(['init', '--tools', 'claude', '--mode', 'copy', '-y'], tmpDir);
+  it("list rules shows rules from rule files", async () => {
+    await run(["init", "--tools", "claude", "--mode", "copy", "-y"], tmpDir);
 
-    const rulesPath = join(tmpDir, '.dwf', 'rules', 'conventions.yml');
+    const rulesPath = join(tmpDir, ".dwf", "rules", "conventions.yml");
     await writeFile(
       rulesPath,
       `scope: conventions
@@ -148,192 +178,293 @@ rules:
     severity: error
     content: A manual rule.
 `,
-      'utf-8',
+      "utf-8"
     );
 
-    const result = await run(['list', 'rules'], tmpDir);
+    const result = await run(["list", "rules"], tmpDir);
     assert.equal(result.exitCode, 0);
-    assert.ok(result.stdout.includes('manual-rule'));
+    assert.ok(result.stdout.includes("manual-rule"));
   });
 
-  it('list blocks shows deprecation message', async () => {
-    const result = await run(['list', 'blocks'], tmpDir);
+  it("list blocks shows deprecation message", async () => {
+    const result = await run(["list", "blocks"], tmpDir);
 
     assert.equal(result.exitCode, 0);
-    assert.ok(result.stdout.includes('Blocks have been replaced'));
-    assert.ok(result.stdout.includes('devw list rules'));
-    assert.ok(result.stdout.includes('devw add --list'));
+    assert.ok(result.stdout.includes("Blocks have been replaced"));
+    assert.ok(result.stdout.includes("devw list rules"));
+    assert.ok(result.stdout.includes("devw add --list"));
   });
 
-  it('list tools shows configured tools', async () => {
-    await run(['init', '--tools', 'claude', '--mode', 'copy', '-y'], tmpDir);
-    const result = await run(['list', 'tools'], tmpDir);
+  it("list tools shows configured tools", async () => {
+    await run(["init", "--tools", "claude", "--mode", "copy", "-y"], tmpDir);
+    const result = await run(["list", "tools"], tmpDir);
 
     assert.equal(result.exitCode, 0);
-    assert.ok(result.stdout.includes('claude'));
+    assert.ok(result.stdout.includes("claude"));
   });
 
-  it('doctor passes on valid project', async () => {
-    await run(['init', '--tools', 'claude', '--mode', 'copy', '-y'], tmpDir);
-    await run(['compile'], tmpDir);
-    const result = await run(['doctor'], tmpDir);
+  it("doctor passes on valid project", async () => {
+    await run(["init", "--tools", "claude", "--mode", "copy", "-y"], tmpDir);
+    await run(["compile"], tmpDir);
+    const result = await run(["doctor"], tmpDir);
 
     assert.equal(result.exitCode, 0);
-    assert.ok(result.stdout.includes('config.yml exists'));
-    assert.ok(result.stdout.includes('config.yml is valid'));
+    assert.ok(result.stdout.includes("config.yml exists"));
+    assert.ok(result.stdout.includes("config.yml is valid"));
   });
 
-  it('devw with no args in non-TTY exits 0 and prints usage', async () => {
+  it("devw with no args in non-TTY exits 0 and prints usage", async () => {
     // execFile runs in non-TTY by default — menu should display help instead of prompting
     const result = await run([], tmpDir);
 
     assert.equal(result.exitCode, 0);
-    assert.ok(result.stdout.includes('Usage:'));
+    assert.ok(result.stdout.includes("Usage:"));
   });
 
-  it('add without args and non-TTY exits with error', async () => {
-    await run(['init', '--tools', 'claude', '--mode', 'copy', '-y'], tmpDir);
+  it("add without args and non-TTY exits with error", async () => {
+    await run(["init", "--tools", "claude", "--mode", "copy", "-y"], tmpDir);
     // execFile runs in non-TTY mode by default
-    const result = await run(['add'], tmpDir);
+    const result = await run(["add"], tmpDir);
 
     assert.equal(result.exitCode, 1);
-    assert.ok(result.stderr.includes('No rule specified'));
+    assert.ok(result.stderr.includes("No rule specified"));
   });
 
-  it('add with old block format exits with error', async () => {
-    await run(['init', '--tools', 'claude', '--mode', 'copy', '-y'], tmpDir);
-    const result = await run(['add', 'typescript-strict'], tmpDir);
+  it("add with old block format exits with error", async () => {
+    await run(["init", "--tools", "claude", "--mode", "copy", "-y"], tmpDir);
+    const result = await run(["add", "typescript-strict"], tmpDir);
 
     assert.equal(result.exitCode, 1);
-    assert.ok(result.stderr.includes('is no longer supported'));
+    assert.ok(result.stderr.includes("is no longer supported"));
   });
 
-  it('add with old block format includes category/name hint in error', async () => {
-    await run(['init', '--tools', 'claude', '--mode', 'copy', '-y'], tmpDir);
-    const result = await run(['add', 'typescript-strict'], tmpDir);
+  it("add with old block format includes category/name hint in error", async () => {
+    await run(["init", "--tools", "claude", "--mode", "copy", "-y"], tmpDir);
+    const result = await run(["add", "typescript-strict"], tmpDir);
 
     assert.equal(result.exitCode, 1);
     // Should suggest typescript/strict based on first dash split
-    assert.ok(result.stderr.includes('typescript/strict'));
+    assert.ok(result.stderr.includes("typescript/strict"));
   });
 
-  it('add with invalid format exits with error', async () => {
-    await run(['init', '--tools', 'claude', '--mode', 'copy', '-y'], tmpDir);
-    const result = await run(['add', 'INVALID/FORMAT'], tmpDir);
+  it("add with invalid format exits with error", async () => {
+    await run(["init", "--tools", "claude", "--mode", "copy", "-y"], tmpDir);
+    const result = await run(["add", "INVALID/FORMAT"], tmpDir);
 
     assert.equal(result.exitCode, 1);
-    assert.ok(result.stderr.includes('Invalid rule path'));
+    assert.ok(result.stderr.includes("Invalid rule path"));
   });
 
-  it('remove without args in non-TTY shows usage error', async () => {
-    await run(['init', '--tools', 'claude', '--mode', 'copy', '-y'], tmpDir);
+  it("remove without args in non-TTY shows usage error", async () => {
+    await run(["init", "--tools", "claude", "--mode", "copy", "-y"], tmpDir);
     // Non-TTY, no args → should error with usage hint
-    const result = await run(['remove'], tmpDir);
+    const result = await run(["remove"], tmpDir);
 
     assert.equal(result.exitCode, 1);
-    assert.ok(result.stderr.includes('No rule specified'));
+    assert.ok(result.stderr.includes("No rule specified"));
   });
 
-  it('remove with old block format exits with error', async () => {
-    await run(['init', '--tools', 'claude', '--mode', 'copy', '-y'], tmpDir);
-    const result = await run(['remove', 'typescript-strict'], tmpDir);
+  it("remove with old block format exits with error", async () => {
+    await run(["init", "--tools", "claude", "--mode", "copy", "-y"], tmpDir);
+    const result = await run(["remove", "typescript-strict"], tmpDir);
 
     assert.equal(result.exitCode, 1);
-    assert.ok(result.stderr.includes('is no longer supported'));
+    assert.ok(result.stderr.includes("is no longer supported"));
   });
 
-  it('remove with old block format includes category/name hint in error', async () => {
-    await run(['init', '--tools', 'claude', '--mode', 'copy', '-y'], tmpDir);
-    const result = await run(['remove', 'typescript-strict'], tmpDir);
+  it("remove with old block format includes category/name hint in error", async () => {
+    await run(["init", "--tools", "claude", "--mode", "copy", "-y"], tmpDir);
+    const result = await run(["remove", "typescript-strict"], tmpDir);
 
     assert.equal(result.exitCode, 1);
-    assert.ok(result.stderr.includes('typescript/strict'));
+    assert.ok(result.stderr.includes("typescript/strict"));
   });
 
-  it('remove non-installed rule exits with error', async () => {
-    await run(['init', '--tools', 'claude', '--mode', 'copy', '-y'], tmpDir);
-    const result = await run(['remove', 'typescript/strict'], tmpDir);
+  it("remove non-installed rule exits with error", async () => {
+    await run(["init", "--tools", "claude", "--mode", "copy", "-y"], tmpDir);
+    const result = await run(["remove", "typescript/strict"], tmpDir);
 
     assert.equal(result.exitCode, 1);
-    assert.ok(result.stderr.includes('not installed'));
+    assert.ok(result.stderr.includes("not installed"));
   });
 
-  it('compile generates multi-file output for directory bridges', async () => {
-    await run(['init', '--tools', 'claude', '--mode', 'copy', '-y'], tmpDir);
+  it(
+    "add --list shows available registry rules",
+    { timeout: 30_000 },
+    async () => {
+      await run(["init", "--tools", "claude", "--mode", "copy", "-y"], tmpDir);
+      const result = await run(["add", "--list"], tmpDir);
+
+      assert.equal(result.exitCode, 0);
+      assert.ok(result.stdout.includes("Available rules"));
+      assert.ok(result.stdout.includes("typescript"));
+      assert.ok(result.stdout.includes("strict"));
+    }
+  );
+
+  it(
+    "add --list --search filters rules by term",
+    { timeout: 30_000 },
+    async () => {
+      await run(["init", "--tools", "claude", "--mode", "copy", "-y"], tmpDir);
+      const result = await run(
+        ["add", "--list", "--search", "typescript"],
+        tmpDir
+      );
+
+      assert.equal(result.exitCode, 0);
+      assert.ok(result.stdout.includes("strict"));
+    }
+  );
+
+  it("add --list --tag filters rules by tag", { timeout: 30_000 }, async () => {
+    await run(["init", "--tools", "claude", "--mode", "copy", "-y"], tmpDir);
+    const result = await run(["add", "--list", "--tag", "typescript"], tmpDir);
+
+    assert.equal(result.exitCode, 0);
+    assert.ok(result.stdout.includes("strict"));
+  });
+
+  it(
+    "add --dry-run shows preview without writing rule file",
+    { timeout: 30_000 },
+    async () => {
+      await run(["init", "--tools", "claude", "--mode", "copy", "-y"], tmpDir);
+      const result = await run(
+        ["add", "--dry-run", "typescript/strict"],
+        tmpDir
+      );
+
+      assert.equal(result.exitCode, 0);
+      assert.ok(result.stdout.includes("Dry run"));
+      assert.ok(result.stdout.includes("pulled-typescript-strict.yml"));
+
+      try {
+        await readFile(
+          join(tmpDir, ".dwf", "rules", "pulled-typescript-strict.yml"),
+          "utf-8"
+        );
+        assert.fail("Rule file must not be created in dry-run mode");
+      } catch (err) {
+        assert.equal((err as NodeJS.ErrnoException).code, "ENOENT");
+      }
+    }
+  );
+
+  it(
+    "add installs rule, creates file, and updates config",
+    { timeout: 30_000 },
+    async () => {
+      await run(["init", "--tools", "claude", "--mode", "copy", "-y"], tmpDir);
+      const result = await run(["add", "typescript/strict"], tmpDir);
+
+      assert.equal(result.exitCode, 0);
+      assert.ok(result.stdout.includes("Added typescript/strict"));
+
+      const ruleFile = await readFile(
+        join(tmpDir, ".dwf", "rules", "pulled-typescript-strict.yml"),
+        "utf-8"
+      );
+      assert.ok(ruleFile.includes("source:"));
+      assert.ok(ruleFile.includes("typescript/strict"));
+
+      const config = await readFile(
+        join(tmpDir, ".dwf", "config.yml"),
+        "utf-8"
+      );
+      assert.ok(config.includes("pulled:"));
+      assert.ok(config.includes("typescript/strict"));
+
+      const cacheData = await readFile(
+        join(tmpDir, ".dwf", ".cache", "registry.json"),
+        "utf-8"
+      );
+      assert.ok(cacheData.includes("rules"));
+    }
+  );
+
+  it("compile generates multi-file output for directory bridges", async () => {
+    await run(["init", "--tools", "claude", "--mode", "copy", "-y"], tmpDir);
 
     // Write two scope files
     await writeFile(
-      join(tmpDir, '.dwf', 'rules', 'conventions.yml'),
+      join(tmpDir, ".dwf", "rules", "conventions.yml"),
       `scope: conventions
 rules:
   - id: named-exports
     severity: error
     content: Always use named exports.
 `,
-      'utf-8',
+      "utf-8"
     );
     await writeFile(
-      join(tmpDir, '.dwf', 'rules', 'security.yml'),
+      join(tmpDir, ".dwf", "rules", "security.yml"),
       `scope: security
 rules:
   - id: no-eval
     severity: error
     content: Never use eval.
 `,
-      'utf-8',
+      "utf-8"
     );
 
-    const result = await run(['compile'], tmpDir);
+    const result = await run(["compile"], tmpDir);
 
     assert.equal(result.exitCode, 0);
 
     // Both scope files should be generated
-    const convFile = await readFile(join(tmpDir, '.claude', 'rules', 'dwf-conventions.md'), 'utf-8');
-    assert.ok(convFile.includes('named exports'));
+    const convFile = await readFile(
+      join(tmpDir, ".claude", "rules", "dwf-conventions.md"),
+      "utf-8"
+    );
+    assert.ok(convFile.includes("named exports"));
 
-    const secFile = await readFile(join(tmpDir, '.claude', 'rules', 'dwf-security.md'), 'utf-8');
-    assert.ok(secFile.includes('eval'));
+    const secFile = await readFile(
+      join(tmpDir, ".claude", "rules", "dwf-security.md"),
+      "utf-8"
+    );
+    assert.ok(secFile.includes("eval"));
   });
 
-  it('compile --dry-run lists files without writing', async () => {
-    await run(['init', '--tools', 'claude', '--mode', 'copy', '-y'], tmpDir);
+  it("compile --dry-run lists files without writing", async () => {
+    await run(["init", "--tools", "claude", "--mode", "copy", "-y"], tmpDir);
 
     await writeFile(
-      join(tmpDir, '.dwf', 'rules', 'conventions.yml'),
+      join(tmpDir, ".dwf", "rules", "conventions.yml"),
       `scope: conventions
 rules:
   - id: named-exports
     severity: error
     content: Always use named exports.
 `,
-      'utf-8',
+      "utf-8"
     );
 
-    const result = await run(['compile', '--dry-run'], tmpDir);
+    const result = await run(["compile", "--dry-run"], tmpDir);
 
     assert.equal(result.exitCode, 0);
-    assert.ok(result.stdout.includes('Dry run'));
-    assert.ok(result.stdout.includes('.claude/rules/dwf-conventions.md'));
+    assert.ok(result.stdout.includes("Dry run"));
+    assert.ok(result.stdout.includes(".claude/rules/dwf-conventions.md"));
   });
 
-  it('explain shows multi-file output paths for directory bridges', async () => {
-    await run(['init', '--tools', 'claude', '--mode', 'copy', '-y'], tmpDir);
+  it("explain shows multi-file output paths for directory bridges", async () => {
+    await run(["init", "--tools", "claude", "--mode", "copy", "-y"], tmpDir);
 
     await writeFile(
-      join(tmpDir, '.dwf', 'rules', 'conventions.yml'),
+      join(tmpDir, ".dwf", "rules", "conventions.yml"),
       `scope: conventions
 rules:
   - id: named-exports
     severity: error
     content: Always use named exports.
 `,
-      'utf-8',
+      "utf-8"
     );
 
-    const result = await run(['explain'], tmpDir);
+    const result = await run(["explain"], tmpDir);
 
     assert.equal(result.exitCode, 0);
-    assert.ok(result.stdout.includes('multi-file'));
-    assert.ok(result.stdout.includes('.claude/rules/dwf-'));
+    assert.ok(result.stdout.includes("multi-file"));
+    assert.ok(result.stdout.includes(".claude/rules/dwf-"));
   });
 });
